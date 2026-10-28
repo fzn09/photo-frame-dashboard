@@ -37,9 +37,7 @@
       };
     });
     var names = open.map(function (g) { return g.name.toLowerCase(); });
-    // the mock's pre-checked items must not leak into live data: keep done items only after the first live load
-    var keepDone = D.shopLive ? D.groceries.filter(function (g) { return g.done && names.indexOf(g.name.toLowerCase()) < 0; }) : [];
-    D.shopLive = true;
+    var keepDone = D.groceries.filter(function (g) { return g.done && names.indexOf(g.name.toLowerCase()) < 0; });
     D.groceries = open.concat(keepDone);
     App.emit('data');
     App.emit('shopping'); // the Shopping view repaints itself when it's the one on screen

@@ -164,35 +164,8 @@ window.DATA = (function () {
     all: ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry', 'Frozen', 'Snacks', 'Household']
   };
   var gid = 0;
-  function g(name, cat, qty, store, done, note) {
-    return { id: 'g' + (++gid), name: name, cat: cat, qty: qty, store: store, done: !!done, note: note || '' };
-  }
-  var groceries = [
-    g('Bananas', 'Produce', 1, 'grocer', false, 'Bunch, not too ripe'),
-    g('Baby spinach', 'Produce', 1, 'grocer'),
-    g('Avocados', 'Produce', 3, 'grocer'),
-    g('Honeycrisp apples', 'Produce', 6, 'grocer'),
-    g('Sourdough loaf', 'Bakery', 1, 'grocer'),
-    g('Bagels', 'Bakery', 2, 'grocer', false, 'Everything'),
-    g('Chicken thighs', 'Meat & Fish', 1, 'grocer', false, 'Boneless'),
-    g('Salmon fillets', 'Meat & Fish', 2, 'grocer'),
-    g('Milk 2%', 'Dairy & Eggs', 2, 'grocer'),
-    g('Eggs', 'Dairy & Eggs', 1, 'grocer', false, '2 dozen'),
-    g('Greek yogurt', 'Dairy & Eggs', 1, 'grocer'),
-    g('Aged cheddar', 'Dairy & Eggs', 1, 'grocer'),
-    g('Rigatoni', 'Pantry', 2, 'grocer'),
-    g('Olive oil', 'Pantry', 1, 'grocer'),
-    g('Coffee beans', 'Pantry', 1, 'grocer', false, 'Dark roast'),
-    g('Frozen peas', 'Frozen', 1, 'grocer'),
-    g('Waffles', 'Frozen', 1, 'grocer'),
-    g('Goldfish crackers', 'Snacks', 1, 'grocer'),
-    g('Granola bars', 'Snacks', 1, 'grocer'),
-    g('Paper towels', 'Household', 1, 'grocer'),
-    g('Dish soap', 'Household', 1, 'grocer'),
-    g('Lemons', 'Produce', 2, 'grocer', true),
-    g('Butter', 'Dairy & Eggs', 1, 'grocer', true),
-    g('Tortillas', 'Bakery', 1, 'grocer', true)
-  ];
+  // No mock list: the Shopping view shows only what Bring! returns (empty until the first /api/shopping answer).
+  var groceries = [];
   var catalog = [
     ['Apples', 'Produce'], ['Avocados', 'Produce'], ['Bananas', 'Produce'], ['Baby spinach', 'Produce'], ['Blueberries', 'Produce'],
     ['Broccoli', 'Produce'], ['Carrots', 'Produce'], ['Cucumber', 'Produce'], ['Garlic', 'Produce'], ['Grapes', 'Produce'],
