@@ -96,7 +96,7 @@
 .h-ring.is-done .ring-bg { fill: var(--c); }
 .h-ring.is-done .num { color: var(--c-ink); }
 
-.h-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.h-duo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 .h-shop, .h-status { display: flex; flex-direction: column; gap: 4px; }
 .h-stat { display: flex; align-items: baseline; gap: 8px; }
 .h-stat .num { font-size: 56px; line-height: .9; }
@@ -108,3 +108,21 @@
 .h-st-row span { color: var(--ink-2); }
 .h-st-row.is-warn { color: #B45F00; font-weight: 800; }
 .h-st-row.is-warn span { color: inherit; }
+
+/* ---- transit departure board */
+.h-transit { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.h-dep-list { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
+.h-dep { display: flex; align-items: center; gap: 7px; }
+.h-dep-line {
+  min-width: 30px; height: 20px; padding: 0 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 4px; font-size: 12px; font-weight: 800; letter-spacing: .02em;
+  background: var(--mute); color: #fff; flex: none;
+}
+.h-dep-line--subway   { background: #FF6000; }
+.h-dep-line--suburban { background: #009252; }
+.h-dep-line--tram     { background: #C0272D; }
+.h-dep-line--bus      { background: var(--mute); }
+.h-dep-dir  { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--ink-2); }
+.h-dep-min  { font-size: 15px; flex: none; }
+.h-dep-empty { font-size: 15px; color: var(--mute); margin-top: 6px; }

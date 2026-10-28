@@ -121,13 +121,31 @@
   function status() {
     var lights = D.devices.filter(function (d) { return d.type === 'light' && d.on; }).length;
     var unlocked = D.devices.filter(function (d) { return d.type === 'lock' && !d.locked; });
-    var garage = D.devices.filter(function (d) { return d.type === 'garage'; })[0];
+    var garage = D.devices.filter(function (d) { return d.type === 'garage'; })[0] || { state: 'closed' };
     var secure = !unlocked.length && garage.state === 'closed';
     var secText = secure ? 'All locked' : (garage.state !== 'closed' ? 'Garage open' : unlocked[0].name + ' unlocked');
     return '<div class="label">Home</div>' +
       '<div class="h-st-row">' + App.icon('bulb', 24) + '<b class="num">' + lights + '</b><span>lights on</span></div>' +
       '<div class="h-st-row' + (secure ? '' : ' is-warn') + '">' + App.icon(secure ? 'lock' : 'unlock', 24) + '<span>' + secText + '</span></div>' +
       '<div class="h-st-row">' + App.icon('thermo', 24) + '<b class="num">' + D.climate.current + '°</b><span>inside</span></div>';
+  }
+
+  function transit() {
+    var tr = D.transit;
+    if (!tr || !tr.departures || !tr.departures.length) {
+      return '<div class="label">Transit</div><div class="h-dep-empty">—</div>';
+    }
+    var now = App.now();
+    var deps = tr.departures.filter(function (d) { return (d.when - now) > -60000; }).slice(0, 4);
+    return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
+      '<div class="h-dep-list">' + deps.map(function (d) {
+        var mins = Math.round((d.when - now) / 60000);
+        return '<div class="h-dep">' +
+          '<span class="h-dep-line h-dep-line--' + d.product + '">' + App.esc(d.line) + '</span>' +
+          '<span class="h-dep-dir">' + App.esc(d.direction) + '</span>' +
+          '<b class="num h-dep-min">' + (mins <= 0 ? 'now' : mins + 'm') + '</b>' +
+          '</div>';
+      }).join('') + '</div>';
   }
 
   function paint() {
@@ -140,6 +158,7 @@
     el.querySelector('.h-chores').innerHTML = chores();
     el.querySelector('.h-shop').innerHTML = shopping();
     el.querySelector('.h-status').innerHTML = status();
+    el.querySelector('.h-transit').innerHTML = transit();
   }
 
   function photoCaption(s) {
@@ -159,7 +178,7 @@
           '<div class="h-side">' +
           '  <button class="h-photo" data-go="photos"><div class="h-photo-stage"></div><div class="h-photo-cap"></div></button>' +
           '  <button class="h-chores card" data-go="tasks"></button>' +
-          '  <div class="h-duo"><button class="h-shop card" data-go="shopping"></button><button class="h-status card" data-go="control"></button></div>' +
+          '  <div class="h-duo"><button class="h-shop card" data-go="shopping"></button><button class="h-status card" data-go="control"></button><div class="h-transit card"></div></div>' +
           '</div></div>';
         el.addEventListener('click', function (e) {
           var ev = e.target.closest('[data-ev]');
@@ -180,6 +199,7 @@
     if (!V.el || !V.el.firstChild) return;
     V.el.querySelector('.h-clock').innerHTML = clock();
     V.el.querySelector('.h-hero-slot').innerHTML = hero();
+    V.el.querySelector('.h-transit').innerHTML = transit();
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
   });
   App.on('data', function () { if (App.current === 'home') paint(); });

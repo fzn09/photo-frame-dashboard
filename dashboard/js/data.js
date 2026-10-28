@@ -18,13 +18,12 @@ window.DATA = (function () {
     return Object.assign({ id: 'e' + (++n), allDay: true, start: at(d, '00:00'), end: at(d + days, '00:00'), title: title, people: people }, extra || {});
   }
 
-  var ALL = ['alex', 'jordan', 'maya', 'otto'];
+  // ids match the Worker's CAL_<ID> secrets: alex = Fauzan (CAL_ALEX), jordan = Amanda (CAL_JORDAN)
+  var ALL = ['alex', 'jordan'];
 
   var people = [
-    { id: 'alex', name: 'Wes', color: '#2D5BFF', rgb: '45 91 255', ink: '#FFFFFF', home: false, status: 'Driving home', eta: 12 },
-    { id: 'jordan', name: 'Claudia', color: '#E4007C', rgb: '228 0 124', ink: '#FFFFFF', home: false, status: 'At the office' },
-    { id: 'maya', name: 'Buzzsaw', age: 10, color: '#00A36C', rgb: '0 163 108', ink: '#FFFFFF', home: true, status: 'Home' },
-    { id: 'otto', name: 'Skidmark', age: 6, color: '#FFB000', rgb: '255 176 0', ink: '#111111', home: true, status: 'Home' }
+    { id: 'alex', name: 'Fauzan', color: '#2D5BFF', rgb: '45 91 255', ink: '#FFFFFF', home: false, status: 'Driving home', eta: 12 },
+    { id: 'jordan', name: 'Amanda', color: '#E4007C', rgb: '228 0 124', ink: '#FFFFFF', home: false, status: 'At the office' }
   ];
   var family = { id: 'family', name: 'Family', color: '#111111', rgb: '17 17 17', ink: '#FFFFFF' };
 
@@ -39,15 +38,13 @@ window.DATA = (function () {
     ev(0, '12:00', '12:45', 'Dentist', ['maya', 'jordan'], { travel: 15, loc: 'Bright Smiles Dental' }),
     ev(0, '13:00', '14:00', 'Lunch with Sam', ['alex'], { loc: 'Café Rustica' }),
     ev(0, '15:45', '16:30', 'Piano lesson', ['otto'], { travel: 12, loc: "Ms. Park's Studio", notes: 'Bring the blue theory book.' }),
-    ev(0, '16:05', '16:30', 'Drive Buzzsaw to soccer', ['jordan']),
-    ev(0, '16:25', '16:50', 'Pick up Skidmark', ['jordan'], { loc: "Ms. Park's Studio" }),
     ev(0, '16:30', '18:00', 'Soccer practice', ['maya'], { travel: 20, loc: 'Lakeshore Fields', notes: 'Shin guards + water bottle. Rain likely — pack a jacket.' }),
     ev(0, '17:00', '17:30', 'Parent–teacher call', ['alex', 'jordan'], { loc: 'Zoom' }),
     ev(0, '18:30', '19:30', "Dinner at Nonna's", ALL, { travel: 20, loc: "Nonna's", notes: 'Bring the lemon cake.' }),
     ev(0, '20:00', '20:30', 'Bath + books', ['otto']),
 
     // Tomorrow → +6
-    allDay(1, 3, 'Wes in Montréal', ['alex'], { loc: 'Hotel William Gray' }),
+    allDay(1, 3, 'Fauzan in Montréal', ['alex'], { loc: 'Hotel William Gray' }),
     ev(1, '07:00', '07:45', 'Gym', ['jordan'], { loc: 'Iron Works' }),
     ev(1, '08:15', '08:40', 'School drop-off', ['jordan'], { travel: 10 }),
     ev(1, '10:30', '11:15', 'Vet — Biscuit', ['jordan'], { travel: 10, loc: 'Riverdale Animal Clinic' }),
@@ -91,7 +88,7 @@ window.DATA = (function () {
     if (d % 9 === 0) events.push(ev(d, '12:00', '13:00', 'Lunch meeting', ['alex']));
     if (d % 11 === 0) events.push(ev(d, '09:00', '10:00', 'Doctor', ['jordan']));
   }
-  events.push(allDay(12, 1, "Buzzsaw's birthday 🎂", ALL));
+  events.push(allDay(12, 1, 'Birthday 🎂', ALL));
   events.push(allDay(-8, 3, 'Cottage weekend', ALL));
 
   // Extra events for the "overloaded day" demo
@@ -105,6 +102,11 @@ window.DATA = (function () {
     ev(0, '19:45', '20:30', 'Bake sale prep', ['maya', 'jordan']),
     ev(0, '20:30', '21:30', 'Hockey', ['alex'], { travel: 15 })
   ];
+
+  // Only Fauzan and Amanda have calendars/lanes now: drop the kids' mock events, chores and stats.
+  function adults(e) { e.people = e.people.filter(function (id) { return ALL.indexOf(id) > -1; }); return e.people.length; }
+  events = events.filter(adults);
+  busyExtras = busyExtras.filter(adults);
 
   // ---------------------------------------------------------------- chores
   var routines = [
@@ -153,16 +155,13 @@ window.DATA = (function () {
     chore('evening', 'any', 'Wipe counters', '🧽', 1, false),
     chore('evening', 'any', 'Garbage to curb', '🗑️', 2, false)
   ];
-  var stars = { maya: 42, otto: 57 };
-  // Mon..Sun, 1 = all chores done, 0 = missed, null = future
-  var week = { maya: [1, 1, 0, 1, 1, 0, 1], otto: [1, 0, 1, 1, 1, 1, 0] };
+  chores = chores.filter(function (c) { return c.who === 'any' || ALL.indexOf(c.who) > -1; });
+  var stars = {};
+  var week = {};
 
   // ---------------------------------------------------------------- shopping
-  var stores = [{ id: 'grocer', name: 'FreshCo' }, { id: 'costco', name: 'Costco' }];
   var catOrder = {
-    all: ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry', 'Frozen', 'Snacks', 'Household'],
-    grocer: ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry', 'Frozen', 'Snacks', 'Household'],
-    costco: ['Household', 'Pantry', 'Snacks', 'Dairy & Eggs', 'Meat & Fish', 'Frozen', 'Produce', 'Bakery']
+    all: ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry', 'Frozen', 'Snacks', 'Household']
   };
   var gid = 0;
   function g(name, cat, qty, store, done, note) {
@@ -174,21 +173,21 @@ window.DATA = (function () {
     g('Avocados', 'Produce', 3, 'grocer'),
     g('Honeycrisp apples', 'Produce', 6, 'grocer'),
     g('Sourdough loaf', 'Bakery', 1, 'grocer'),
-    g('Bagels', 'Bakery', 2, 'costco', false, 'Everything'),
+    g('Bagels', 'Bakery', 2, 'grocer', false, 'Everything'),
     g('Chicken thighs', 'Meat & Fish', 1, 'grocer', false, 'Boneless'),
     g('Salmon fillets', 'Meat & Fish', 2, 'grocer'),
-    g('Milk 2%', 'Dairy & Eggs', 2, 'costco'),
-    g('Eggs', 'Dairy & Eggs', 1, 'costco', false, '2 dozen'),
+    g('Milk 2%', 'Dairy & Eggs', 2, 'grocer'),
+    g('Eggs', 'Dairy & Eggs', 1, 'grocer', false, '2 dozen'),
     g('Greek yogurt', 'Dairy & Eggs', 1, 'grocer'),
     g('Aged cheddar', 'Dairy & Eggs', 1, 'grocer'),
     g('Rigatoni', 'Pantry', 2, 'grocer'),
-    g('Olive oil', 'Pantry', 1, 'costco'),
+    g('Olive oil', 'Pantry', 1, 'grocer'),
     g('Coffee beans', 'Pantry', 1, 'grocer', false, 'Dark roast'),
     g('Frozen peas', 'Frozen', 1, 'grocer'),
     g('Waffles', 'Frozen', 1, 'grocer'),
-    g('Goldfish crackers', 'Snacks', 1, 'costco'),
+    g('Goldfish crackers', 'Snacks', 1, 'grocer'),
     g('Granola bars', 'Snacks', 1, 'grocer'),
-    g('Paper towels', 'Household', 1, 'costco'),
+    g('Paper towels', 'Household', 1, 'grocer'),
     g('Dish soap', 'Household', 1, 'grocer'),
     g('Lemons', 'Produce', 2, 'grocer', true),
     g('Butter', 'Dairy & Eggs', 1, 'grocer', true),
@@ -234,8 +233,8 @@ window.DATA = (function () {
     { id: 'e-porch', room: 'entry', type: 'light', name: 'Porch', on: true, level: 100 },
     { id: 'g-door', room: 'entry', type: 'garage', name: 'Garage', state: 'closed' },
     { id: 'g-side', room: 'entry', type: 'lock', name: 'Side Door', locked: true },
-    { id: 'u-maya', room: 'upstairs', type: 'light', name: "Buzzsaw's Lamp", on: true, level: 30 },
-    { id: 'u-otto', room: 'upstairs', type: 'light', name: "Skidmark's Nightlight", on: false, level: 15 },
+    { id: 'u-maya', room: 'upstairs', type: 'light', name: 'Bedside Lamp', on: true, level: 30 },
+    { id: 'u-otto', room: 'upstairs', type: 'light', name: 'Nightlight', on: false, level: 15 },
     { id: 'u-hall', room: 'upstairs', type: 'light', name: 'Hallway', on: false, level: 60 },
     { id: 'u-bath', room: 'upstairs', type: 'light', name: 'Bathroom', on: false, level: 100 },
     { id: 'y-string', room: 'yard', type: 'light', name: 'String Lights', on: false, level: 100, flaky: true },
@@ -255,6 +254,17 @@ window.DATA = (function () {
     { id: 'movie', name: 'Movie', icon: 'film', set: { 'k-pend': 0, 'k-under': 15, 'k-island': 0, 'l-lamp': 15, 'l-ceil': 0, 'l-blinds': 0, 'l-fire': 30 } },
     { id: 'away', name: 'Away', icon: 'away', set: { 'k-pend': 0, 'k-under': 0, 'k-island': 0, 'l-lamp': 0, 'l-ceil': 0, 'l-fire': 0, 'u-maya': 0, 'u-hall': 0, 'e-porch': 100 } },
     { id: 'night', name: 'Goodnight', icon: 'moon', set: { 'k-pend': 0, 'k-under': 10, 'k-island': 0, 'l-lamp': 0, 'l-ceil': 0, 'l-fire': 0, 'u-hall': 10, 'u-otto': 15, 'e-porch': 0 } }
+  ];
+
+  // ---------------------------------------------------------------- live city cams (Photos view -> Live)
+  // type: 'img' = JPEG the view re-fetches every `every` s (safest on the frame's A33);
+  //       'yt'  = YouTube live, src = video id (iframe; only if the owner allows embedding);
+  //       'hls' = .m3u8 played by the WebView's own <video> (no hls.js bundled).
+  // Verified on 2026-10-28: the two berlin.de JPEGs. The YouTube Alexanderplatz/Brandenburger Tor streams
+  // checked had embedding disabled, and skylinewebcams/wetter.com/feratel give no embed licence, so none are listed.
+  var webcams = [
+    { id: 'rathaus', region: 'Mitte', name: 'Rotes Rathaus', type: 'img', every: 60, src: 'https://www.berlin.de/webcams/rathaus/webcam.jpg', credit: '© berlin.de · RN/BerlinOnline' },
+    { id: 'fsz', region: 'Charlottenburg', name: 'Theodor-Heuss-Platz', type: 'img', every: 60, src: 'https://www.berlin.de/webcams/fsz/webcam.jpg', credit: '© berlin.de · rbb' }
   ];
 
   // ---------------------------------------------------------------- weather (index = hour of day)
@@ -337,13 +347,24 @@ window.DATA = (function () {
     }
   ];
 
+  // ---------------------------------------------------------------- transit (mock — replaced by /api/transit at runtime)
+  var transit = {
+    stop: 'Gleisdreieck',
+    departures: [
+      { line: 'U1', direction: 'Warschauer Str.', when: at(0, '15:22'), delay: 0, product: 'subway' },
+      { line: 'U2', direction: 'Pankow',          when: at(0, '15:28'), delay: 2, product: 'subway' },
+      { line: 'U7', direction: 'Rudow',            when: at(0, '15:30'), delay: 0, product: 'subway' },
+      { line: '187', direction: 'Spichernstr.',    when: at(0, '15:33'), delay: 0, product: 'bus'    }
+    ]
+  };
+
   return {
     people: people, family: family, ALL: ALL,
     events: events, busyExtras: busyExtras,
     routines: routines, chores: chores, stars: stars, week: week,
-    stores: stores, catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals,
+    catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals,
     rooms: rooms, devices: devices, climate: climate, media: media, cameras: cameras, scenes: scenes,
-    weather: weather, photos: photos, agents: agents,
+    weather: weather, webcams: webcams, photos: photos, agents: agents, transit: transit,
     _gid: function () { return 'g' + (++gid); },
     _eid: function () { return 'e' + (++n); }
   };

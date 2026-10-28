@@ -12,6 +12,16 @@
     Object.keys(patch).forEach(function (k) { before[k] = d[k]; d[k] = patch[k]; });
     V.pending[id] = true;
     changed([id]);
+    if (D.live) {
+      return App.homeSync(d, patch, function (ok) {
+        delete V.pending[id];
+        if (!ok && !(opts && opts.silent)) {
+          Object.keys(before).forEach(function (k) { d[k] = before[k]; });
+          App.toast('Couldn’t reach <b>' + d.name + '</b> · it may be offline', { tone: 'error', icon: 'bolt' });
+          changed([id]);
+        } else paintTile(id);
+      });
+    }
     setTimeout(function () {
       delete V.pending[id];
       if (d.flaky && !(opts && opts.silent)) {
@@ -59,13 +69,22 @@
   function summary() {
     var lights = D.devices.filter(function (d) { return d.type === 'light' && d.on; });
     var unlocked = D.devices.filter(function (d) { return d.type === 'lock' && !d.locked; });
-    var garage = dev('g-door');
+    var garage = dev('g-door') || D.devices.filter(function (d) { return d.type === 'garage'; })[0] || { state: 'closed' };
     var secure = !unlocked.length && garage.state === 'closed';
     var c = D.climate, m = D.media;
     return '<button class="sum' + (lights.length ? ' sum--warm' : '') + '" data-sum="lights"><span class="label">Lights</span><b class="num">' + lights.length + '</b><small>on in ' + unique(lights.map(function (l) { return l.room; })).length + ' rooms</small></button>' +
       '<button class="sum' + (secure ? '' : ' sum--warn') + '" data-sum="security"><span class="label">Security</span><b class="num">' + (secure ? 'Locked' : unlocked.length + (garage.state !== 'closed' ? 1 : 0)) + '</b><small>' + (secure ? 'All doors + garage' : (garage.state !== 'closed' ? 'Garage ' + garage.state : '') + (unlocked.length ? (garage.state !== 'closed' ? ' · ' : '') + unlocked.map(function (u) { return u.name; }).join(', ') : '') + (secure ? '' : ' open')) + '</small></button>' +
       '<button class="sum" data-sum="climate"><span class="label">Climate</span><b class="num">' + c.current + '°</b><small>' + (c.mode === 'off' ? 'System off' : (c.set > c.current ? 'Heating' : c.set < c.current ? 'Cooling' : 'Holding') + ' to ' + c.set + '°') + '</small></button>' +
       '<button class="sum" data-sum="media"><span class="label">Media</span><b class="num">' + (m.playing ? 'Playing' : 'Paused') + '</b><small>' + m.room + ' speaker</small></button>';
+  }
+  // Debounced write to Home Assistant for climate/media/garage; toast if it fails. No-op on mock data.
+  function push(ent, patch) {
+    if (!D.live || !ent.id) return;
+    V.push = V.push || {};
+    clearTimeout(V.push[ent.id]);
+    V.push[ent.id] = setTimeout(function () {
+      App.homeSync(ent, patch, function (ok) { if (!ok) App.toast('Couldn’t reach Home Assistant', { tone: 'error', icon: 'bolt' }); });
+    }, 500);
   }
   function unique(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
 
@@ -198,13 +217,13 @@
         });
         t.addEventListener('click', function () { if (!d.locked && Date.now() - (V.lastHold || 0) > 800) App.setDevice(d.id, { locked: true }); });
       }
-      if (d.type === 'garage') t.addEventListener('click', function () { App.openGarageSheet(); });
+      if (d.type === 'garage') t.addEventListener('click', function () { App.openGarageSheet(d.id); });
     })();
   }
 
   // Slide-to-confirm for the garage
-  App.openGarageSheet = function () {
-    var g = dev('g-door'), opening = g.state === 'closed';
+  App.openGarageSheet = function (id) {
+    var g = dev(id || 'g-door'), opening = g.state === 'closed';
     App.sheet('<div class="sheet-pad"><div class="label">Garage door · currently ' + g.state + '</div><h2 class="serif sheet-h">' + (opening ? 'Open' : 'Close') + ' the garage?</h2>' +
       '<p class="sheet-p">' + (opening ? 'Make sure the driveway is clear.' : 'The door will stop and reverse if anything is in the way.') + '</p>' +
       '<div class="slide-confirm"><span class="sc-label">Slide to ' + (opening ? 'open' : 'close') + ' →</span><span class="sc-fill"></span><span class="sc-knob">' + App.icon('garage', 30) + '</span></div></div>', {
@@ -231,8 +250,9 @@
             close();
             g.state = opening ? 'opening' : 'closing';
             V.scene = null;
-            changed(['g-door']);
-            setTimeout(function () { g.state = opening ? 'open' : 'closed'; changed(['g-door']); App.toast('Garage ' + g.state, { icon: 'garage', ms: 2500 }); }, 4000);
+            changed([g.id]);
+            if (D.live) push(g, { state: opening ? 'open' : 'closed' }); // HA reports the real state on the next poll
+            setTimeout(function () { g.state = opening ? 'open' : 'closed'; changed([g.id]); App.toast('Garage ' + g.state, { icon: 'garage', ms: 2500 }); }, 4000);
           } else { knob.style.transform = ''; fill.style.width = ''; }
         });
       }
@@ -315,11 +335,12 @@
     if ((t = e.target.closest('[data-temp]'))) {
       D.climate.set = Math.max(15, Math.min(28, D.climate.set + +t.dataset.temp));
       if (D.climate.mode === 'off') D.climate.mode = 'heat';
+      push(D.climate, { set: D.climate.set });
       return climateChanged();
     }
-    if ((t = e.target.closest('[data-tmode]'))) { D.climate.mode = t.dataset.tmode; return climateChanged(); }
+    if ((t = e.target.closest('[data-tmode]'))) { D.climate.mode = t.dataset.tmode; push(D.climate, { mode: D.climate.mode }); return climateChanged(); }
     if ((t = e.target.closest('[data-cam]'))) return App.cameraSheet(D.cameras.filter(function (c) { return c.id === t.dataset.cam; })[0]);
-    if ((t = e.target.closest('[data-play]'))) { D.media.playing = !D.media.playing; paintPart('.hc-media', media()); paintPart('.hc-sum', summary()); }
+    if ((t = e.target.closest('[data-play]'))) { D.media.playing = !D.media.playing; push(D.media, { playing: D.media.playing }); paintPart('.hc-media', media()); paintPart('.hc-sum', summary()); }
   }
   function climateChanged() { paintPart('.hc-climate', climate()); paintPart('.hc-sum', summary()); App.emit('data'); }
 

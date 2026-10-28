@@ -2,7 +2,25 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "home-dashboard",
   "compatibility_date": "2026-09-30",
+  "main": "worker.js",
   "assets": {
     "directory": "./dist"
+  },
+  "vars": {
+    // Weather: latitude + longitude for Open-Meteo (free, no API key needed)
+    "WEATHER_LAT": "52.52",
+    "WEATHER_LON": "13.41",
+    // IANA timezone name — Open-Meteo aligns hourly array to local midnight
+    "WEATHER_TZ": "Europe/Berlin",
+    // BVG stop ID (find via https://v6.bvg.transport.rest/locations?query=StopName)
+    "BVG_STOP_ID": "900110001",
+    // Display name shown in the transit widget
+    "BVG_STOP_NAME": "S+U Schönhauser Allee"
   }
+  // Secrets — set via: wrangler secret put SECRET_NAME
+  // Required: GOOGLE_SERVICE_EMAIL, GOOGLE_SERVICE_KEY (PEM private key from service account JSON)
+  // Required: CAL_ALEX (Fauzan), CAL_JORDAN (Amanda)  (Google Calendar IDs, e.g. user@gmail.com)
+  // Required: BRING_EMAIL, BRING_PASSWORD
+  // Write access: DASH_TOKEN (same value as VITE_DASH_TOKEN in dashboard/.env at build time)
+  // Optional: HA_URL, HA_TOKEN (Home Assistant), BRING_LIST var (default "home")
 }

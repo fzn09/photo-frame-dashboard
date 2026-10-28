@@ -13,3 +13,4 @@ import './views/control.js';
 import './views/agents.js';
 import './views/ambient.js';
 import './diag.js';
+import './fetch.js';

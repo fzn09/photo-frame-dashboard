@@ -333,8 +333,7 @@
 
   // ------------------------------------------------------------ boot
   App.start = function () {
-    App.setTime(15, 18); // demo default: a busy weekday afternoon
-    fit();
+    fit(); // clock is live (offset 0); long-press the rail clock for demo times
     window.addEventListener('resize', fit);
     // Switch tabs the instant a finger lands (pointerdown), not on release. Keyboard "clicks"
     // (detail === 0) still work.
