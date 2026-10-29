@@ -4,6 +4,7 @@
 /log/
 /loader-*.txt
 /.claude/
+/graphify-out
 .DS_Store
 __pycache__/
 *.pyc
