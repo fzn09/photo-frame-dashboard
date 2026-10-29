@@ -1,4 +1,4 @@
-// Serves the built dashboard and proxies Pexels so the API key stays server-side.
+// Serves the built dashboard and proxies Unsplash so the API key stays server-side.
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -10,18 +10,18 @@ export default {
 
     const q = env.PHOTO_QUERY;
     const api = q
-      ? 'https://api.pexels.com/v1/search?per_page=40&query=' + encodeURIComponent(q)
-      : 'https://api.pexels.com/v1/curated?per_page=40';
-    const r = await fetch(api, { headers: { Authorization: env.PEXELS_KEY || '' } });
+      ? 'https://api.unsplash.com/search/photos?per_page=30&query=' + encodeURIComponent(q)
+      : 'https://api.unsplash.com/photos?per_page=30';
+    const r = await fetch(api, { headers: { Authorization: 'Client-ID ' + (env.UNSPLASH_KEY || '') } });
     if (!r.ok) return new Response('upstream ' + r.status, { status: 502 });
 
-    const { photos = [] } = await r.json();
-    const out = photos.map((p) => ({
+    const body = await r.json();
+    const out = (body.results || body).map((p) => ({
       id: p.id,
       o: p.height > p.width ? 'p' : 'l',
-      url: p.src.original,
-      photographer: p.photographer,
-      alt: p.alt || '',
+      url: p.urls.raw,
+      photographer: p.user.name,
+      alt: p.alt_description || '',
     }));
     const res = new Response(JSON.stringify(out), {
       headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=3600' },

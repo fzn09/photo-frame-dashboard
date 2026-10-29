@@ -9,7 +9,7 @@
     "run_worker_first": ["/api/*"]
   },
   "vars": {
-    // Pexels search term; remove for the curated feed. Key: `wrangler secret put PEXELS_KEY`
+    // Unsplash search term; remove for the editorial feed. Key: `wrangler secret put UNSPLASH_KEY`
     "PHOTO_QUERY": "nature landscape"
   }
 }
