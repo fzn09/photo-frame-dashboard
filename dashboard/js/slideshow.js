@@ -65,6 +65,10 @@
     }
   };
 
+  // Slideshows wait for the first /api/photos attempt (see loadPhotos) so none of them fills its queue
+  // from the demo list and then keeps showing it after the stream has arrived.
+  var live = [], settled = false;
+
   App.Slideshow = function (el, opts) {
     this.el = el;
     this.o = Object.assign({ layout: 'auto', interval: 15000, captions: true }, opts || {});
@@ -73,6 +77,8 @@
     this.count = 0;
     this.timer = null;
     this.current = null;
+    this.want = false;
+    live.push(this);
   };
   var S = App.Slideshow.prototype;
 
@@ -156,17 +162,36 @@
     clearInterval(this.timer);
     this.timer = setInterval(function () { self.next(); }, this.o.interval);
   };
-  S.start = function () { if (!this.current) this.next(); else this.restart(); };
-  S.stop = function () { clearInterval(this.timer); this.timer = null; };
+  S.start = function () {
+    this.want = true;
+    if (!settled) return; // started for real by settle()
+    if (!this.current) this.next(); else this.restart();
+  };
+  S.stop = function () { this.want = false; clearInterval(this.timer); this.timer = null; };
 
-  // Stream stock photos from the Worker; on any failure keep the demo list.
+  function settle() {
+    if (settled) return;
+    settled = true;
+    live.forEach(function (s) { if (s.want) s.start(); });
+  }
+
+  // Stream stock photos from the Worker; on failure keep the demo list and retry with backoff
+  // (Wi-Fi often comes up after the page loads), then go back to hourly refreshes.
+  var RETRY = [5000, 15000, 60000, 300000], failures = 0, retryTimer = null;
   App.loadPhotos = function () {
+    clearTimeout(retryTimer);
     fetch('/api/photos').then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (list) {
-      if (!Array.isArray(list) || !list.length) return;
+      if (!Array.isArray(list) || !list.length) return Promise.reject('empty');
+      failures = 0;
       D.photos = list;
+      // Drop queues built from the demo list so the stream takes over at the next slide.
+      live.forEach(function (s) { s.queue = []; });
       App.emit('data');
-    }).catch(function () {});
+    }).catch(function () {
+      retryTimer = setTimeout(App.loadPhotos, RETRY[Math.min(failures++, RETRY.length - 1)]);
+    }).then(settle);
   };
   App.loadPhotos();
+  setTimeout(settle, 4000); // a hung request must not leave the tile blank: fall back to the demo list
   setInterval(App.loadPhotos, 3600000);
 })();
