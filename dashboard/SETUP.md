@@ -211,6 +211,26 @@ adb shell am start -n com.wesbos.homehq/.MainActivity
 
 ---
 
+## 12. Choosing which views the frame shows
+
+The `VIEWS` var in `wrangler.jsonc` lists the views on the rail, in rail order. Default:
+`"home,calendar,shopping,photos"` (the ones with real data). Valid names:
+`home` (Today, always on), `calendar`, `tasks` (Chores), `shopping`, `photos`, `control` (Home), `agents`.
+Unknown names are ignored; an empty/invalid value falls back to the default.
+
+To change it: edit `VIEWS`, then `npm run deploy`. The frame polls `/api/config` every 5 minutes and applies the
+list without a reload (if it is showing a view that just got hidden, it goes back to Today). The last list is
+cached in the frame's localStorage, so a reboot without Wi-Fi still shows the right views.
+
+A hidden view is never built, so it costs the frame nothing. Today also drops the cards of hidden views
+(Chores, Home status, the photo tile) and the layout reflows. With Photos hidden the screensaver shows only the
+clock and weather. `GET /api/config` shows what the Worker currently serves.
+
+Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off on the frame. Open the page with
+`?demo` to turn them on (remembered), `?demo=0` to turn them off.
+
+---
+
 ## Quick reference: all configuration
 
 | Key | Where | Description |
@@ -227,5 +247,6 @@ adb shell am start -n com.wesbos.homehq/.MainActivity
 | `DASH_TOKEN` | secret (+ `VITE_DASH_TOKEN` in `.env`) | Guards the write endpoints |
 | `HA_URL` / `HA_TOKEN` | secrets | Home Assistant base URL + long-lived token (optional) |
 | `BRING_LIST` | var (optional) | Bring! list name, default `home` |
+| `VIEWS` | var | Comma list of views shown on the frame (section 12) |
 | `BRING_EMAIL` | secret | Bring! account email |
 | `BRING_PASSWORD` | secret | Bring! account password |

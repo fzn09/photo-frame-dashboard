@@ -6,6 +6,16 @@
   var $ = App.$ = function (s, r) { return (r || document).querySelector(s); };
   App.$$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
+  // Demo UI (clock long-press panel, keyboard shortcuts, startup tip) is off in kiosk mode.
+  // ?demo turns it on (remembered), ?demo=0 off, same pattern as ?diag.
+  App.demo = (function () {
+    var q = location.search.match(/[?&]demo(=([^&]*))?/);
+    try {
+      if (q) localStorage.setItem('hq-demo', q[2] === '0' ? '0' : '1');
+      return localStorage.getItem('hq-demo') === '1';
+    } catch (e) { return !!q && q[2] !== '0'; }
+  })();
+
   // ------------------------------------------------------------ events
   var handlers = {};
   App.on = function (e, fn) { (handlers[e] = handlers[e] || []).push(fn); };
@@ -168,9 +178,25 @@
     view.show($('#view-' + name), opts || {});
     view._built = true; view._dirty = false; view._min = minuteKey();
   }
+  // Which views are shown: D.views (default in data.js, overridden by the cached list and by the Worker's
+  // /api/config). A hidden view is never built, so it also costs the frame no memory or CPU.
+  App.enabled = function (name) { return D.views.indexOf(name) > -1; };
+  App.setViews = function (list) {
+    if (!Array.isArray(list)) return;
+    list = list.filter(function (n) { return n !== 'home' && $('#view-' + n); });
+    D.views = ['home'].concat(list);
+    App.$$('.rail-item').forEach(function (b) { b.hidden = !App.enabled(b.dataset.go); });
+    // CSS hook: Today hides the cards of views that are off (.stage[data-off~="tasks"] .h-chores, ...)
+    $('#stage').dataset.off = App.$$('.view[data-view]').map(function (v) { return v.dataset.view; })
+      .filter(function (n) { return !App.enabled(n); }).join(' ');
+    try { localStorage.setItem('hq-views', D.views.join(',')); } catch (e) { /* private mode: just not cached */ }
+    if (App.current && !App.enabled(App.current)) App.go('home');
+    App.emit('views');
+  };
+
   App.go = function (name, opts) {
     opts = opts || {};
-    if (!App.views[name]) name = 'home';
+    if (!App.views[name] || !App.enabled(name)) name = 'home';
     if (App.current && App.current !== name && App.views[App.current].hide) App.views[App.current].hide();
     App.$$('.view').forEach(function (v) { v.classList.toggle('is-active', v.dataset.view === name); });
     App.$$('.rail-item').forEach(function (b) { b.classList.toggle('is-active', b.dataset.go === name); });
@@ -197,7 +223,7 @@
     refreshTimer = setTimeout(function next() {
       var name = Object.keys(App.views).filter(function (k) {
         var v = App.views[k];
-        return k !== App.current && (!v._built || v._dirty);
+        return k !== App.current && App.enabled(k) && (!v._built || v._dirty);
       })[0];
       if (!name) return;
       prebuild(name);
@@ -333,8 +359,11 @@
 
   // ------------------------------------------------------------ boot
   App.start = function () {
-    fit(); // clock is live (offset 0); long-press the rail clock for demo times
+    fit(); // clock is live (offset 0); with ?demo, long-press the rail clock for demo times
     window.addEventListener('resize', fit);
+    var cached = null;
+    try { cached = localStorage.getItem('hq-views'); } catch (e) { /* default list */ }
+    App.setViews(cached ? cached.split(',') : D.views.slice(1)); // before the first App.go: no flash of hidden views
     // Switch tabs the instant a finger lands (pointerdown), not on release. Keyboard "clicks"
     // (detail === 0) still work.
     $('#rail').addEventListener('pointerdown', function (e) {
@@ -352,7 +381,7 @@
     setInterval(tick, 1000);
     App.emit('ready');
     refreshStale(1500);
-    setTimeout(function () { App.toast('Tip: press and hold the <b>clock</b> in the sidebar for demo controls', { ms: 6000, icon: 'bolt' }); }, 1200);
+    if (App.demo) setTimeout(function () { App.toast('Tip: press and hold the <b>clock</b> in the sidebar for demo controls', { ms: 6000, icon: 'bolt' }); }, 1200);
   };
   document.addEventListener('DOMContentLoaded', function () { App.start(); });
 })();

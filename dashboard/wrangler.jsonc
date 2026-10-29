@@ -15,7 +15,10 @@
     // BVG stop ID (find via https://v6.bvg.transport.rest/locations?query=StopName)
     "BVG_STOP_ID": "900110001",
     // Display name shown in the transit widget
-    "BVG_STOP_NAME": "S+U Schönhauser Allee"
+    "BVG_STOP_NAME": "S+U Schönhauser Allee",
+    // Views the frame shows (rail order). Valid: home, calendar, tasks, shopping, photos, control, agents.
+    // "home" is always on. Unknown names are ignored. Change + redeploy; the frame picks it up within ~5 min.
+    "VIEWS": "home,calendar,shopping,photos"
   }
   // Secrets — set via: wrangler secret put SECRET_NAME
   // Required: GOOGLE_SERVICE_EMAIL, GOOGLE_SERVICE_KEY (PEM private key from service account JSON)

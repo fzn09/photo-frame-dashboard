@@ -115,7 +115,10 @@
     return run;
   }
 
+  function updateConfig(data) { if (data && Array.isArray(data.views)) App.setViews(data.views.filter(function (n) { return n !== 'home'; })); }
+
   App.on('ready', function () {
+    poll('config',   updateConfig,    5);
     poll('weather',  updateWeather,  30);
     poll('calendar', updateCalendar,  5);
     pullShopping = poll('shopping', updateShopping, 2, function () { return writes > 0; });

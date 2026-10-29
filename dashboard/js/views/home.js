@@ -155,9 +155,9 @@
     el.querySelector('.h-presence').innerHTML = presence();
     el.querySelector('.h-hero-slot').innerHTML = hero();
     el.querySelector('.h-lanes').innerHTML = lanes();
-    el.querySelector('.h-chores').innerHTML = chores();
+    if (App.enabled('tasks')) el.querySelector('.h-chores').innerHTML = chores();
     el.querySelector('.h-shop').innerHTML = shopping();
-    el.querySelector('.h-status').innerHTML = status();
+    if (App.enabled('control')) el.querySelector('.h-status').innerHTML = status();
     el.querySelector('.h-transit').innerHTML = transit();
   }
 
@@ -189,9 +189,9 @@
         V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, interval: 12000, onChange: photoCaption });
       }
       paint();
-      V.slides.start();
+      if (App.enabled('photos')) V.slides.start();
     },
-    resume: function () { V.slides.start(); },
+    resume: function () { if (App.enabled('photos')) V.slides.start(); },
     hide: function () { if (V.slides) V.slides.stop(); }
   });
   // Every minute: just the clock and next-up countdown (cheap, even while hidden). Weather on the hour.
@@ -203,4 +203,10 @@
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
+  App.on('views', function () {
+    if (!V.el || !V.el.firstChild) return;
+    paint();
+    if (!V.slides) return;
+    if (App.enabled('photos') && App.current === 'home') V.slides.start(); else V.slides.stop();
+  });
 })();

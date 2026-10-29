@@ -332,6 +332,8 @@ window.DATA = (function () {
   };
 
   return {
+    // views shown on the frame; the Worker's VIEWS var overrides this (same default as views.js)
+    views: ['home', 'calendar', 'shopping', 'photos'],
     people: people, family: family, ALL: ALL,
     events: events, busyExtras: busyExtras,
     routines: routines, chores: chores, stars: stars, week: week,

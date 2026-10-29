@@ -1,8 +1,9 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping (GET list, POST write), /api/home (HA bridge), /api/transit
+// Routes: /api/weather, /api/calendar, /api/shopping (GET list, POST write), /api/home (HA bridge), /api/config (visible views), /api/transit
 // All other paths are served by Cloudflare Assets automatically.
 
 import { mapHome, toService } from './ha-map.js';
+import { parseViews } from './views.js';
 
 const JSON_CORS = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 
@@ -13,6 +14,7 @@ export default {
       if (pathname === '/api/weather')  return handleWeather(env);
       if (pathname === '/api/calendar') return handleCalendar(env);
       if (pathname === '/api/shopping') return request.method === 'POST' ? shopWrite(request, env) : handleShopping(env);
+      if (pathname === '/api/config')   return handleConfig(env);
       if (pathname === '/api/home')     return request.method === 'POST' ? homeWrite(request, env) : handleHome(env);
       if (pathname === '/api/transit')  return handleTransit(env);
     } catch (err) {
@@ -21,6 +23,14 @@ export default {
     return new Response('Not found', { status: 404 });
   }
 };
+
+// ---- Which views the frame shows (VIEWS var in wrangler.jsonc; no secrets in this response) ---------
+
+function handleConfig(env) {
+  return new Response(JSON.stringify({ views: parseViews(env.VIEWS) }), {
+    headers: { ...JSON_CORS, 'Cache-Control': 'max-age=60' }
+  });
+}
 
 // ---- Open-Meteo (free, no API key) ----------------------------------------
 // https://open-meteo.com — WMO weather interpretation codes → app condition strings

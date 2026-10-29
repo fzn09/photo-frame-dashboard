@@ -43,7 +43,7 @@
 
   App.on('mode', function (m) {
     clearInterval(shiftTimer);
-    if (m === 'ambient') { amb.show.start(); paint(); shiftTimer = setInterval(pixelShift, 60000); }
+    if (m === 'ambient') { if (App.enabled('photos')) amb.show.start(); paint(); shiftTimer = setInterval(pixelShift, 60000); }
     else amb.show.stop();
     if (m === 'night') { paint(); shiftTimer = setInterval(pixelShift, 60000); }
     App.resetIdle();

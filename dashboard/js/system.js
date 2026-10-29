@@ -166,6 +166,7 @@
   }
 
   App.on('ready', function () {
+    if (!App.demo) return; // kiosk mode: no demo panel, no keyboard shortcuts
     $('#demo').addEventListener('click', demoClick);
     App.hold($('#railClock'), 700, { done: App.openDemo });
     document.addEventListener('keydown', function (e) {
@@ -176,7 +177,7 @@
       if (k === 'n') App.setMode('night');
       if (k === 'escape') { closeDemo(); App.closeSheet(); }
       var views = ['home', 'calendar', 'tasks', 'shopping', 'photos', 'control', 'agents'];
-      if (k >= '1' && k <= '7') App.go(views[+k - 1]);
+      if (k >= '1' && k <= '7' && App.enabled(views[+k - 1])) App.go(views[+k - 1]);
     });
   });
 })();

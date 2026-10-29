@@ -77,7 +77,14 @@
 .h-more { min-height: 36px; margin-top: auto; font-size: 16px; font-weight: 800; font-stretch: 75%; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); text-align: left; padding: 0 12px; }
 
 /* ---- side column */
-.h-side { grid-column: 8 / 13; display: grid; grid-template-rows: 1fr 142px 150px; gap: 16px; min-height: 0; }
+.h-side { grid-column: 8 / 13; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.h-side > .h-photo { flex: 1 1 0; min-height: 0; }
+.h-side > .h-chores { flex: 0 0 142px; }
+.h-side > .h-duo { flex: 0 0 150px; }
+/* cards of hidden views disappear and the column reflows (data-off is set by App.setViews) */
+.stage[data-off~="photos"] .h-photo, .stage[data-off~="tasks"] .h-chores, .stage[data-off~="control"] .h-status { display: none; }
+.stage[data-off~="photos"] .h-side > .h-chores { flex: 1 1 0; min-height: 142px; }
+.stage[data-off~="photos"][data-off~="tasks"] .h-side > .h-duo { flex: 1 1 0; }
 .h-photo { position: relative; border-radius: var(--r); overflow: hidden; background: var(--paper-2); display: block; width: 100%; }
 .h-photo-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 .h-photo-cap {
@@ -96,7 +103,7 @@
 .h-ring.is-done .ring-bg { fill: var(--c); }
 .h-ring.is-done .num { color: var(--c-ink); }
 
-.h-duo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.h-duo { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 16px; }
 .h-shop, .h-status { display: flex; flex-direction: column; gap: 4px; }
 .h-stat { display: flex; align-items: baseline; gap: 8px; }
 .h-stat .num { font-size: 56px; line-height: .9; }
