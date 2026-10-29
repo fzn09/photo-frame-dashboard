@@ -7,6 +7,7 @@ assert.deepEqual(parseViews('agents'), ['home', 'agents'], 'home is forced on');
 assert.deepEqual(parseViews(' Photos , HOME,photos,xx ,'), ['home', 'photos'], 'trim, case, dedupe, unknown dropped');
 assert.deepEqual(parseViews('shopping,calendar'), ['home', 'calendar', 'shopping'], 'rail order, not input order');
 assert.deepEqual(parseViews('home'), ['home'], 'home alone is valid');
+assert.deepEqual(parseViews('kitchen,fridge,shopping'), ['home', 'shopping', 'fridge', 'kitchen']);
 for (const bad of [undefined, null, '', ' , ', 'nope,xx', 42]) assert.deepEqual(parseViews(bad), DEFAULT, 'fallback for ' + JSON.stringify(bad));
 assert.deepEqual(parseViews(NAMES.join(',')), NAMES);
 assert.notEqual(parseViews(''), DEFAULT, 'returns a copy, not the shared default');

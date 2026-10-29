@@ -1,5 +1,5 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping (GET list, POST write), /api/home (HA bridge), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
+// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/home (HA bridge), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
 // All other paths are served by Cloudflare Assets automatically.
 
 import { mapHome, toService } from './ha-map.js';
@@ -13,7 +13,10 @@ export default {
     try {
       if (pathname === '/api/weather')  return handleWeather(env);
       if (pathname === '/api/calendar') return handleCalendar(env);
-      if (pathname === '/api/shopping') return request.method === 'POST' ? shopWrite(request, env) : handleShopping(env);
+      if (pathname === '/api/shopping' || pathname === '/api/fridge') {
+        const which = pathname.slice(5);
+        return request.method === 'POST' ? bringWrite(request, env, which) : bringRead(env, which);
+      }
       if (pathname === '/api/config')   return handleConfig(env);
       if (pathname === '/api/home')     return request.method === 'POST' ? homeWrite(request, env) : handleHome(env);
       if (pathname === '/api/transit')  return handleTransit(env);
@@ -53,11 +56,14 @@ async function handleWeather(env) {
   const url = `https://api.open-meteo.com/v1/forecast` +
     `?latitude=${lat}&longitude=${lon}` +
     `&hourly=temperature_2m,precipitation_probability,weathercode` +
-    `&daily=temperature_2m_max,temperature_2m_min` +
+    `&daily=temperature_2m_max,temperature_2m_min,sunset` +
     `&timezone=${encodeURIComponent(tz)}` +
     `&forecast_days=2`;
+  const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality` +
+    `?latitude=${lat}&longitude=${lon}&current=european_aqi&timezone=${encodeURIComponent(tz)}`;
 
-  const res  = await fetch(url);
+  // air quality is a nice-to-have: never let it fail the weather response
+  const [res, aq] = await Promise.all([fetch(url), fetch(aqUrl).then(r => r.json()).catch(() => ({}))]);
   const data = await res.json();
 
   // Open-Meteo returns 48 hourly entries (2 days). Slice the first 24 = today.
@@ -69,7 +75,10 @@ async function handleWeather(env) {
   const hi = Math.round(data.daily.temperature_2m_max[0]);
   const lo = Math.round(data.daily.temperature_2m_min[0]);
 
-  return new Response(JSON.stringify({ hi, lo, t, c, p }), {
+  const sun = (data.daily.sunset?.[0] || '').slice(11, 16); // "HH:MM" local, tz was requested above
+  const aqi = aq.current?.european_aqi ?? null;
+
+  return new Response(JSON.stringify({ hi, lo, t, c, p, sun, aqi }), {
     headers: { ...JSON_CORS, 'Cache-Control': 'max-age=1800, s-maxage=1800' }
   });
 }
@@ -168,8 +177,8 @@ async function handleCalendar(env) {
 // Flow mirrors the python bring_api package used by D:\Projects\shoplister
 const BRING = 'https://api.getbring.com/rest/';
 
-// Login + headers + target list. Throws on auth failure; list is null if the account has none.
-async function bringSession(env) {
+// Login + headers + target list (which: 'shopping' | 'fridge'). Throws on auth failure; list is null if not found.
+async function bringSession(env, which) {
   const authRes = await fetch(BRING + 'v2/bringauth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -186,24 +195,26 @@ async function bringSession(env) {
     'X-BRING-USER-UUID': auth.uuid,
     'X-BRING-PUBLIC-USER-UUID': auth.publicUuid
   };
-  // List named BRING_LIST (default "home", like shoplister), else the first list
+  // Shopping: list named BRING_LIST (default "home", like shoplister), else the first list.
+  // Fridge: list named BRING_FRIDGE_LIST (default "fridge"), no fallback, so it never writes to the shopping list.
   const { lists } = await (await fetch(`${BRING}bringusers/${auth.uuid}/lists`, { headers: H })).json();
-  const want = (env.BRING_LIST || 'home').toLowerCase();
-  const list = (lists || []).find(l => (l.name || '').trim().toLowerCase() === want) || (lists || [])[0] || null;
+  const fridge = which === 'fridge';
+  const want = (fridge ? env.BRING_FRIDGE_LIST || 'fridge' : env.BRING_LIST || 'home').toLowerCase();
+  const list = (lists || []).find(l => (l.name || '').trim().toLowerCase() === want) || (fridge ? null : (lists || [])[0]) || null;
   return { H, list };
   // ponytail: re-authenticates on every request; use Workers KV to cache the token if Bring! rate-limits
 }
 
-async function handleShopping(env) {
+async function bringRead(env, which) {
   if (!env.BRING_EMAIL || !env.BRING_PASSWORD) {
     return new Response('[]', { status: 503, headers: JSON_CORS });
   }
-  const { H, list } = await bringSession(env);
-  if (!list) return new Response('[]', { headers: JSON_CORS });
+  const { H, list } = await bringSession(env, which);
+  if (!list) return new Response('{"error":"no Bring! list"}', { status: 404, headers: JSON_CORS });
 
   const data = await (await fetch(`${BRING}v2/bringlists/${list.listUuid}`, { headers: H })).json();
   // itemId is Bring!'s (German) catalog key or the free-text name typed. Quantity lives in the
-  // specification as a leading "2× " (written by shopWrite) because Bring! has no quantity field.
+  // specification as a leading "2× " (written by bringWrite) because Bring! has no quantity field.
   const items = (data.items?.purchase || []).map(item => {
     const m = /^(\d+)×\s*/.exec(item.specification || '');
     return { name: item.itemId, note: (item.specification || '').replace(/^\d+×\s*/, ''), qty: m ? +m[1] : 1 };
@@ -221,13 +232,13 @@ function guard(request, env) {
 
 const BRING_OPS = { add: 'TO_PURCHASE', done: 'TO_RECENTLY', remove: 'REMOVE' };
 
-// POST {op:'add'|'done'|'remove', name, qty?, note?}. 'add' also covers qty change and "add back".
-async function shopWrite(request, env) {
+// POST {op:'add'|'done'|'remove', name, qty?, note?}. 'add' also covers qty/note change and "add back".
+async function bringWrite(request, env, which) {
   const denied = guard(request, env);
   if (denied) return denied;
   const { op, name, qty = 1, note = '' } = await request.json();
   if (!BRING_OPS[op] || !name) return new Response('{"error":"bad request"}', { status: 400, headers: JSON_CORS });
-  const { H, list } = await bringSession(env);
+  const { H, list } = await bringSession(env, which);
   if (!list) return new Response('{"error":"no Bring! list"}', { status: 404, headers: JSON_CORS });
   const res = await fetch(`${BRING}v2/bringlists/${list.listUuid}/items`, {
     method: 'PUT',

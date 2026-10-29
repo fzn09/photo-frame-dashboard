@@ -1,0 +1,4 @@
+/* Fridge: layout reuses css/views/shopping.css (.shop, .s-row, .s-tile, ...) */
+.f-exp { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 6px; background: var(--paper-2); color: var(--ink-2); font-weight: 700; }
+.f-exp.is-due { background: var(--alert); color: #fff; }
+.f-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }

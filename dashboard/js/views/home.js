@@ -27,13 +27,25 @@
       }).join('') + '</div>';
   }
 
+  // EAQI bands (Open-Meteo / EEA): 0-20 good ... 100+ extremely poor
+  var AQ = [[20, 'Good'], [40, 'Fair'], [60, 'Moderate'], [80, 'Poor'], [100, 'Very poor'], [1e9, 'Extremely poor']];
+
+  function airSun() {
+    var W = D.weather, bits = [];
+    if (W && W.sun) bits.push(App.icon('moon', 20) + ' Sunset <b>' + App.fmt.time(new Date('1970-01-01T' + W.sun), false) + '</b>');
+    if (W && W.aqi != null) bits.push('Air <b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1] + '</b>');
+    return bits.length ? '<div class="h-air">' + bits.join('<i></i>') + '</div>' : '';
+  }
+
   function presence() {
-    return D.people.map(function (p) {
+    var rows = D.people.map(function (p) {
       var sub = p.home ? 'Home' : (p.eta ? '<b>ETA ' + p.eta + ' min</b>' : p.status);
       return '<div class="h-who' + (p.home ? ' is-home' : '') + '" style="' + App.pstyle(p) + '">' +
         App.avatar(p, 36, p.home ? '' : 'avatar--away') +
         '<span><b>' + p.name + '</b><small>' + sub + '</small></span></div>';
-    }).join('');
+    });
+    rows.splice(1, 0, airSun()); // lands in the gap; space-between spreads the rows
+    return rows.join('');
   }
 
   function hero() {

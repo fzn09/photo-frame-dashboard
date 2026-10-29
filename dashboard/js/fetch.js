@@ -43,23 +43,43 @@
     App.emit('shopping'); // the Shopping view repaints itself when it's the one on screen
   }
 
-  // Write-through to Bring! via the Worker. op: 'add' (also qty change / add back) | 'done' | 'remove'.
+  // Fridge = a second Bring! list. Same shape as groceries, ids stable per name.
+  function updateFridge(items) {
+    var old = {};
+    D.fridge.forEach(function (f) { old[f.name.toLowerCase()] = f; });
+    D.fridge = items.map(function (item) {
+      var o = old[item.name.toLowerCase()];
+      return { id: o ? o.id : D._gid(), name: item.name, note: item.note || '', qty: item.qty || 1, cat: o ? o.cat : App.categorize(item.name) };
+    });
+    App.emit('data');
+    App.emit('fridge');
+  }
+
+  // Write-through to Bring! via the Worker. op: 'add' (also qty/note change, add back) | 'done' | 'remove'.
   // The Worker answers 503 when writes or Bring! aren't configured: that's mock mode, stay silent.
   var TOKEN = import.meta.env.VITE_DASH_TOKEN || '';
-  var writes = 0, pullShopping;
-  App.shopSync = function (op, g) {
-    writes++;
-    fetch('/api/shopping', {
+  function bringPost(endpoint, op, g, after) {
+    fetch('/api/' + endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Dash-Token': TOKEN },
       body: JSON.stringify({ op: op, name: g.name, qty: g.qty, note: g.note || '' })
     })
       .then(function (r) { if (!r.ok && r.status !== 503) return Promise.reject(r.status); })
       .catch(function (err) {
-        console.warn('[fetch] shopping write failed:', err);
+        console.warn('[fetch] ' + endpoint + ' write failed:', err);
         App.toast('Couldn’t sync <b>' + App.esc(g.name) + '</b> to Bring!', { tone: 'error', icon: 'bolt' });
       })
-      .then(function () { if (--writes === 0 && pullShopping) pullShopping(); });
+      .then(after);
+  }
+  var writes = 0, pullShopping;
+  App.shopSync = function (op, g) {
+    writes++;
+    bringPost('shopping', op, g, function () { if (--writes === 0 && pullShopping) pullShopping(); });
+  };
+  var fridgeWrites = 0, pullFridge;
+  App.fridgeSync = function (op, g) {
+    fridgeWrites++;
+    bringPost('fridge', op, g, function () { if (--fridgeWrites === 0 && pullFridge) pullFridge(); });
   };
 
   function updateTransit(data) {
@@ -122,6 +142,8 @@
     poll('weather',  updateWeather,  30);
     poll('calendar', updateCalendar,  5);
     pullShopping = poll('shopping', updateShopping, 2, function () { return writes > 0; });
+    // Each Bring! call logs in again, so the fridge list is only polled while its view is on
+    pullFridge = poll('fridge', updateFridge, 5, function () { return fridgeWrites > 0 || !App.enabled('fridge'); });
     poll('transit',  updateTransit,   1);
     pullHome = poll('home', updateHome, 0.5, function () { return homeWrites > 0; });
   });

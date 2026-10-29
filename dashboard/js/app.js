@@ -240,7 +240,8 @@
     if (App.current) App.views[App.current].show($('#view-' + App.current), { rerender: true });
   };
 
-  // ------------------------------------------------------------ toasts (single, with undo)
+  // ------------------------------------------------------------ toasts (single, with undo or one action)
+  // opts.undo = fn (an Undo button), or opts.action = { label: html, fn }
   var toastTimer;
   App.toast = function (html, opts) {
     opts = opts || {};
@@ -248,16 +249,17 @@
     box.innerHTML = '';
     clearTimeout(toastTimer);
     var ms = opts.ms || 5000;
+    var act = opts.action || (opts.undo && { label: App.icon('undo', 22) + 'Undo', fn: opts.undo });
     var t = document.createElement('div');
     t.className = 'toast' + (opts.tone ? ' toast--' + opts.tone : '');
     t.style.setProperty('--ms', ms + 'ms');
     t.innerHTML = (opts.icon ? App.icon(opts.icon, 26) : '') + '<span class="toast-msg">' + html + '</span>' +
-      (opts.undo ? '<button class="toast-undo">' + App.icon('undo', 22) + 'Undo</button>' : '');
+      (act ? '<button class="toast-undo">' + act.label + '</button>' : '');
     box.appendChild(t);
     t.classList.add('is-in');
     function kill() { t.remove(); }
     toastTimer = setTimeout(kill, ms);
-    if (opts.undo) t.querySelector('.toast-undo').addEventListener('click', function () { clearTimeout(toastTimer); opts.undo(); kill(); });
+    if (act) t.querySelector('.toast-undo').addEventListener('click', function () { clearTimeout(toastTimer); act.fn(); kill(); });
   };
 
   // ------------------------------------------------------------ sheets (modal cards)

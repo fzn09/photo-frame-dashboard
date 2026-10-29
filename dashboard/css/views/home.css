@@ -39,6 +39,9 @@
 .h-who small { font-size: var(--fs-min); color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .h-who small b { font-size: var(--fs-min); color: var(--c); }
 .h-who .avatar--away { background: var(--paper); }
+.h-air { display: flex; align-items: center; gap: 10px; font-size: var(--fs-min); color: var(--mute); white-space: nowrap; }
+.h-air b { color: var(--ink); }
+.h-air i { width: 4px; height: 4px; border-radius: 50%; background: var(--mute); }
 
 /* ---- main column */
 .h-main { grid-column: 1 / 8; display: grid; grid-template-rows: 232px 1fr; gap: 16px; min-height: 0; }

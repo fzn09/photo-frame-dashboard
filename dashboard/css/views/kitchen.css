@@ -1,0 +1,30 @@
+/* Kitchen: calculator (left) + conversions and timers (right) */
+.kitchen { height: 100%; display: grid; grid-template-columns: 500px 1fr; gap: 28px; }
+
+.k-calc { min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+.k-screen { background: var(--ink); color: var(--paper); border-radius: var(--r); padding: 14px 26px 10px; text-align: right; }
+.k-line { min-height: 26px; font-size: 20px; color: #AAA59B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-display { font-size: 76px; line-height: 1.05; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.k-keys { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 10px; }
+.k-key { display: grid; place-items: center; border-radius: 16px; background: var(--card); font-size: 36px; font-weight: 700; }
+.k-key:active { transform: scale(.95); background: var(--line); }
+.k-key--fn { background: var(--paper-2); }
+.k-key--fn.is-op, .k-key--eq { background: var(--ink); color: var(--paper); }
+.k-key--wide { grid-column: span 2; }
+
+.k-side { min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.k-conv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.k-presets { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.k-chip { min-height: 60px; padding: 0 8px; border-radius: 14px; background: var(--card); font-size: 19px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.k-chip:active { transform: scale(.95); background: var(--line); }
+.k-chip--screen { background: var(--paper-2); font-size: 16px; }
+
+.k-timers { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.k-timer { min-height: 84px; padding: 0 10px 0 22px; border-radius: var(--r); background: var(--card); display: flex; align-items: center; gap: 16px; text-align: left; }
+.k-timer .label { flex: 1; }
+.k-t-time { min-width: 140px; font-size: 48px; font-weight: 700; }
+.k-t-x { width: var(--tap); height: var(--tap); border-radius: 50%; display: grid; place-items: center; }
+.k-t-x:active { background: var(--line); }
+.k-timer.is-done { background: var(--alert); color: #fff; }
+.k-timer.is-done .label { color: inherit; }
+.k-none { padding: 24px 4px; font-size: 20px; color: var(--mute); }

@@ -16,9 +16,9 @@
     "BVG_STOP_ID": "900110001",
     // Display name shown in the transit widget
     "BVG_STOP_NAME": "S+U Schönhauser Allee",
-    // Views the frame shows (rail order). Valid: home, calendar, tasks, shopping, photos, control, agents.
+    // Views the frame shows (rail order). Valid: home, calendar, tasks, shopping, fridge, kitchen, photos, control, agents.
     // "home" is always on. Unknown names are ignored. Change + redeploy; the frame picks it up within ~5 min.
-    "VIEWS": "home,calendar,shopping,photos",
+    "VIEWS": "home,calendar,shopping,fridge,kitchen,photos",
     // Unsplash search term for the photo stream; remove for the editorial feed. Secret: UNSPLASH_KEY
     "PHOTO_QUERY": "nature landscape"
   }
@@ -27,5 +27,5 @@
   // Required: CAL_ALEX (Fauzan), CAL_JORDAN (Amanda)  (Google Calendar IDs, e.g. user@gmail.com)
   // Required: BRING_EMAIL, BRING_PASSWORD
   // Write access: DASH_TOKEN (same value as VITE_DASH_TOKEN in dashboard/.env at build time)
-  // Optional: HA_URL, HA_TOKEN (Home Assistant), BRING_LIST var (default "home")
+  // Optional: HA_URL, HA_TOKEN (Home Assistant), BRING_LIST var (default "home"), BRING_FRIDGE_LIST var (default "fridge")
 }

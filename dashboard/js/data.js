@@ -183,6 +183,9 @@ window.DATA = (function () {
     ['Popcorn', 'Snacks'], ['Dish soap', 'Household'], ['Dishwasher pods', 'Household'], ['Garbage bags', 'Household'],
     ['Laundry detergent', 'Household'], ['Paper towels', 'Household'], ['Toilet paper', 'Household'], ['Toothpaste', 'Household']
   ];
+  // Fridge: a second Bring! list, empty until the first /api/fridge answer (like groceries)
+  var fridge = [];
+  var fridgeUsuals = ['Milk 2%', 'Eggs', 'Butter', 'Cheddar', 'Greek yogurt', 'Cream cheese', 'Parmesan', 'Oat milk', 'Chicken thighs', 'Bacon', 'Baby spinach', 'Tomatoes'];
   var usuals = ['Milk 2%', 'Eggs', 'Bananas', 'Bread', 'Apples', 'Coffee beans', 'Greek yogurt', 'Cheddar', 'Butter', 'Baby spinach', 'Chicken thighs', 'Paper towels'];
 
   // ---------------------------------------------------------------- home control
@@ -337,7 +340,7 @@ window.DATA = (function () {
     people: people, family: family, ALL: ALL,
     events: events, busyExtras: busyExtras,
     routines: routines, chores: chores, stars: stars, week: week,
-    catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals,
+    catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals, fridge: fridge, fridgeUsuals: fridgeUsuals,
     rooms: rooms, devices: devices, climate: climate, media: media, cameras: cameras, scenes: scenes,
     weather: weather, webcams: webcams, photos: photos, agents: agents, transit: transit,
     _gid: function () { return 'g' + (++gid); },

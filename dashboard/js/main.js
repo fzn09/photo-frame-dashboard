@@ -8,6 +8,8 @@ import './views/home.js';
 import './views/calendar.js';
 import './views/tasks.js';
 import './views/shopping.js';
+import './views/fridge.js';
+import './views/kitchen.js';
 import './views/photos.js';
 import './views/control.js';
 import './views/agents.js';

@@ -1,7 +1,7 @@
 // Which views the frame shows. Pure function: used by worker.js (/api/config), checked by test/views.test.mjs.
 // Keep NAMES in sync with the data-go buttons in index.html. js/data.js has the same default for the offline case.
 
-export const NAMES = ['home', 'calendar', 'tasks', 'shopping', 'photos', 'control', 'agents'];
+export const NAMES = ['home', 'calendar', 'tasks', 'shopping', 'fridge', 'kitchen', 'photos', 'control', 'agents'];
 export const DEFAULT = ['home', 'calendar', 'shopping', 'photos'];
 
 // "Home, photos ,xx,photos" -> ['home','photos']. Unknown names dropped, duplicates dropped, 'home' always

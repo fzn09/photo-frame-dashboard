@@ -168,6 +168,11 @@ The token ships inside the page JavaScript, so it stops casual misuse only. Keep
 Which Bring! list is used: the one named `home`, else the first; override with a `BRING_LIST` var.
 Quantity is stored in the Bring! item note as `2× …`.
 
+The Fridge view (`fridge` in `VIEWS`) uses a second Bring! list through `/api/fridge`: create a list
+named `Fridge` in the Bring! app (override the name with a `BRING_FRIDGE_LIST` var). There is no
+fallback list, so without it the view stays empty and nothing is written. Expiry dates are kept in the
+item note as `bis 3.11.`, so they read naturally in the Bring! app too.
+
 ---
 
 ## 9. Google Home via Home Assistant (optional)
@@ -215,7 +220,7 @@ adb shell am start -n com.wesbos.homehq/.MainActivity
 
 The `VIEWS` var in `wrangler.jsonc` lists the views on the rail, in rail order. Default:
 `"home,calendar,shopping,photos"` (the ones with real data). Valid names:
-`home` (Today, always on), `calendar`, `tasks` (Chores), `shopping`, `photos`, `control` (Home), `agents`.
+`home` (Today, always on), `calendar`, `tasks` (Chores), `shopping`, `fridge`, `kitchen` (calculator, conversions, timers), `photos`, `control` (Home), `agents`.
 Unknown names are ignored; an empty/invalid value falls back to the default.
 
 To change it: edit `VIEWS`, then `npm run deploy`. The frame polls `/api/config` every 5 minutes and applies the
@@ -247,6 +252,7 @@ Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off
 | `DASH_TOKEN` | secret (+ `VITE_DASH_TOKEN` in `.env`) | Guards the write endpoints |
 | `HA_URL` / `HA_TOKEN` | secrets | Home Assistant base URL + long-lived token (optional) |
 | `BRING_LIST` | var (optional) | Bring! list name, default `home` |
+| `BRING_FRIDGE_LIST` | var (optional) | Bring! list for the Fridge view, default `fridge` |
 | `VIEWS` | var | Comma list of views shown on the frame (section 12) |
 | `BRING_EMAIL` | secret | Bring! account email |
 | `BRING_PASSWORD` | secret | Bring! account password |
