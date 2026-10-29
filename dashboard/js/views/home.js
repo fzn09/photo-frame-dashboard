@@ -136,7 +136,7 @@
       return '<div class="label">Transit</div><div class="h-dep-empty">—</div>';
     }
     var now = App.now();
-    var deps = tr.departures.filter(function (d) { return (d.when - now) > -60000; }).slice(0, 4);
+    var deps = tr.departures.filter(function (d) { return (d.when - now) > 5 * 60000; }).slice(0, 4);
     return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
       '<div class="h-dep-list">' + deps.map(function (d) {
         var mins = Math.round((d.when - now) / 60000);
