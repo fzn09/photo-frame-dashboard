@@ -1,5 +1,5 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping (GET list, POST write), /api/home (HA bridge), /api/config (visible views), /api/transit
+// Routes: /api/weather, /api/calendar, /api/shopping (GET list, POST write), /api/home (HA bridge), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
 // All other paths are served by Cloudflare Assets automatically.
 
 import { mapHome, toService } from './ha-map.js';
@@ -17,6 +17,7 @@ export default {
       if (pathname === '/api/config')   return handleConfig(env);
       if (pathname === '/api/home')     return request.method === 'POST' ? homeWrite(request, env) : handleHome(env);
       if (pathname === '/api/transit')  return handleTransit(env);
+      if (pathname === '/api/photos')   return handlePhotos(env);
     } catch (err) {
       return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: JSON_CORS });
     }
@@ -305,4 +306,24 @@ async function handleTransit(env) {
   return new Response(JSON.stringify({ stop: env.BVG_STOP_NAME || stopId, departures }), {
     headers: { ...JSON_CORS, 'Cache-Control': 'max-age=60, s-maxage=60' }
   });
+}
+
+// ---- Unsplash stock photos for the slideshow (key stays here) --------------
+
+async function handlePhotos(env) {
+  const q = env.PHOTO_QUERY;
+  const api = q
+    ? 'https://api.unsplash.com/search/photos?per_page=30&query=' + encodeURIComponent(q)
+    : 'https://api.unsplash.com/photos?per_page=30';
+  const r = await fetch(api, { headers: { Authorization: 'Client-ID ' + (env.UNSPLASH_KEY || '') } });
+  if (!r.ok) throw new Error('Unsplash ' + r.status);
+  const body = await r.json();
+  const out = (body.results || body).map(p => ({
+    id: p.id,
+    o: p.height > p.width ? 'p' : 'l',
+    url: p.urls.raw,
+    photographer: p.user.name,
+    alt: p.alt_description || ''
+  }));
+  return new Response(JSON.stringify(out), { headers: { ...JSON_CORS, 'Cache-Control': 'max-age=3600' } });
 }

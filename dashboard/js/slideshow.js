@@ -4,6 +4,7 @@
   var D = window.DATA;
 
   function src(p, big) {
+    if (p.url) return p.url + '&auto=format&fit=max&q=80&w=' + (big ? 1600 : 800); // stock photo from /api/photos
     var w = p.o === 'p' ? 800 : 1600, h = p.o === 'p' ? 1200 : 1000;
     if (!big) { w = Math.round(w / 2); h = Math.round(h / 2); }
     return App.img(p.seed, w, h);
@@ -12,6 +13,7 @@
 
   function parseDate(p) { var a = p.date.split('-'); return new Date(+a[0], +a[1] - 1, +a[2]); }
   App.photoMeta = function (p) {
+    if (p.url) return { date: p.photographer, monthYear: p.photographer, kicker: 'Unsplash', onThisDay: false, place: p.alt || '', from: null };
     var d = parseDate(p), now = App.now();
     var years = now.getFullYear() - d.getFullYear();
     var onThisDay = d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
@@ -156,4 +158,15 @@
   };
   S.start = function () { if (!this.current) this.next(); else this.restart(); };
   S.stop = function () { clearInterval(this.timer); this.timer = null; };
+
+  // Stream stock photos from the Worker; on any failure keep the demo list.
+  App.loadPhotos = function () {
+    fetch('/api/photos').then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); }).then(function (list) {
+      if (!Array.isArray(list) || !list.length) return;
+      D.photos = list;
+      App.emit('data');
+    }).catch(function () {});
+  };
+  App.loadPhotos();
+  setInterval(App.loadPhotos, 3600000);
 })();
