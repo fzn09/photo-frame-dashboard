@@ -186,7 +186,7 @@
     list = list.filter(function (n) { return n !== 'home' && $('#view-' + n); });
     D.views = ['home'].concat(list);
     App.$$('.rail-item').forEach(function (b) { b.hidden = !App.enabled(b.dataset.go); });
-    // CSS hook: Today hides the cards of views that are off (.stage[data-off~="tasks"] .h-chores, ...)
+    // CSS hook: Today hides the cards of views that are off (.stage[data-off~="tasks"] .h-photo)
     $('#stage').dataset.off = App.$$('.view[data-view]').map(function (v) { return v.dataset.view; })
       .filter(function (n) { return !App.enabled(n); }).join(' ');
     try { localStorage.setItem('hq-views', D.views.join(',')); } catch (e) { /* private mode: just not cached */ }
