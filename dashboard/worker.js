@@ -1,30 +1,57 @@
 // Cloudflare Worker — API proxy for home dashboard
 // Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/home (HA bridge), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
-// All other paths are served by Cloudflare Assets automatically.
+// All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
+//
+// Access gate: the whole site (page, assets and /api/*) needs the `hq` cookie, which holds DASH_TOKEN.
+// Open https://<worker>/?key=<DASH_TOKEN> once on the frame to set it (one year). The page JS carries the
+// token too, so gating only /api would protect nothing: anyone with the URL would get the token.
 
 import { mapHome, toService } from './ha-map.js';
 import { parseViews } from './views.js';
 
-const JSON_CORS = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
+// Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
+const JSON_CORS = { 'Content-Type': 'application/json' };
+const COOKIE_AGE = 365 * 24 * 3600;
+
+function gate(request, env, url) {
+  if (!env.DASH_TOKEN) return new Response('DASH_TOKEN is not set', { status: 503 });
+  const key = url.searchParams.get('key');
+  if (key !== null) {
+    if (key !== env.DASH_TOKEN) return new Response('Wrong key', { status: 401 });
+    return new Response(null, { status: 302, headers: {
+      Location: '/',
+      'Set-Cookie': 'hq=' + encodeURIComponent(env.DASH_TOKEN) + '; Max-Age=' + COOKIE_AGE + '; Path=/; Secure; HttpOnly; SameSite=Lax'
+    } });
+  }
+  const cookie = (request.headers.get('Cookie') || '').split(/;\s*/).find(c => c.startsWith('hq='));
+  if (cookie && decodeURIComponent(cookie.slice(3)) === env.DASH_TOKEN) return null;
+  return new Response('Open this dashboard with its key link.', { status: 401 });
+}
 
 export default {
   async fetch(request, env) {
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
+    const { pathname } = url;
+    const denied = gate(request, env, url);
+    if (denied) return denied;
     try {
-      if (pathname === '/api/weather')  return handleWeather(env);
-      if (pathname === '/api/calendar') return handleCalendar(env);
+      // await: the handlers are async, and only an awaited rejection reaches the catch below
+      if (pathname === '/api/weather')  return await handleWeather(env);
+      if (pathname === '/api/calendar') return await handleCalendar(env);
       if (pathname === '/api/shopping' || pathname === '/api/fridge') {
         const which = pathname.slice(5);
-        return request.method === 'POST' ? bringWrite(request, env, which) : bringRead(env, which);
+        return await (request.method === 'POST' ? bringWrite(request, env, which) : bringRead(env, which));
       }
       if (pathname === '/api/config')   return handleConfig(env);
-      if (pathname === '/api/home')     return request.method === 'POST' ? homeWrite(request, env) : handleHome(env);
-      if (pathname === '/api/transit')  return handleTransit(env);
-      if (pathname === '/api/photos')   return handlePhotos(env);
+      if (pathname === '/api/home')     return await (request.method === 'POST' ? homeWrite(request, env) : handleHome(env));
+      if (pathname === '/api/transit')  return await handleTransit(env);
+      if (pathname === '/api/photos')   return await handlePhotos(env);
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), { status: 502, headers: JSON_CORS });
+      console.error(pathname, err); // details stay in the Worker logs (wrangler tail), not in the response
+      return new Response('{"error":"upstream failed"}', { status: 502, headers: JSON_CORS });
     }
-    return new Response('Not found', { status: 404 });
+    if (pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
+    return env.ASSETS.fetch(request);
   }
 };
 
@@ -222,8 +249,7 @@ async function bringRead(env, which) {
   return new Response(JSON.stringify(items), { headers: { ...JSON_CORS, 'Cache-Control': 'no-store' } });
 }
 
-// Write calls need the X-Dash-Token header to match the DASH_TOKEN secret (503 if it isn't set, so
-// write support is off by default). The token ships in the page JS: stops casual abuse only.
+// Write calls need the X-Dash-Token header to match the DASH_TOKEN secret, on top of the site gate.
 function guard(request, env) {
   if (!env.DASH_TOKEN) return new Response('{"error":"writes disabled: DASH_TOKEN not set"}', { status: 503, headers: JSON_CORS });
   if (request.headers.get('X-Dash-Token') !== env.DASH_TOKEN) return new Response('{"error":"bad token"}', { status: 401, headers: JSON_CORS });

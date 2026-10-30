@@ -359,6 +359,13 @@
     onIdleTick();
   }
 
+  // Reload once a day in the 3 a.m. hour to clear slow leaks on the 1 GB frame. The uptime check stops a
+  // reload loop within that hour. Real time, not App.now(), which demo mode can shift.
+  var bootAt = Date.now();
+  App.on('minute', function () {
+    if (new Date().getHours() === 3 && Date.now() - bootAt > 3600000) location.reload();
+  });
+
   // ------------------------------------------------------------ boot
   App.start = function () {
     fit(); // clock is live (offset 0); with ?demo, long-press the rail clock for demo times

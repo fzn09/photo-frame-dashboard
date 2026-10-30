@@ -122,18 +122,50 @@
       });
   };
 
+  // After a failure, retry at 5 s, 15 s and 1 min (Wi-Fi comes up after the page loads), then fall back to
+  // the normal interval. 503 = the Worker has no credentials for it: the mock data is intended, stop asking.
+  // feeds[endpoint].ok = time of the last good response (0 = still showing mock data), read by railStale().
+  var RETRY = [5000, 15000, 60000], feeds = {};
   function poll(endpoint, handler, intervalMin, busy) {
+    var f = feeds[endpoint] = { every: intervalMin * 60000, ok: 0, off: false }, fails = 0, timer;
     function run() {
-      if (busy && busy()) return; // a write is in flight: its own refresh follows
+      clearTimeout(timer); // a write's refresh calls run() early; keep a single timer
+      if (busy && busy()) { timer = setTimeout(run, f.every); return; } // a write is in flight: its own refresh follows
+      var wait = f.every;
       fetch('/api/' + endpoint)
         .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
-        .then(handler)
-        .catch(function (err) { console.warn('[fetch] ' + endpoint + ' failed:', err); });
+        .then(function (data) { fails = 0; f.ok = Date.now(); handler(data); })
+        .catch(function (err) {
+          if (err === 503) { f.off = true; return; }
+          console.warn('[fetch] ' + endpoint + ' failed:', err);
+          if (fails < RETRY.length) wait = RETRY[fails++];
+        })
+        .then(function () { if (!f.off) timer = setTimeout(run, wait); railStale(); });
     }
     run();
-    setInterval(run, intervalMin * 60 * 1000);
     return run;
   }
+
+  // Under the rail clock: "Sample data" while a feed has never loaded, "Updated N min ago" once the
+  // oldest feed is more than two intervals behind, nothing when all is fresh. Off and idle feeds don't count.
+  var shown = null;
+  function railStale() {
+    var now = Date.now(), never = false, oldest = now;
+    Object.keys(feeds).forEach(function (k) {
+      var f = feeds[k];
+      if (f.off || k === 'config' || (k === 'fridge' && !App.enabled('fridge'))) return;
+      if (!f.ok) never = true;
+      else if (now - f.ok > 2 * f.every) oldest = Math.min(oldest, f.ok);
+    });
+    var html = never ? '<b>Sample</b><span>data</span>'
+      : oldest < now ? '<b>Updated</b><span>' + Math.round((now - oldest) / 60000) + ' min ago</span>' : '';
+    if (html === shown) return;
+    shown = html;
+    var el = document.getElementById('railStale');
+    el.innerHTML = html;
+    el.hidden = !html;
+  }
+  App.on('minute', railStale);
 
   function updateConfig(data) { if (data && Array.isArray(data.views)) App.setViews(data.views.filter(function (n) { return n !== 'home'; })); }
 

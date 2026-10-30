@@ -68,6 +68,9 @@ ul { margin: 0; padding: 0; list-style: none; }
 .rail-item.is-active { background: var(--ink); color: var(--paper); }
 .rail-item:active { background: var(--paper-2); }
 .rail-item.is-active:active { background: var(--ink-2); }
+.rail-stale { margin-top: auto; padding: 6px 0; text-align: center; line-height: 1.2; font-size: 11px; color: var(--mute); }
+.rail-stale b { display: block; font-weight: 800; }
+.rail-stale + .rail-clock { margin-top: 0; }
 .rail-clock { margin-top: auto; padding: 10px 0; text-align: center; line-height: 1; position: relative; overflow: hidden; }
 .rail-clock.is-holding { background: var(--paper-2); }
 .rail-clock b { display: block; font-size: 24px; font-weight: 800; font-stretch: 62%; font-variant-numeric: tabular-nums; }

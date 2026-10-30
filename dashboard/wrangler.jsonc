@@ -4,7 +4,10 @@
   "compatibility_date": "2026-09-30",
   "main": "worker.js",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    // The Worker runs before every asset so its access gate covers the page too (see worker.js)
+    "binding": "ASSETS",
+    "run_worker_first": true
   },
   "vars": {
     // Weather: latitude + longitude for Open-Meteo (free, no API key needed)
@@ -26,6 +29,7 @@
   // Required: GOOGLE_SERVICE_EMAIL, GOOGLE_SERVICE_KEY (PEM private key from service account JSON)
   // Required: CAL_ALEX (Fauzan), CAL_JORDAN (Amanda)  (Google Calendar IDs, e.g. user@gmail.com)
   // Required: BRING_EMAIL, BRING_PASSWORD
-  // Write access: DASH_TOKEN (same value as VITE_DASH_TOKEN in dashboard/.env at build time)
+  // Required: DASH_TOKEN (same value as VITE_DASH_TOKEN in dashboard/.env at build time). Gates the whole
+  //   site and the writes; open /?key=<DASH_TOKEN> once on each device to set the access cookie.
   // Optional: HA_URL, HA_TOKEN (Home Assistant), BRING_LIST var (default "home"), BRING_FRIDGE_LIST var (default "fridge")
 }
