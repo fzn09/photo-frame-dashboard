@@ -12,6 +12,9 @@ assert.equal((await get('/')).status, 401, 'page needs the cookie');
 assert.equal((await get('/api/config')).status, 401, 'api needs the cookie');
 assert.equal((await get('/', 'hq=wrong')).status, 401, 'wrong cookie');
 assert.equal((await get('/?key=wrong')).status, 401, 'wrong key');
+assert.equal(await (await get('/manifest.webmanifest')).text(), 'page', 'manifest is public: fetched without cookies');
+assert.equal((await get('/icon-192.png')).status, 200, 'manifest icons are public');
+assert.equal((await get('/index.html')).status, 401, 'other assets stay gated');
 
 const set = await get('/?key=' + TOKEN);
 assert.equal(set.status, 302);

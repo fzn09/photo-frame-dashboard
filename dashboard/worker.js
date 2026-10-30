@@ -12,9 +12,13 @@ import { parseViews } from './views.js';
 // Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
 const JSON_CORS = { 'Content-Type': 'application/json' };
 const COOKIE_AGE = 365 * 24 * 3600;
+// Browsers fetch the web-app manifest without cookies, so these must pass the gate or Firefox can't
+// install the dashboard as a full-screen app. They hold only the app name and icons, no family data.
+const PUBLIC = new Set(['/manifest.webmanifest', '/icon-192.png', '/icon-512.png']);
 
 function gate(request, env, url) {
   if (!env.DASH_TOKEN) return new Response('DASH_TOKEN is not set', { status: 503 });
+  if (PUBLIC.has(url.pathname)) return null;
   const key = url.searchParams.get('key');
   if (key !== null) {
     if (key !== env.DASH_TOKEN) return new Response('Wrong key', { status: 401 });
