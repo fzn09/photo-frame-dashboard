@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The package name must contain "com.android.launcher": Rockchip low-RAM builds kill any paused
+     app not named in /system/etc/lowmem_package_filter.xml <prev>, which lists that string. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.android.launcher.firefoxhome">
+  <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="28" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <application android:label="Firefox Home" android:icon="@android:drawable/sym_def_app_icon"
+      android:allowBackup="false" android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+    <activity android:name=".HomeActivity" android:launchMode="singleTask"
+        android:stateNotNeeded="true" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.HOME" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>

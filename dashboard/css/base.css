@@ -3,6 +3,7 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: #0B0B0B; }
 body {
   font-family: var(--sans);
+  font-weight: 500;
   font-size: var(--fs-body);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -295,13 +296,6 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 }
 .demo-grid button:active, .demo-grid button.is-on { background: #fff; color: var(--ink); }
 .demo-note { font-size: 16px; color: rgba(255, 255, 255, .6); }
-
-/* ---------------------------------------------------------------- night dashboard (tap on night clock) */
-.stage[data-mode="nightdash"] > .rail,
-.stage[data-mode="nightdash"] > .views {
-  filter: invert(1) hue-rotate(180deg) grayscale(1) sepia(1) saturate(5) hue-rotate(-38deg) brightness(.62);
-}
-.stage[data-mode="nightdash"] { background: #000; }
 
 /* ---------------------------------------------------------------- diagnostics overlay (?diag) */
 .diag {

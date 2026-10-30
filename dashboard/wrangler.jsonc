@@ -23,7 +23,7 @@
     // "home" is always on. Unknown names are ignored. Change + redeploy; the frame picks it up within ~5 min.
     "VIEWS": "home,calendar,shopping,fridge,kitchen,photos",
     // Unsplash search term for the photo stream; remove for the editorial feed. Secret: UNSPLASH_KEY
-    "PHOTO_QUERY": "nature landscape"
+    "PHOTO_QUERY": "aesthetic wallpapers"
   }
   // Secrets — set via: wrangler secret put SECRET_NAME
   // Required: GOOGLE_SERVICE_EMAIL, GOOGLE_SERVICE_KEY (PEM private key from service account JSON)
