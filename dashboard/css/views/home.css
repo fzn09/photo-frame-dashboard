@@ -77,8 +77,7 @@
 }
 .h-dep-dir { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
 .h-dep-min { flex: none; font-family: var(--mono); font-weight: 400; font-stretch: 100%; font-size: 18px; letter-spacing: 0; }
-.h-dep-empty { font-size: 18px; color: var(--mute); }
-
+.h-dep-empty { font-size: 30px; line-height: 1.1; color: var(--ink-2); padding-top: 4px; }
 /* ---- next up: the decision card. Countdown is the biggest number after the clock */
 .h-hero-slot { display: grid; }
 .h-hero {

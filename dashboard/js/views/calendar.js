@@ -109,7 +109,18 @@
       nowLine([day]) + '</div>' +
       '</div></div>';
     var empty = !App.timedOn(day).length ? '<div class="cal-empty serif">Nothing on the calendar.<br><i>A rare, quiet day.</i></div>' : '';
-    return '<div class="cal-day">' + ad + grid + empty + '</div>';
+    // person names above the lanes, so the colours and the "with" dots have a legend
+    var head = '<div class="lanes-head" style="grid-template-columns:64px repeat(' + D.people.length + ',1fr)"><div class="gutter"></div>' +
+      D.people.map(function (p) { return '<div class="lane-head" style="' + App.pstyle(p) + '"><b>' + App.esc(p.name) + '</b></div>'; }).join('') + '</div>';
+    // today with nothing left: peek at tomorrow
+    var now = App.now(), nextDay = '';
+    if (App.dayStart(day).getTime() === App.dayStart(now).getTime() && !App.timedOn(day).some(function (e) { return e.end > now; })) {
+      var tm = App.timedOn(App.addDays(now, 1)).slice(0, 3);
+      if (tm.length) nextDay = '<div class="cal-next"><div class="label">Tomorrow</div>' + tm.map(function (e) {
+        return '<button class="cal-next-ev" data-ev="' + e.id + '"><span>' + App.fmt.time(e.start) + '</span>' + App.esc(e.title) + '</button>';
+      }).join('') + '</div>';
+    }
+    return '<div class="cal-day">' + head + ad + grid + empty + nextDay + '</div>';
   }
 
   // ------------------------------------------------------------ 3 day

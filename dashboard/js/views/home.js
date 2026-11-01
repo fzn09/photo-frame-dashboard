@@ -123,11 +123,11 @@ import { daysLeft } from '../../calc.js';
   function transit() {
     var tr = D.transit;
     if (!tr || !tr.departures || !tr.departures.length) {
-      return '<div class="label">Transit</div><div class="h-dep-empty">—</div>';
+      return '<div class="label">Transit</div><div class="h-dep-empty serif"><i>Departures</i> unavailable</div>';
     }
     var now = App.now();
     var deps = tr.departures.filter(function (d) { return (d.when - now) > -60000; }).slice(0, 5);
-    if (!deps.length) return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div><div class="h-dep-empty">No departures listed</div>';
+    if (!deps.length) return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div><div class="h-dep-empty serif"><i>Nothing</i> coming up</div>';
     return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
       '<div class="h-dep-list">' + deps.map(function (d) {
         var mins = Math.round((d.when - now) / 60000);

@@ -11,6 +11,17 @@
       .sort(function (a, b) { return (a.done - b.done) || ((b.overdue ? 1 : 0) - (a.overdue ? 1 : 0)); });
   }
 
+  // first open chore for `who` in a later routine (wraps to tomorrow's earlier ones)
+  function nextFor(who, r) {
+    var rs = D.routines, i = rs.indexOf(r);
+    for (var k = 1; k < rs.length; k++) {
+      var x = rs[(i + k) % rs.length];
+      var c = listFor(who, x).filter(function (c) { return !c.done; })[0];
+      if (c) return '<div class="ch-next"><div class="label">Next · ' + App.esc(x.name) + '</div>' + c.emoji + ' ' + App.esc(c.title) + '</div>';
+    }
+    return '';
+  }
+
   function row(c, p) {
     var pend = V.pending[c.id];
     return '<button class="ch' + (c.done ? ' is-done' : '') + (pend ? ' is-checking' : '') + (c.overdue && !c.done ? ' is-overdue' : '') + '" data-ch="' + c.id + '">' +
@@ -42,7 +53,7 @@
       (kid ? '<span class="ch-stars">' + App.icon('star', 18, 'i--fill') + '<span class="num">' + D.stars[who] + '</span></span>' : '<span class="ch-sub">' + (who === 'any' ? 'Up for grabs' : (list.length ? done + ' of ' + list.length : 'Nothing')) + '</span>') + '</div>' +
       '<div class="ch-ring">' + App.ring(done, list.length || 1, 46) + '<span class="num">' + (all ? '✓' : list.length ? done + '/' + list.length : '–') + '</span></div>' +
       '</header>' +
-      '<div class="ch-list">' + (list.length ? list.map(function (c) { return row(c, p); }).join('') : '<div class="ch-none serif"><i>Nothing this ' + (r.id === 'evening' ? 'evening' : r.id === 'morning' ? 'morning' : 'afternoon') + '</i></div>') +
+      '<div class="ch-list">' + (list.length ? list.map(function (c) { return row(c, p); }).join('') : '<div class="ch-none serif"><i>Nothing this ' + (r.id === 'evening' ? 'evening' : r.id === 'morning' ? 'morning' : 'afternoon') + '</i></div>' + nextFor(who, r)) +
       (all ? '<div class="ch-alldone serif">All done<i>!</i></div>' : '') + '</div>' +
       weekGrid(who) +
       '</section>';

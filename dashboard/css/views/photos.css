@@ -26,7 +26,7 @@
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
   background: linear-gradient(0deg, rgba(0, 0, 0, .7), rgba(0, 0, 0, 0)); pointer-events: none;
 }
-.cap { position: absolute; left: 44px; bottom: 40px; z-index: 2; color: #fff; max-width: 70%; opacity: .7; }
+.cap { position: absolute; left: 44px; bottom: 40px; z-index: 2; color: #fff; max-width: 70%; opacity: .92; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }
 .cap-kicker { font-family: var(--mono); font-size: 16px; font-weight: 400; }
 .cap-kicker b { color: var(--accent); font-weight: 400; }
 .cap-date { font-size: 88px; line-height: .95; margin-top: 8px; }
@@ -36,6 +36,8 @@
 .photos { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: #000; color: #fff; overflow: hidden; }
 .ph-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 .photos.is-loud .cap { opacity: 1; }
+/* scrim behind the top controls so they read on any photo */
+.photos::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 130px; z-index: 3; pointer-events: none; background: linear-gradient(180deg, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)); }
 .ph-zone { position: absolute; top: 90px; bottom: 110px; z-index: 3; }
 .ph-zone--l { left: 0; width: 22%; }
 .ph-zone--c { left: 22%; width: 56%; }
@@ -45,7 +47,7 @@
 .ph-btn {
   height: var(--tap); min-width: var(--tap); padding: 0 17px; border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  background: rgba(0, 0, 0, .38);
+  background: rgba(0, 0, 0, .6);
   font-size: 17px; font-weight: 600;
 }
 .ph-btn:active { transform: scale(.92); }
@@ -66,6 +68,6 @@
   background: linear-gradient(0deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, 0));
 }
 .ph-live-cap b { display: block; font-size: 46px; line-height: 1; }
-.ph-live-cap span { display: block; margin-top: 10px; font-family: var(--mono); font-size: 16px; font-weight: 400; opacity: .75; }
+.ph-live-cap span { display: block; margin-top: 10px; font-family: var(--mono); font-size: 16px; font-weight: 400; opacity: .9; }
 .ph-live-cap i { font-style: normal; color: var(--accent); }
 .ph-live-nav { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
