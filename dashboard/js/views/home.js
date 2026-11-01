@@ -55,8 +55,8 @@ import { daysLeft } from '../../calc.js';
     var who = e.people.map(function (id) { return App.person(id).name; });
     var whoText = App.isFamily(e) ? 'Everyone' : who.join(' + ');
     var big = mins < 100
-      ? '<div class="h-hero-count num">' + Math.round(mins) + '<small>min</small></div>'
-      : '<div class="h-hero-count num">' + App.fmt.time(e.start, false) + '<small>' + App.fmt.ampm(e.start) + '</small></div>';
+      ? '<div class="h-hero-count num"><em>in</em>' + Math.round(mins) + '<small>min</small></div>'
+      : '<div class="h-hero-count num"><em>at</em>' + App.fmt.time(e.start, false) + '<small>' + App.fmt.ampm(e.start) + '</small></div>';
     var leavePill = '';
     if (e.travel) {
       leavePill = leave <= 0
@@ -127,6 +127,7 @@ import { daysLeft } from '../../calc.js';
     }
     var now = App.now();
     var deps = tr.departures.filter(function (d) { return (d.when - now) > -60000; }).slice(0, 5);
+    if (!deps.length) return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div><div class="h-dep-empty">No departures listed</div>';
     return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
       '<div class="h-dep-list">' + deps.map(function (d) {
         var mins = Math.round((d.when - now) / 60000);
@@ -160,13 +161,14 @@ import { daysLeft } from '../../calc.js';
       if (!el.firstChild) {
         el.innerHTML = '<div class="home">' +
           '<div class="h-clock" data-go="calendar"></div>' +
-          '<div class="h-weather"></div>' +
-          '<div class="h-transit"></div>' +
-          '<div class="h-main"><div class="h-hero-slot"></div><div class="h-lanes" style="grid-template-columns:repeat(' + D.people.length + ',1fr)"></div></div>' +
-          '<div class="h-side">' +
-          '  <button class="h-photo" data-go="photos"><div class="h-photo-stage"></div><div class="h-photo-cap"></div></button>' +
-          '  <div class="h-duo"><div class="h-shop card" data-go="shopping"></div><div class="h-fridge card" data-go="fridge"></div></div>' +
-          '</div></div>';
+          '<div class="h-weather card"></div>' +
+          '<div class="h-transit card"></div>' +
+          '<div class="h-hero-slot"></div>' +
+          '<div class="h-lanes card" style="grid-template-columns:repeat(' + D.people.length + ',1fr)"></div>' +
+          '<div class="h-shop card" data-go="shopping"></div>' +
+          '<div class="h-fridge card" data-go="fridge"></div>' +
+          '<button class="h-photo" data-go="photos"><div class="h-photo-stage"></div><div class="h-photo-cap"></div></button>' +
+          '</div>';
         el.addEventListener('click', function (e) {
           var ev = e.target.closest('[data-ev]');
           if (ev) { App.eventSheet(App.findEvent(ev.dataset.ev)); return; }
