@@ -84,7 +84,9 @@
 
   S.refill = function () {
     var q = [];
-    D.photos.forEach(function (p) { q.push(p); if (p.fav) q.push(p); });
+    // Landscape only, so photos fill the frame instead of sitting letterboxed; portraits are the fallback if that's all there is.
+    var land = D.photos.filter(function (p) { return p.o !== 'p'; });
+    (land.length ? land : D.photos).forEach(function (p) { q.push(p); if (p.fav) q.push(p); });
     // On-this-day photos always come first in a fresh cycle
     shuffle(q).sort(function (a, b) { return (App.photoMeta(b).onThisDay ? 1 : 0) - (App.photoMeta(a).onThisDay ? 1 : 0); });
     this.queue = q;

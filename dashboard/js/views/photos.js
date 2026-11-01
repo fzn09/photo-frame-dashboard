@@ -2,8 +2,7 @@
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null, show: null, layout: 'auto', loud: false, mode: 'photos', region: null, cam: null, timer: null };
-  var LAYOUTS = [['auto', 'Auto'], ['cover', 'Cover'], ['pair', 'Pair'], ['collage', 'Collage'], ['polaroid', 'Polaroid']];
+  var V = { el: null, show: null, loud: false, mode: 'photos', region: null, cam: null, timer: null };
 
   function heart() {
     var s = V.show && V.show.current, on = s && s.photos[0].fav;
@@ -75,16 +74,14 @@
           '<button class="ph-zone ph-zone--c" data-loud aria-label="Show details"></button>' +
           '<button class="ph-zone ph-zone--r" data-next aria-label="Next"></button>' +
           '<div class="ph-top"><div class="seg seg--glass"><button data-mode="photos" class="is-on">Photos</button><button data-mode="live">Live</button></div>' +
-          '<div class="seg seg--glass ph-layouts">' + LAYOUTS.map(function (l) {
-            return '<button data-layout="' + l[0] + '" class="' + (l[0] === V.layout ? 'is-on' : '') + '">' + l[1] + '</button>';
-          }).join('') + '</div></div>' +
+          '</div>' +
           '<div class="ph-live"><div class="ph-live-view"></div><div class="ph-live-bar"><div class="ph-live-cap"></div><div class="ph-live-nav"></div></div></div>' +
           '<div class="ph-bottom">' +
           '  <button class="ph-btn" data-prev>' + App.icon('left', 30) + '</button>' +
           '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favourite</span></button>' +
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
           '</div></div>';
-        V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: V.layout, interval: 15000, onChange: function () { setTimeout(heart); } });
+        V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: 'cover', interval: 15000, onChange: function () { setTimeout(heart); } });
         el.addEventListener('click', function (e) {
           var t = e.target.closest('button');
           if (!t) return;
@@ -94,11 +91,6 @@
           if (t.hasAttribute('data-next')) V.show.next();
           if (t.hasAttribute('data-prev')) V.show.prev();
           if (t.hasAttribute('data-loud')) { V.loud = !V.loud; el.querySelector('.photos').classList.toggle('is-loud', V.loud); }
-          if (t.dataset.layout) {
-            V.layout = t.dataset.layout;
-            App.$$('[data-layout]', el).forEach(function (b) { b.classList.toggle('is-on', b === t); });
-            V.show.setLayout(V.layout);
-          }
           if (t.hasAttribute('data-fav')) {
             var p = V.show.current && V.show.current.photos[0];
             if (!p) return;

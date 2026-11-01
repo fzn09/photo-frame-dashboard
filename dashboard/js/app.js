@@ -332,6 +332,11 @@
     }
   }
   App.resetIdle = function () { idleSec = 0; };
+  // Idle only ever enters night (above); nothing left it until a touch. Follow the clock both ways untouched.
+  App.on('minute', function () {
+    if (App.mode === 'night' && !App.isNight()) App.setMode('ambient');
+    else if (App.mode === 'ambient' && App.isNight()) App.setMode('night');
+  });
 
   // ------------------------------------------------------------ stage scaling
   // Designed at 1280×800. Screens wider than 16:10 (e.g. 1920×1080 frames) widen the stage to their
