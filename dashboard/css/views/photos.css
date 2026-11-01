@@ -20,15 +20,15 @@
 }
 .polaroid-img { width: 660px; height: 470px; overflow: hidden; background: #ddd; }
 .polaroid--p .polaroid-img { width: 420px; height: 560px; }
-.polaroid figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; padding: 16px 6px 20px; color: #111111; font-size: 30px; }
+.polaroid figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; padding: 16px 6px 20px; color: var(--ink); font-size: 30px; }
 
 .slide--cover::after, .slide--pair::after, .slide--collage::after, .slide--fit::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
   background: linear-gradient(0deg, rgba(0, 0, 0, .7), rgba(0, 0, 0, 0)); pointer-events: none;
 }
 .cap { position: absolute; left: 44px; bottom: 40px; z-index: 2; color: #fff; max-width: 70%; opacity: .7; }
-.cap-kicker { font-family: var(--mono); font-size: 16px; font-weight: 400; }
-.cap-kicker b { color: var(--accent); font-weight: 400; }
+.cap-kicker { font-size: 15px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.cap-kicker b { color: var(--warm); }
 .cap-date { font-size: 88px; line-height: .95; margin-top: 8px; }
 .cap--m .cap-date { font-size: 60px; }
 
@@ -46,11 +46,11 @@
   height: var(--tap); min-width: var(--tap); padding: 0 17px; border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   background: rgba(0, 0, 0, .38);
-  font-size: 17px; font-weight: 600;
+  font-size: 17px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
 }
 .ph-btn:active { transform: scale(.92); }
 .ph-btn--fav { padding: 0 24px 0 20px; }
-.ph-btn--fav.is-on { background: var(--accent); color: var(--on-accent); }
+.ph-btn--fav.is-on { background: #E4007C; }
 .ph-btn--fav.is-on .i { fill: currentColor; }
 
 /* Live city cams (Photos view, Live mode) */
@@ -66,6 +66,6 @@
   background: linear-gradient(0deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, 0));
 }
 .ph-live-cap b { display: block; font-size: 46px; line-height: 1; }
-.ph-live-cap span { display: block; margin-top: 10px; font-family: var(--mono); font-size: 16px; font-weight: 400; opacity: .75; }
-.ph-live-cap i { font-style: normal; color: var(--accent); }
+.ph-live-cap span { display: block; margin-top: 10px; font-size: 16px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.ph-live-cap i { font-style: normal; color: var(--warm); }
 .ph-live-nav { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
