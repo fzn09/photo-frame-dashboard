@@ -28,18 +28,17 @@ import { daysLeft } from '../../calc.js';
   function weather() {
     var w = App.weatherNow();
     var hours = App.hourly(7);
-    var tmin = Math.min.apply(null, hours.map(function (h) { return h.t; }));
-    var tmax = Math.max.apply(null, hours.map(function (h) { return h.t; }));
+    // Side column: sunset + air as two short rows. The advice gets a full-width line under the top row.
+    var side = airSun();
     return ageTag('weather') + '<div class="h-wx-top">' +
       '<span class="h-wx-icon">' + App.icon(w.cond, 60) + '</span>' +
       '<span class="h-wx-temp num">' + w.temp + '°</span>' +
       '<span class="h-wx-meta"><b>' + w.label + '</b><span>H ' + w.hi + '°  L ' + w.lo + '°</span></span>' +
-      '<div class="h-wx-side">' + airSun() + '<div class="h-wx-say"><b>' + w.summary + '.</b> ' + w.advice + '.</div></div>' +
-      '</div>' +
+      (side ? '<div class="h-wx-side">' + side + '</div>' : '') +
+      '</div><div class="h-wx-say"><b>' + w.summary + '.</b> ' + w.advice + '.</div>' +
       '<div class="h-wx-hours">' + hours.map(function (h) {
-        var lift = tmax === tmin ? 0 : Math.round((h.t - tmin) / (tmax - tmin) * 8);
         return '<div class="h-hr' + (h.p >= 50 ? ' is-wet' : '') + '"><span class="h-hr-l">' + h.label + '</span>' +
-          '<span class="h-hr-i" style="transform:translateY(' + -lift + 'px)">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
+          '<span class="h-hr-i">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
       }).join('') + '</div>';
   }
 
@@ -48,9 +47,9 @@ import { daysLeft } from '../../calc.js';
 
   function airSun() {
     var W = D.weather, bits = [];
-    if (W && W.sun) bits.push(App.icon('moon', 20) + ' Sunset <b>' + App.fmt.time(new Date('1970-01-01T' + W.sun), false) + '</b>');
-    if (W && W.aqi != null) bits.push('Air <b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1] + '</b>');
-    return bits.length ? '<div class="h-air">' + bits.join('<i></i>') + '</div>' : '';
+    if (W && W.sun) bits.push('<div><span>Sunset</span><b>' + App.fmt.time(new Date('1970-01-01T' + W.sun), false) + '</b></div>');
+    if (W && W.aqi != null) bits.push('<div><span>Air</span><b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1] + '</b></div>');
+    return bits.length ? '<div class="h-air">' + bits.join('') + '</div>' : '';
   }
 
   function hero() {

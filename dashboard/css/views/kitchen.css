@@ -8,7 +8,7 @@
 .k-keys { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 10px; }
 .k-key { display: grid; place-items: center; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); font-size: 36px; font-weight: 400; }
 .k-key:active { transform: scale(.95); background: var(--line); }
-.k-key--fn { background: rgba(255, 255, 255, .09); }
+.k-key--fn { background: rgb(var(--ov) / .07); }
 .k-key--fn.is-op, .k-key--eq { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 .k-key--wide { grid-column: span 2; }
 
@@ -17,7 +17,7 @@
 .k-presets { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 .k-chip { min-height: 60px; padding: 0 8px; border-radius: 14px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-body); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .k-chip:active { transform: scale(.95); background: var(--line); }
-.k-chip--screen { background: rgba(255, 255, 255, .09); font-size: var(--fs-min); }
+.k-chip--screen { background: rgb(var(--ov) / .07); font-size: var(--fs-min); }
 
 .k-timers { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 .k-timer { min-height: 84px; padding: 0 10px 0 22px; border-radius: var(--r); background: var(--card); box-shadow: inset 0 0 0 1px var(--line); display: flex; align-items: center; gap: 16px; text-align: left; }

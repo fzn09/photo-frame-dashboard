@@ -36,6 +36,16 @@
   App.sameDay = function (a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); };
   App.isNight = function () { var h = App.now().getHours(); return h >= 22 || h < 6; };
 
+  // Light by day (Silver & Walnut), dark from sunset to 07:00 (Walnut Evening). Sunset comes from the weather feed;
+  // 18:00 until it has loaded. Sets html[data-theme]; runs at boot and every minute.
+  App.applyTheme = function () {
+    var n = App.now(), h = n.getHours() + n.getMinutes() / 60, sun = D.weather && D.weather.sun && D.weather.sun.split(':');
+    var dusk = sun ? +sun[0] + sun[1] / 60 : 18;
+    if (isNaN(dusk)) dusk = 18;
+    var t = h >= dusk || h < 7 ? 'dark' : 'light';
+    if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
+  };
+
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var MON_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
@@ -366,12 +376,16 @@
   // Reload once a day in the 3 a.m. hour to clear slow leaks on the 1 GB frame. The uptime check stops a
   // reload loop within that hour. Real time, not App.now(), which demo mode can shift.
   var bootAt = Date.now();
+  App.on('minute', App.applyTheme);
+  App.on('data', App.applyTheme); // sunset arrives with the weather feed
+  App.on('time', App.applyTheme); // demo clock jumps
   App.on('minute', function () {
     if (new Date().getHours() === 3 && Date.now() - bootAt > 3600000) location.reload();
   });
 
   // ------------------------------------------------------------ boot
   App.start = function () {
+    App.applyTheme(); // before the first paint of any view
     fit(); // clock is live (offset 0); with ?demo, long-press the rail clock for demo times
     window.addEventListener('resize', fit);
     var cached = null;

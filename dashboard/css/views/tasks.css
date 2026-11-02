@@ -19,7 +19,7 @@
 .ch-stars .num { font-size: var(--fs-m); }
 .ch-sub { font-size: var(--fs-min); opacity: .85; font-weight: 600; }
 .ch-ring { position: relative; width: 46px; height: 46px; flex: none; }
-.ch-ring .ring-bg { stroke: rgba(255, 255, 255, .16); }
+.ch-ring .ring-bg { stroke: rgb(var(--ov) / .16); }
 .ch-ring .ring-fg { stroke: var(--c); }
 .ch-ring .num { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: grid; place-items: center; font-size: var(--fs-min); }
 

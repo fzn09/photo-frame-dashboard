@@ -25,7 +25,7 @@ window.DATA = (function () {
     { id: 'alex', name: 'Fauzan', color: '#2D5BFF', rgb: '45 91 255', ink: '#FFFFFF', home: false, status: 'Driving home', eta: 12 },
     { id: 'jordan', name: 'Amanda', color: '#E4007C', rgb: '228 0 124', ink: '#FFFFFF', home: false, status: 'At the office' }
   ];
-  var family = { id: 'family', name: 'Family', color: '#F7F1EA', rgb: '247 241 234', ink: '#0C0907' };
+  var family = { id: 'family', name: 'Family', color: '#7A6A5D', rgb: '122 106 93', ink: '#FFFFFF' };
 
   // ---------------------------------------------------------------- calendar
   var events = [

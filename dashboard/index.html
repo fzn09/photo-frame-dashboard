@@ -3,10 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=1280, initial-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#F2EEE6">
+  <meta name="theme-color" content="#EEF0F1">
   <title>Home HQ</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon-192.png">
+  <script>
+    // Best guess before the app boots, so the 3 a.m. reload never flashes the day palette at night.
+    // App.applyTheme() corrects it with the real sunset.
+    (function () { var h = new Date().getHours(); if (h >= 18 || h < 7) document.documentElement.dataset.theme = 'dark'; })();
+  </script>
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/views/home.css">

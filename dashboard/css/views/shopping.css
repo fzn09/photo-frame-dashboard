@@ -19,12 +19,12 @@
 .s-box {
   width: 40px; height: 40px; border-radius: 12px; flex: none;
   display: grid; place-items: center; color: transparent;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .4);
+  box-shadow: inset 0 0 0 2px rgb(var(--ov) / .4);
 }
 .s-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .s-name b { font-size: var(--fs-m); font-weight: 500; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; }
 .s-name small { font-size: var(--fs-min); color: var(--mute); }
-.s-qty { display: flex; align-items: center; background: rgba(255, 255, 255, .06); border-radius: 999px; margin-left: 4px; }
+.s-qty { display: flex; align-items: center; background: rgb(var(--ov) / .06); border-radius: 999px; margin-left: 4px; }
 .s-qty button { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; }
 .s-qty button:active { background: var(--line); }
 .s-qty .num { min-width: 26px; text-align: center; font-size: var(--fs-m); }
@@ -46,7 +46,7 @@
 /* right column */
 .s-side { min-height: 0; display: flex; flex-direction: column; gap: 18px; }
 .s-add { background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line); color: var(--ink); border-radius: var(--r); padding: 12px; display: flex; flex-direction: column; gap: 14px; }
-.s-input-wrap { display: flex; align-items: center; gap: 12px; height: 68px; padding: 0 20px; border-radius: 14px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); }
+.s-input-wrap { display: flex; align-items: center; gap: 12px; height: 68px; padding: 0 20px; border-radius: 14px; background: rgb(var(--ov) / .06); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); }
 .s-input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-size: var(--fs-m); font-weight: 500; }
 .s-input::placeholder { color: var(--mute); font-weight: 400; }
 
