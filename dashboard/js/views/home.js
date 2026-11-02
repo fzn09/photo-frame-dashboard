@@ -120,6 +120,21 @@ import { daysLeft } from '../../calc.js';
       }).join('') + '</ul>';
   }
 
+  // BVG line colours; lines not listed fall back to the per-product CSS colour.
+  var LINE_COLOR = {
+    U1: '#7DAD4C', U2: '#DA421E', U3: '#16683D', U4: '#F0D722', U5: '#7E5330', U55: '#7E5330',
+    U6: '#8C6DAB', U7: '#009BD5', U8: '#224F86', U9: '#F3791D',
+    S1: '#DA6BA2', S2: '#007734', S25: '#007734', S26: '#007734', S3: '#0066AD', S41: '#AD5937',
+    S45: '#CD9C53', S46: '#CD9C53', S47: '#CD9C53', S5: '#EB7405', S7: '#816DA6', S75: '#816DA6',
+    S8: '#66AA22', S85: '#66AA22', S9: '#992746'
+  };
+  function lineStyle(name) {
+    var c = LINE_COLOR[String(name).replace(/\s+/g, '').toUpperCase()];
+    if (!c) return '';
+    var lum = parseInt(c.substr(1, 2), 16) * 299 + parseInt(c.substr(3, 2), 16) * 587 + parseInt(c.substr(5, 2), 16) * 114;
+    return ' style="background:' + c + (lum > 150000 ? ';color:#111' : '') + '"';
+  }
+
   function transit() {
     var tr = D.transit;
     if (!tr || !tr.departures || !tr.departures.length) {
@@ -132,7 +147,7 @@ import { daysLeft } from '../../calc.js';
       '<div class="h-dep-list">' + deps.map(function (d) {
         var mins = Math.round((d.when - now) / 60000);
         return '<div class="h-dep">' +
-          '<span class="h-dep-line h-dep-line--' + d.product + '">' + App.esc(d.line) + '</span>' +
+          '<span class="h-dep-line h-dep-line--' + d.product + '"' + lineStyle(d.line) + '>' + App.esc(d.line) + '</span>' +
           '<span class="h-dep-dir">' + App.esc(d.direction) + '</span>' +
           '<b class="num h-dep-min">' + (mins <= 0 ? 'now' : mins + 'm') + '</b>' +
           '</div>';
