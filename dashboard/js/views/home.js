@@ -131,8 +131,10 @@ import { daysLeft } from '../../calc.js';
   function lineStyle(name) {
     var c = LINE_COLOR[String(name).replace(/\s+/g, '').toUpperCase()];
     if (!c) return '';
-    var lum = parseInt(c.substr(1, 2), 16) * 299 + parseInt(c.substr(3, 2), 16) * 587 + parseInt(c.substr(5, 2), 16) * 114;
-    return ' style="background:' + c + (lum > 150000 ? ';color:#111' : '') + '"';
+    // WCAG relative luminance: dark text when it contrasts better with the badge than white does
+    var L = [1, 3, 5].map(function (i) { var v = parseInt(c.substr(i, 2), 16) / 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
+    var lum = .2126 * L[0] + .7152 * L[1] + .0722 * L[2];
+    return ' style="background:' + c + (1.05 / (lum + .05) < (lum + .05) / .06 ? ';color:#111' : '') + '"';
   }
 
   function transit() {
@@ -141,17 +143,23 @@ import { daysLeft } from '../../calc.js';
       return '<div class="label">Transit</div><div class="h-dep-empty serif"><i>Departures</i> unavailable</div>';
     }
     var now = App.now();
-    var deps = tr.departures.filter(function (d) { return (d.when - now) > -60000; }).slice(0, 5);
-    if (!deps.length) return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div><div class="h-dep-empty serif"><i>Nothing</i> coming up</div>';
+    // feed older than 3 polls: say so, and never read a dead feed as "nothing coming up"
+    var age = tr.at && Date.now() - tr.at > 180000 ? Math.round((Date.now() - tr.at) / 60000) : 0;
+    var ageLine = age ? '<div class="h-dep-age">Updated ' + age + ' min ago</div>' : '';
+    var deps = tr.departures.filter(function (d) { return (d.when - now) > -60000; }).slice(0, 3);
+    if (!deps.length) {
+      return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
+        (age ? '<div class="h-dep-empty serif"><i>Departures</i> unavailable</div>' : '<div class="h-dep-empty serif"><i>Nothing</i> coming up</div>') + ageLine;
+    }
     return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
       '<div class="h-dep-list">' + deps.map(function (d) {
         var mins = Math.round((d.when - now) / 60000);
         return '<div class="h-dep">' +
           '<span class="h-dep-line h-dep-line--' + d.product + '"' + lineStyle(d.line) + '>' + App.esc(d.line) + '</span>' +
           '<span class="h-dep-dir">' + App.esc(d.direction) + '</span>' +
-          '<b class="num h-dep-min">' + (mins <= 0 ? 'now' : mins + 'm') + '</b>' +
+          '<b class="num h-dep-min">' + (mins <= 0 ? 'now' : mins < 60 ? mins + 'm' : App.fmt.time(d.when, false)) + '</b>' +
           '</div>';
-      }).join('') + '</div>';
+      }).join('') + '</div>' + ageLine;
   }
 
   function paint() {

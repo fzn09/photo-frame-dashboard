@@ -58,7 +58,7 @@ import { withExpiry, daysLeft } from '../../calc.js';
   function paintSuggest() { V.el.querySelector('.s-suggest').innerHTML = suggestHTML(); }
   function paintHead() {
     var n = D.fridge.filter(soon).length;
-    V.el.querySelector('.s-count').innerHTML = '<span class="num">' + D.fridge.length + '</span> items' + (n ? ' · <span class="num">' + n + '</span> to use soon' : '');
+    V.el.querySelector('.s-count').innerHTML = '<span class="num">' + D.fridge.length + '</span> ' + (D.fridge.length === 1 ? 'item' : 'items') + (n ? ' · <span class="num">' + n + '</span> to use soon' : '');
   }
   function render() {
     V.el.innerHTML = '<div class="shop">' +

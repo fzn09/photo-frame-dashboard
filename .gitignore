@@ -4,6 +4,10 @@
 /log/
 /loader-*.txt
 /.claude/
+/.codex
+/.github
+/.impeccable
+/.agents
 /graphify-out
 .DS_Store
 __pycache__/

@@ -219,7 +219,7 @@ adb shell am start -n com.wesbos.homehq/.MainActivity
 ## 12. Choosing which views the frame shows
 
 The `VIEWS` var in `wrangler.jsonc` lists the views on the rail, in rail order. Default:
-`"home,calendar,shopping,photos"` (the ones with real data). Valid names:
+`"home,calendar,shopping,fridge,photos"` (the ones with real data). Valid names:
 `home` (Today, always on), `calendar`, `tasks` (Chores), `shopping`, `fridge`, `kitchen` (calculator, conversions, timers), `photos`, `control` (Home), `agents`.
 Unknown names are ignored; an empty/invalid value falls back to the default.
 

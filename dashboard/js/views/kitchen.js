@@ -63,9 +63,19 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
       '<button class="btn" data-tplus="' + t.id + '">+1 min</button>' +
       '<button class="k-t-x" data-tx="' + t.id + '" aria-label="Cancel">' + App.icon('x', 26) + '</button></div>';
   }
+  function paintRail() {
+    var el = document.getElementById('railTimer');
+    if (!el) return;
+    var run = T.filter(function (t) { return !t.done; }).sort(function (a, b) { return a.end - b.end; })[0];
+    el.hidden = !T.length;
+    el.classList.toggle('is-done', !run);
+    el.innerHTML = T.length ? App.icon('clock', 22) + '<span>' + (run ? mmss(run) : 'Done') + '</span>' : '';
+  }
+  document.getElementById('railTimer').addEventListener('click', function () { App.go('kitchen'); });
   function paintTimers() {
     var box = V.el && V.el.querySelector('.k-timers');
     if (box) box.innerHTML = T.length ? T.map(timerHTML).join('') : '<div class="k-none">No timers running</div>';
+    paintRail();
   }
   function ring(t) {
     if (App.mode !== 'day') App.setMode('day');
@@ -87,6 +97,7 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
       }
     });
     if (changed) return paintTimers();
+    paintRail();
     if (V.el) App.$$('.k-timer[data-t]', V.el).forEach(function (el) {
       var t = T.filter(function (x) { return x.id === +el.dataset.t; })[0];
       if (t) el.querySelector('.k-t-time').textContent = mmss(t);

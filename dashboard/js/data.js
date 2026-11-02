@@ -25,7 +25,7 @@ window.DATA = (function () {
     { id: 'alex', name: 'Fauzan', color: '#2D5BFF', rgb: '45 91 255', ink: '#FFFFFF', home: false, status: 'Driving home', eta: 12 },
     { id: 'jordan', name: 'Amanda', color: '#E4007C', rgb: '228 0 124', ink: '#FFFFFF', home: false, status: 'At the office' }
   ];
-  var family = { id: 'family', name: 'Family', color: '#111111', rgb: '17 17 17', ink: '#FFFFFF' };
+  var family = { id: 'family', name: 'Family', color: '#EEF3F6', rgb: '238 243 246', ink: '#02070A' };
 
   // ---------------------------------------------------------------- calendar
   var events = [
@@ -298,7 +298,7 @@ window.DATA = (function () {
       tokens: 4.6, cost: 17.9, week: [3.1, 2.4, 5.2, 4.0, 2.2, 1.1, 4.6]
     },
     {
-      id: 'cursor', name: 'Cursor', plan: 'Pro+', color: '#111111', rgb: '17 17 17', status: 'ok',
+      id: 'cursor', name: 'Cursor', plan: 'Pro+', color: '#EEF3F6', rgb: '238 243 246', status: 'ok',
       meters: [
         { label: 'Included usage', win: MONTH, used: 76, left: 17280, detail: '$45.60 of $60' },
         { label: 'On-demand', win: MONTH, used: 16, left: 17280, detail: '$8.20 of $50 cap' }
@@ -336,7 +336,7 @@ window.DATA = (function () {
 
   return {
     // views shown on the frame; the Worker's VIEWS var overrides this (same default as views.js)
-    views: ['home', 'calendar', 'shopping', 'photos'],
+    views: ['home', 'calendar', 'shopping', 'fridge', 'photos'],
     people: people, family: family, ALL: ALL,
     events: events, busyExtras: busyExtras,
     routines: routines, chores: chores, stars: stars, week: week,

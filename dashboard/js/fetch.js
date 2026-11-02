@@ -84,6 +84,7 @@
 
   function updateTransit(data) {
     D.transit = {
+      at: Date.now(),
       stop: data.stop || '',
       departures: (data.departures || []).map(function (d) {
         return Object.assign({}, d, { when: new Date(d.when) });
