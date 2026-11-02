@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { parseViews, DEFAULT, NAMES } from '../views.js';
 
 assert.deepEqual(parseViews('home,calendar,shopping,photos'), ['home', 'calendar', 'shopping', 'photos']);
-assert.deepEqual(parseViews('agents'), ['home', 'agents'], 'home is forced on');
+assert.deepEqual(parseViews('kitchen'), ['home', 'kitchen'], 'home is forced on');
+assert.deepEqual(parseViews('control,agents'), DEFAULT, 'removed views are ignored');
 assert.deepEqual(parseViews(' Photos , HOME,photos,xx ,'), ['home', 'photos'], 'trim, case, dedupe, unknown dropped');
 assert.deepEqual(parseViews('shopping,calendar'), ['home', 'calendar', 'shopping'], 'rail order, not input order');
 assert.deepEqual(parseViews('home'), ['home'], 'home alone is valid');

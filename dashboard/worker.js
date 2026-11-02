@@ -1,12 +1,11 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/home (HA bridge), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
+// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
 // All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
 //
 // Access gate: the whole site (page, assets and /api/*) needs the `hq` cookie, which holds DASH_TOKEN.
 // Open https://<worker>/?key=<DASH_TOKEN> once on the frame to set it (one year). The page JS carries the
 // token too, so gating only /api would protect nothing: anyone with the URL would get the token.
 
-import { mapHome, toService } from './ha-map.js';
 import { parseViews } from './views.js';
 
 // Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
@@ -47,7 +46,6 @@ export default {
         return await (request.method === 'POST' ? bringWrite(request, env, which) : bringRead(env, which));
       }
       if (pathname === '/api/config')   return handleConfig(env);
-      if (pathname === '/api/home')     return await (request.method === 'POST' ? homeWrite(request, env) : handleHome(env));
       if (pathname === '/api/transit')  return await handleTransit(env);
       if (pathname === '/api/photos')   return await handlePhotos(env);
     } catch (err) {
@@ -284,45 +282,6 @@ async function bringWrite(request, env, which) {
     })
   });
   if (!res.ok) throw new Error('Bring! write failed: ' + res.status);
-  return new Response('{"ok":true}', { headers: JSON_CORS });
-}
-
-// ---- Home Assistant bridge (Google Home devices reach the dashboard through HA) ---------------
-// GET /api/home -> mapped devices/rooms/climate/media. POST /api/home {id, patch} -> HA service call.
-// Secrets: HA_URL (e.g. https://xxxx.ui.nabu.casa), HA_TOKEN (long-lived access token).
-
-const haFetch = (env, path, init = {}) =>
-  fetch(env.HA_URL.replace(/\/$/, '') + path, {
-    ...init, headers: { Authorization: `Bearer ${env.HA_TOKEN}`, 'Content-Type': 'application/json' }
-  });
-
-async function handleHome(env) {
-  if (!env.HA_URL || !env.HA_TOKEN) return new Response('{}', { status: 503, headers: JSON_CORS });
-  const res = await haFetch(env, '/api/states');
-  if (!res.ok) throw new Error('Home Assistant answered ' + res.status);
-  const states = await res.json();
-
-  // Areas (rooms) aren't in /api/states: ask HA's template engine once. Rooms fall back to "Home" if this fails.
-  let areas = {};
-  try {
-    const ids = states.map(s => s.entity_id).filter(id => /^(light|lock|cover)\./.test(id));
-    const tpl = `{% set r = {} %}{% for i in ${JSON.stringify(ids)} %}{% set r = dict(r, **{i: area_name(i) or ''}) %}{% endfor %}{{ r | tojson }}`;
-    const t = await haFetch(env, '/api/template', { method: 'POST', body: JSON.stringify({ template: tpl }) });
-    if (t.ok) areas = Object.fromEntries(Object.entries(JSON.parse(await t.text())).filter(([, v]) => v));
-  } catch (e) { /* ponytail: areas are cosmetic, never fail the whole call over them */ }
-
-  return new Response(JSON.stringify(mapHome(states, areas)), { headers: { ...JSON_CORS, 'Cache-Control': 'no-store' } });
-}
-
-async function homeWrite(request, env) {
-  const denied = guard(request, env);
-  if (denied) return denied;
-  if (!env.HA_URL || !env.HA_TOKEN) return new Response('{"error":"HA not configured"}', { status: 503, headers: JSON_CORS });
-  const { id, patch } = await request.json();
-  const call = typeof id === 'string' && patch ? toService(id, patch) : null;
-  if (!call) return new Response('{"error":"bad request"}', { status: 400, headers: JSON_CORS });
-  const res = await haFetch(env, `/api/services/${call.domain}/${call.service}`, { method: 'POST', body: JSON.stringify(call.data) });
-  if (!res.ok) throw new Error('Home Assistant answered ' + res.status);
   return new Response('{"ok":true}', { headers: JSON_CORS });
 }
 

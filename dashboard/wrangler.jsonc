@@ -19,7 +19,7 @@
     "BVG_STOP_ID": "900110001",
     // Display name shown in the transit widget
     "BVG_STOP_NAME": "S+U Schönhauser Allee",
-    // Views the frame shows (rail order). Valid: home, calendar, tasks, shopping, fridge, kitchen, photos, control, agents.
+    // Views the frame shows (rail order). Valid: home, calendar, tasks, shopping, fridge, kitchen, photos.
     // "home" is always on. Unknown names are ignored. Change + redeploy; the frame picks it up within ~5 min.
     "VIEWS": "home,calendar,shopping,fridge,kitchen,photos",
     // Unsplash search term for the photo stream; remove for the editorial feed. Secret: UNSPLASH_KEY
@@ -31,5 +31,5 @@
   // Required: BRING_EMAIL, BRING_PASSWORD
   // Required: DASH_TOKEN (same value as VITE_DASH_TOKEN in dashboard/.env at build time). Gates the whole
   //   site and the writes; open /?key=<DASH_TOKEN> once on each device to set the access cookie.
-  // Optional: HA_URL, HA_TOKEN (Home Assistant), BRING_LIST var (default "home"), BRING_FRIDGE_LIST var (default "fridge")
+  // Optional: BRING_LIST var (default "home"), BRING_FRIDGE_LIST var (default "fridge")
 }

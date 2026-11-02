@@ -93,36 +93,6 @@
     App.emit('data');
   }
 
-  // Home Assistant -> Home view. Replaces the mock devices/rooms and flips D.live so the views write back.
-  // Mock scenes reference mock device ids, so they're dropped once live data is in.
-  function updateHome(data) {
-    if (!data || !data.devices) return;
-    D.live = true;
-    D.devices = data.devices;
-    D.rooms = data.rooms;
-    D.scenes = [];
-    if (data.climate) Object.assign(D.climate, data.climate);
-    if (data.media) Object.assign(D.media, data.media);
-    App.emit('data');
-  }
-
-  // ent = a device, D.climate or D.media (each carries its HA entity id); patch uses the dashboard's own keys.
-  // done(ok) is optional. 503 = HA/writes not configured, counted as not ok so the optimistic change reverts.
-  var homeWrites = 0, pullHome;
-  App.homeSync = function (ent, patch, done) {
-    homeWrites++;
-    fetch('/api/home', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Dash-Token': TOKEN },
-      body: JSON.stringify({ id: ent.id, patch: patch })
-    })
-      .then(function (r) { return r.ok; }, function () { return false; })
-      .then(function (ok) {
-        if (done) done(ok);
-        if (--homeWrites === 0 && pullHome) pullHome();
-      });
-  };
-
   // After a failure, retry at 5 s, 15 s and 1 min (Wi-Fi comes up after the page loads), then fall back to
   // the normal interval. 503 = the Worker has no credentials for it: the mock data is intended, stop asking.
   // feeds[endpoint].ok = time of the last good response (0 = still showing mock data), read by railStale().
@@ -178,6 +148,5 @@
     // Each Bring! call logs in again, so the fridge list is only polled while its view is on
     pullFridge = poll('fridge', updateFridge, 5, function () { return fridgeWrites > 0 || !App.enabled('fridge'); });
     poll('transit',  updateTransit,   1);
-    pullHome = poll('home', updateHome, 0.5, function () { return homeWrites > 0; });
   });
 })();

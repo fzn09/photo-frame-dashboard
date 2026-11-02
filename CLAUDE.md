@@ -31,7 +31,7 @@ npm run dev          # Vite dev server (host: true, port 5173), mock data only
 npm run build        # dist/ — required before dev:live
 npm run dev:live     # wrangler dev: Worker + /api/* + dist/ assets; secrets from .dev.vars
 npm run deploy       # build + wrangler deploy
-node test/views.test.mjs     # single test; also test/ha-map.test.mjs. Plain node:assert, no framework
+node test/views.test.mjs     # plain node:assert, no framework
 ```
 
 Stale `workerd` processes can hold ports after a `dev:live` run; use a fresh port and restart wrangler after a rebuild produces new hashed files.
@@ -44,9 +44,9 @@ Kiosk APK: `dashboard/kiosk/build.ps1` (Windows) or `build.sh`. The saved URL is
 
 - **No framework, no runtime dependencies.** Each module is an IIFE attaching to `window.App` / `window.DATA` / `window.ICONS`. `js/main.js` imports them in a fixed order (icons → data → app → system → slideshow → views → diag → fetch); new modules must slot into that order.
 - **Data flow:** `js/data.js` holds `window.DATA` with mock data as the fallback. `js/fetch.js` polls the Worker's `/api/*`, merges results into `window.DATA`, then calls `App.emit('data')`. Views subscribe with `App.on('data', fn)` and repaint only what changed. A failed fetch keeps the last good data, so the page never goes blank.
-- **Router:** views call `App.register(name, {show, hide, resume})`. `App.go` toggles `content-visibility` on `<section id="view-X">`; views are built once and never torn down, and hidden views are prebuilt in the background. Adding a view means a `js/views/X.js`, a `css/views/X.css`, a section and a rail button in `index.html`, and a name in `views.js`.
+- **Router:** views call `App.register(name, {show, hide, resume})`. `App.go` toggles `content-visibility` on `<section id="view-X">`; views are built lazily and never torn down, and stale views rebuild when selected. Adding a view means a `js/views/X.js`, a `css/views/X.css`, a section and a rail button in `index.html`, and a name in `views.js`.
 - **Which views show** comes from the Worker's `VIEWS` var (`wrangler.jsonc`) via `/api/config`, parsed by `views.js`. That file is shared by the Worker and the page. `home` is always on; disabled views are never built (`#stage[data-off]` CSS hook). `?demo` enables demo tools.
-- **Worker (`worker.js`)** is a dependency-free proxy: weather (Open-Meteo), calendar (Google service account, JWT signed with `crypto.subtle`), shopping (Bring!, GET + POST), home (Home Assistant, mapping in `ha-map.js`), transit (BVG transport.rest), photos (Unsplash). Everything else is static assets from `dist/`. Writes need an `X-Dash-Token` header matching `DASH_TOKEN` (baked in at build time as `VITE_DASH_TOKEN`). Secrets are listed at the bottom of `wrangler.jsonc`; setup is in `dashboard/SETUP.md`.
+- **Worker (`worker.js`)** is a dependency-free proxy: weather (Open-Meteo), calendar (Google service account, JWT signed with `crypto.subtle`), shopping (Bring!, GET + POST), transit (BVG transport.rest), and photos (Unsplash). Everything else is static assets from `dist/`. Writes need an `X-Dash-Token` header matching `DASH_TOKEN` (baked in at build time as `VITE_DASH_TOKEN`). Secrets are listed at the bottom of `wrangler.jsonc`; setup is in `dashboard/SETUP.md`.
 - **Stage:** fixed 1280×800 design, scaled with a CSS transform. Left rail 76px, content 1156×752. Design tokens are in `css/tokens.css`, icons in `js/icons.js` via `App.icon()`.
 - The people are Fauzan (`alex`, `CAL_ALEX`) and Amanda (`jordan`, `CAL_JORDAN`). Location is Berlin (BVG, `Europe/Berlin`).
 

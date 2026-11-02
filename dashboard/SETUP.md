@@ -134,9 +134,6 @@ wrangler secret put CAL_JORDAN
 wrangler secret put BRING_EMAIL
 wrangler secret put BRING_PASSWORD
 wrangler secret put DASH_TOKEN
-# only if you use Home Assistant (section 9):
-wrangler secret put HA_URL
-wrangler secret put HA_TOKEN
 ```
 
 `DASH_TOKEN` must be the same value you put in `dashboard/.env` as `VITE_DASH_TOKEN` **before** `npm run deploy` (it is baked into the build).
@@ -153,10 +150,10 @@ Confirm the live URL shows real calendar events, current weather, your Bring! li
 
 ---
 
-## 8. Write access (DASH_TOKEN): shopping + Home control
+## 8. Write access (DASH_TOKEN): shopping
 
-Checking off, adding and deleting items on the Shopping view is written back to Bring!, and Home
-control is written to Home Assistant, through `POST /api/shopping` and `POST /api/home`. Both need the
+Checking off, adding and deleting items on the Shopping view is written back to Bring! through
+`POST /api/shopping`. Writes need the
 `X-Dash-Token` header to equal the `DASH_TOKEN` secret. Without it they answer 503/401 and the
 dashboard just keeps its local state.
 
@@ -175,25 +172,7 @@ item note as `bis 3.11.`, so they read naturally in the Bring! app too.
 
 ---
 
-## 9. Google Home via Home Assistant (optional)
-
-Google has no public web API for your Home devices, so the Home view talks to **Home Assistant (HA)**,
-which can see Cast speakers/Nest devices (Cast integration) and your lights, locks and covers.
-
-1. Install Home Assistant (HA OS, or the Docker image) and add your devices/integrations.
-2. In HA: your profile → *Security* → **Long-lived access tokens** → create one.
-3. Make HA reachable from Cloudflare: Nabu Casa Remote UI URL, or a Cloudflare Tunnel to HA. A plain
-   `http://192.168…` address does **not** work, the Worker runs in the cloud.
-4. Local test: `HA_URL=https://…` and `HA_TOKEN=…` in `.dev.vars`; `npm run dev:live`; `/api/home` should return `{devices, rooms, climate, media}`.
-5. Deploy: `wrangler secret put HA_URL` and `HA_TOKEN`.
-
-Controllable: lights (on/off/brightness), locks, covers (blinds/garage), the first climate entity, the playing media
-player. Only those domains can be called. Without `HA_URL`/`HA_TOKEN` the Home view shows its mock data.
-Not tested against a live HA in this repo, only the mapper (`node test/ha-map.test.mjs`).
-
----
-
-## 10. Live cams (Photos → Live)
+## 9. Live cams (Photos → Live)
 
 Cams are listed in `js/data.js` (`webcams`). Shipped: two berlin.de JPEG cams (Mitte, Charlottenburg), refreshed
 every 60 s, credited on screen. Types: `img` (JPEG, safest on the frame), `yt` (YouTube live id; only if the owner allows
@@ -202,7 +181,7 @@ Check a feed before adding it: it must be https, return the image without a refe
 
 ---
 
-## 11. Frame time zone (the clock is live now)
+## 10. Frame time zone (the clock is live now)
 
 The frame was set to `America/New_York`. Set it to Berlin over ADB, then restart the kiosk
 (see `kiosk/README.md#time-zone`):
@@ -216,20 +195,20 @@ adb shell am start -n com.wesbos.homehq/.MainActivity
 
 ---
 
-## 12. Choosing which views the frame shows
+## 11. Choosing which views the frame shows
 
 The `VIEWS` var in `wrangler.jsonc` lists the views on the rail, in rail order. Default:
 `"home,calendar,shopping,fridge,kitchen,photos"`. Valid names:
-`home` (Today, always on), `calendar`, `tasks` (Chores), `shopping`, `fridge`, `kitchen` (calculator, conversions, timers), `photos`, `control` (Home), `agents`.
+`home` (Today, always on), `calendar`, `tasks` (Chores), `shopping`, `fridge`, `kitchen` (calculator, conversions, timers), `photos`.
 Unknown names are ignored; an empty/invalid value falls back to the default.
 
 To change it: edit `VIEWS`, then `npm run deploy`. The frame polls `/api/config` every 5 minutes and applies the
 list without a reload (if it is showing a view that just got hidden, it goes back to Today). The last list is
 cached in the frame's localStorage, so a reboot without Wi-Fi still shows the right views.
 
-A hidden view is never built, so it costs the frame nothing. Today also drops the cards of hidden views
-(Chores, Home status, the photo tile) and the layout reflows. With Photos hidden the screensaver shows only the
-clock and weather. `GET /api/config` shows what the Worker currently serves.
+Views are built when first opened and rebuilt after data changes the next time they are selected. Today also drops
+the cards of hidden views (Chores and the photo tile) and the layout reflows. With Photos hidden the screensaver
+shows only the clock and weather. `GET /api/config` shows what the Worker currently serves.
 
 Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off on the frame. Open the page with
 `?demo` to turn them on (remembered), `?demo=0` to turn them off.
@@ -250,7 +229,6 @@ Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off
 | `CAL_ALEX` | secret | Google Calendar ID for Fauzan |
 | `CAL_JORDAN` | secret | Google Calendar ID for Amanda |
 | `DASH_TOKEN` | secret (+ `VITE_DASH_TOKEN` in `.env`) | Guards the write endpoints |
-| `HA_URL` / `HA_TOKEN` | secrets | Home Assistant base URL + long-lived token (optional) |
 | `BRING_LIST` | var (optional) | Bring! list name, default `home` |
 | `BRING_FRIDGE_LIST` | var (optional) | Bring! list for the Fridge view, default `fridge` |
 | `VIEWS` | var | Comma list of views shown on the frame (section 12) |

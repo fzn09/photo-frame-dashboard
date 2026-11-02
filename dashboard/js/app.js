@@ -179,7 +179,7 @@
     view._built = true; view._dirty = false; view._min = minuteKey();
   }
   // Which views are shown: D.views (default in data.js, overridden by the cached list and by the Worker's
-  // /api/config). A hidden view is never built, so it also costs the frame no memory or CPU.
+  // /api/config). Disabled views are not built.
   App.enabled = function (name) { return D.views.indexOf(name) > -1; };
   App.setViews = function (list) {
     if (!Array.isArray(list)) return;
@@ -206,33 +206,8 @@
     else if (view.resume) view.resume($('#view-' + name));
     if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
   };
-  // Build a hidden view and lay it out now (cached by content-visibility; no paint happens).
-  function prebuild(name) {
-    var el = $('#view-' + name), view = App.views[name];
-    build(name);
-    if (view.hide) view.hide();
-    el.classList.add('is-warming');
-    el.offsetHeight;
-    el.classList.remove('is-warming');
-  }
-  // Pre-build (startup) and re-build (after data changes) hidden views in the background, one per
-  // slot, so navigating to them never pays the rebuild cost.
-  var refreshTimer = null;
-  function refreshStale(delay) {
-    clearTimeout(refreshTimer);
-    refreshTimer = setTimeout(function next() {
-      var name = Object.keys(App.views).filter(function (k) {
-        var v = App.views[k];
-        return k !== App.current && App.enabled(k) && (!v._built || v._dirty);
-      })[0];
-      if (!name) return;
-      prebuild(name);
-      refreshTimer = setTimeout(next, 400);
-    }, delay);
-  }
   function markStale() {
     Object.keys(App.views).forEach(function (k) { if (k !== App.current) App.views[k]._dirty = true; });
-    refreshStale(1500);
   }
   App.on('data', markStale);
   App.on('time', markStale);
@@ -393,7 +368,6 @@
     tick();
     setInterval(tick, 1000);
     App.emit('ready');
-    refreshStale(1500);
     if (App.demo) setTimeout(function () { App.toast('Tip: press and hold the <b>clock</b> in the sidebar for demo controls', { ms: 6000, icon: 'bolt' }); }, 1200);
   };
   document.addEventListener('DOMContentLoaded', function () { App.start(); });
