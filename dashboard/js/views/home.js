@@ -5,6 +5,20 @@ import { daysLeft } from '../../calc.js';
   'use strict';
   var D = window.DATA, V = {};
 
+  // "Updated 3 h ago" badge for a card whose feed is overdue (App.feedAge, fetch.js). Hidden while fresh or on sample data.
+  function ageTag(feed) {
+    var m = App.feedAge ? App.feedAge(feed) : 0;
+    return '<span class="h-age" data-feed="' + feed + '"' + (m ? '>' + ageText(m) : ' hidden>') + '</span>';
+  }
+  function ageText(m) { return 'Updated ' + (m < 90 ? m + ' min' : Math.round(m / 60) + ' h') + ' ago'; }
+  function ages() {
+    Array.prototype.forEach.call(V.el.querySelectorAll('.h-age'), function (el) {
+      var m = App.feedAge ? App.feedAge(el.dataset.feed) : 0;
+      el.hidden = !m;
+      if (m) el.textContent = ageText(m);
+    });
+  }
+
   function clock() {
     var n = App.now();
     return '<div class="h-time num">' + App.fmt.time(n, false) + '<span class="h-ampm">' + App.fmt.ampm(n) + '</span></div>' +
@@ -16,7 +30,7 @@ import { daysLeft } from '../../calc.js';
     var hours = App.hourly(7);
     var tmin = Math.min.apply(null, hours.map(function (h) { return h.t; }));
     var tmax = Math.max.apply(null, hours.map(function (h) { return h.t; }));
-    return '<div class="h-wx-top">' +
+    return ageTag('weather') + '<div class="h-wx-top">' +
       '<span class="h-wx-icon">' + App.icon(w.cond, 60) + '</span>' +
       '<span class="h-wx-temp num">' + w.temp + '°</span>' +
       '<span class="h-wx-meta"><b>' + w.label + '</b><span>H ' + w.hi + '°  L ' + w.lo + '°</span></span>' +
@@ -43,7 +57,7 @@ import { daysLeft } from '../../calc.js';
     var e = App.nextEvent(), now = App.now();
     if (!e) {
       var tomorrow = App.timedOn(App.addDays(now, 1))[0];
-      return '<div class="h-hero h-hero--empty" data-go="calendar">' +
+      return '<div class="h-hero h-hero--empty" data-go="calendar">' + ageTag('calendar') +
         '<div class="label label--light">Rest of today</div>' +
         '<div class="h-hero-title serif">Nothing else scheduled.<br><i>Enjoy the quiet.</i></div>' +
         (tomorrow ? '<div class="h-hero-meta">Tomorrow starts with <b>' + App.esc(tomorrow.title) + '</b> at ' + App.fmt.time(tomorrow.start) + '</div>' : '') +
@@ -63,7 +77,7 @@ import { daysLeft } from '../../calc.js';
         ? '<span class="pill pill--alert"><i class="pulse"></i>Leave now</span>'
         : '<span class="pill' + (leave <= 15 ? ' pill--soon' : '') + '">' + App.icon('car', 20) + 'Leave in ' + App.fmt.mins(leave) + '</span>';
     }
-    return '<button class="h-hero" style="' + App.pstyle(p) + '" data-ev="' + e.id + '">' +
+    return '<button class="h-hero" style="' + App.pstyle(p) + '" data-ev="' + e.id + '">' + ageTag('calendar') +
       '<div class="h-hero-main">' +
       '  <div class="label label--on">Next up · ' + App.esc(whoText) + '</div>' +
       '  <div class="h-hero-title serif">' + App.esc(e.title) + '</div>' +
@@ -72,22 +86,29 @@ import { daysLeft } from '../../calc.js';
       '</div>' + big + '</button>';
   }
 
+  // Events everyone is in show once, above the columns (two dots); each column keeps only that person's own.
   function lanes() {
     var now = App.now();
-    return D.people.map(function (p) {
-      var list = App.timedOn(now, p.id).filter(function (e) { return e.end > now; });
-      var shown = list.slice(0, 3), more = list.length - shown.length;
-      return '<div class="h-lane" style="' + App.pstyle(p) + '">' +
-        '<div class="h-lane-head">' + App.avatar(p, 30) + '<b>' + p.name + '</b></div>' +
-        (list.length ? shown.map(function (e) {
-          var cur = e.start <= now;
-          return '<button class="h-ev' + (cur ? ' is-now' : '') + '" data-ev="' + e.id + '">' +
-            '<span class="h-ev-t">' + (cur ? 'Now' : App.fmt.time(e.start, false)) + '</span>' +
-            '<span class="h-ev-n">' + App.esc(e.title) + '</span></button>';
-        }).join('') : '<div class="h-free serif"><i>Free</i> the rest of the day</div>') +
-        (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more</button>' : '') +
-        '</div>';
-    }).join('');
+    var live = function (pid) { return App.timedOn(now, pid).filter(function (e) { return e.end > now; }); };
+    var row = function (e, shared) {
+      var cur = e.start <= now;
+      return '<button class="h-ev' + (cur ? ' is-now' : '') + '" data-ev="' + e.id + '">' +
+        '<span class="h-ev-t">' + (cur ? 'Now' : App.fmt.time(e.start, false)) + '</span>' +
+        '<span class="h-ev-n">' + App.esc(e.title) + '</span>' + (shared ? App.dots(e.people, 12) : '') + '</button>';
+    };
+    var all = live().filter(App.isFamily), together = all.slice(0, 2), cap = together.length ? 1 : 3;
+    return ageTag('calendar') +
+      (together.length ? '<div class="h-together">' + together.map(function (e) { return row(e, true); }).join('') + '</div>' : '') +
+      D.people.map(function (p) {
+        var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
+        var shown = list.slice(0, cap), more = list.length - shown.length + all.length - together.length;
+        return '<div class="h-lane" style="' + App.pstyle(p) + '">' +
+          '<div class="h-lane-head">' + App.avatar(p, 30) + '<b>' + p.name + '</b></div>' +
+          (shown.length ? shown.map(function (e) { return row(e); }).join('') :
+            '<div class="h-free serif">' + (together.length ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
+          (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more</button>' : '') +
+          '</div>';
+      }).join('');
   }
 
   function ring(done, total, size) {
@@ -101,7 +122,8 @@ import { daysLeft } from '../../calc.js';
   function shopping() {
     var open = D.groceries.filter(function (g) { return !g.done; });
     var recent = open.slice(-3).reverse();
-    return '<div class="label">Shopping</div>' +
+    if (!open.length) return ageTag('shopping') + '<div class="label">Shopping</div><div class="h-calm serif"><i>All stocked up.</i> Nothing left to buy.</div>';
+    return ageTag('shopping') + '<div class="label">Shopping</div>' +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>items to get</small></div>' +
       '<ul class="h-recent">' + recent.map(function (g) {
         return '<li><i></i>' + App.esc(g.name) + '</li>';
@@ -111,7 +133,8 @@ import { daysLeft } from '../../calc.js';
   function fridge() {
     var key = function (f) { var d = daysLeft(f.note, App.now()); return d === null ? 999 : d; };
     var next = D.fridge.slice().sort(function (a, b) { return key(a) - key(b); }).slice(0, 3);
-    return '<div class="label">Fridge</div>' +
+    if (!D.fridge.length) return ageTag('fridge') + '<div class="label">Fridge</div><div class="h-calm serif"><i>Fridge is empty.</i> Tap to add what’s inside.</div>';
+    return ageTag('fridge') + '<div class="label">Fridge</div>' +
       '<div class="h-stat"><span class="num">' + D.fridge.length + '</span><small>items inside</small></div>' +
       '<ul class="h-recent">' + next.map(function (f) {
         var d = key(f);
@@ -162,8 +185,14 @@ import { daysLeft } from '../../calc.js';
       }).join('') + '</div>' + ageLine;
   }
 
+  // Both lists empty: shop + fridge shrink to 3 columns each and the photo takes the rest (CSS: .home[data-lean]).
+  function lean() {
+    V.el.firstChild.toggleAttribute('data-lean', !D.groceries.some(function (g) { return !g.done; }) && !D.fridge.length);
+  }
+
   function paint() {
     var el = V.el;
+    lean();
     el.querySelector('.h-clock').innerHTML = clock();
     el.querySelector('.h-weather').innerHTML = weather();
     el.querySelector('.h-hero-slot').innerHTML = hero();
@@ -213,9 +242,10 @@ import { daysLeft } from '../../calc.js';
     V.el.querySelector('.h-hero-slot').innerHTML = hero();
     V.el.querySelector('.h-transit').innerHTML = transit();
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
+    ages();
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
-  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) V.el.querySelector('.h-fridge').innerHTML = fridge(); });
+  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); V.el.querySelector('.h-fridge').innerHTML = fridge(); } });
   App.on('views', function () {
     if (!V.el || !V.el.firstChild) return;
     paint();

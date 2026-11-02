@@ -135,7 +135,7 @@
       var wait = f.every;
       fetch('/api/' + endpoint)
         .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
-        .then(function (data) { fails = 0; f.ok = Date.now(); handler(data); })
+        .then(function (data) { fails = 0; f.ok = Date.now(); f.mono = performance.now(); handler(data); })
         .catch(function (err) {
           if (err === 503) { f.off = true; return; }
           console.warn('[fetch] ' + endpoint + ' failed:', err);
@@ -146,6 +146,13 @@
     run();
     return run;
   }
+
+  // Minutes a feed is overdue (last good response more than two intervals ago), else 0. Cards show it as a badge.
+  // Measured on the monotonic clock: the frame's wall clock can jump when NTP syncs after boot.
+  App.feedAge = function (k) {
+    var f = feeds[k], ms = f && f.ok && !f.off ? performance.now() - f.mono : 0;
+    return f && ms > 2 * f.every ? Math.round(ms / 60000) : 0;
+  };
 
   // Under the rail clock: "Sample data" while a feed has never loaded, "Updated N min ago" once the
   // oldest feed is more than two intervals behind, nothing when all is fresh. Off and idle feeds don't count.

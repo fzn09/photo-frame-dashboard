@@ -50,7 +50,7 @@
 .lanes { position: absolute; left: 64px; right: 0; top: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); }
 .lanes--3 { grid-template-columns: repeat(3, 1fr); }
 .lane { position: relative; border-left: 1px solid var(--line); }
-.lane.is-today { background: rgba(2, 151, 222, .05); }
+.lane.is-today { background: rgba(214, 140, 84, .06); }
 .lane-fam { position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; }
 .lane-fam .ev { pointer-events: auto; }
 
@@ -81,7 +81,7 @@
 .ev-travel {
   position: absolute; left: 8px; right: 8px; bottom: 100%;
   border-radius: 8px 8px 0 0;
-  background: repeating-linear-gradient(-45deg, rgb(var(--c-rgb) / .45) 0 5px, rgb(var(--c-rgb) / .08) 5px 10px);
+  background: repeating-linear-gradient(-45deg, rgb(var(--c-rgb) / .25) 0 5px, rgb(var(--c-rgb) / .05) 5px 10px);
 }
 .ev--more {
   background: var(--paper); color: var(--ink);

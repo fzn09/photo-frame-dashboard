@@ -189,23 +189,23 @@
 
 :root {
   /* Midnight: one dark base, one accent (orange). Built for 1280x800 @ 160 ppi (1px = 0.159 mm). */
-  --paper: #02070A;              /* page */
-  --paper-2: #0D1820;            /* pressed / quiet fill */
+  --paper: #0C0907;              /* page: warm near-black, lamp-lit rather than screen-blue */
+  --paper-2: #1B1511;            /* pressed / quiet fill */
   --card: rgba(255, 255, 255, .05);
-  --raise: #13222C;              /* toasts, banners, panels that sit above the page */
-  --mod: rgba(8, 22, 32, .78);   /* home module cards */
+  --raise: #261D18;              /* toasts, banners, panels that sit above the page */
+  --mod: rgba(30, 21, 16, .78);  /* home module cards */
   --mod-line: rgba(255, 255, 255, .14);
-  --ink: #EEF3F6;
-  --ink-rgb: 238 243 246;
-  --ink-2: #C3CDD3;
-  --mute: #A3B1BA;
+  --ink: #F7F1EA;
+  --ink-rgb: 247 241 234;
+  --ink-2: #D3C8BF;
+  --mute: #B2A59A;
   --line: rgba(255, 255, 255, .13);
 
-  /* signal colours: orange is the only accent */
+  /* signal colours: orange is the only accent, and it means "time-critical" (now, leave, rain, due, timer) */
   --accent: #FC734D;
   --accent-rgb: 252 115 77;
-  --on-accent: #02070A;
-  --glow: #0297DE;
+  --on-accent: #0C0907;
+  --glow: #D68C54;
   --alert: #FC734D;
   --alert-rgb: 252 115 77;
   --amber: #FF9500;

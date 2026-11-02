@@ -24,7 +24,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 /* ---------------------------------------------------------------- type utilities */
 .num { font-stretch: 62%; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .serif { font-family: var(--serif); font-weight: 400; letter-spacing: -.01em; }
-.serif i, i.serif { font-style: italic; color: var(--accent); }
+.serif i, i.serif { font-style: italic; color: var(--ink); }
 .mono { font-family: var(--mono); font-weight: 400; letter-spacing: 0; }
 .label {
   font-family: var(--mono);
@@ -35,7 +35,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   line-height: 1.2;
   display: flex; align-items: center; gap: 6px;
 }
-.label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+.label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mute); flex: none; }
 .label--light { color: rgba(255, 255, 255, .72); }
 .label--on { color: var(--c-ink); opacity: .8; }
 
@@ -48,7 +48,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   transform-origin: 50% 50%;
   background:
     radial-gradient(760px 300px at 60% 105%, rgba(252, 115, 77, .22), rgba(252, 115, 77, 0)),
-    radial-gradient(1000px 560px at 55% 60%, rgba(2, 151, 222, .30), rgba(2, 151, 222, 0)),
+    radial-gradient(1000px 560px at 55% 60%, rgba(214, 140, 84, .22), rgba(214, 140, 84, 0)),
     var(--paper);
   overflow: hidden;
   display: grid;
@@ -162,7 +162,7 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .pill {
   display: inline-flex; align-items: center; gap: 8px;
   height: 40px; padding: 0 16px; border-radius: 999px;
-  background: rgba(2, 7, 10, .55); color: inherit;
+  background: rgba(12, 9, 7, .55); color: inherit;
   font-family: var(--mono); font-size: var(--fs-min); font-weight: 400;
 }
 .pill--soon { background: var(--accent); color: var(--on-accent); }
