@@ -209,7 +209,7 @@ import { daysLeft } from '../../calc.js';
     el.querySelector('.h-weather').innerHTML = weather();
     el.querySelector('.h-hero-slot').innerHTML = hero();
     el.querySelector('.h-lanes').innerHTML = lanes();
-    el.querySelector('.h-shop').innerHTML = shopping();
+    if (App.enabled('shopping')) el.querySelector('.h-shop').innerHTML = shopping();
     el.querySelector('.h-transit').innerHTML = transit();
     if (App.enabled('fridge')) el.querySelector('.h-fridge').innerHTML = fridge();
     if (App.enabled('tasks')) el.querySelector('.h-chores').innerHTML = chores();

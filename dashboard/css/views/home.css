@@ -19,7 +19,8 @@
 .h-row > * { flex: 1 1 0; }
 .home > *, .h-row > * { min-width: 0; min-height: 0; overflow: hidden; }
 .home .card { display: flex; flex-direction: column; gap: 10px; }
-.stage[data-off~="photos"] .h-photo, .stage[data-off~="fridge"] .h-fridge, .stage[data-off~="tasks"] .h-chores { display: none; }
+.stage[data-off~="photos"] .h-photo, .stage[data-off~="fridge"] .h-fridge, .stage[data-off~="tasks"] .h-chores,
+.stage[data-off~="shopping"] .h-shop { display: none; }
 
 /* ---- clock: no card, it is the anchor (168px serif, digits ~19 mm) */
 .h-clock { display: flex; flex-direction: column; justify-content: center; padding-left: 4px; }
