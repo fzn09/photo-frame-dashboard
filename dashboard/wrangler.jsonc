@@ -25,8 +25,13 @@
     // "home" is always on. Unknown names are ignored. Change + redeploy; the frame picks it up within ~5 min.
     "VIEWS": "home,calendar,tasks,shopping,fridge,kitchen,photos",
     // Unsplash search term for the photo stream; remove for the editorial feed. Secret: UNSPLASH_KEY
-    "PHOTO_QUERY": "aesthetic wallpapers"
-  }
+    "PHOTO_QUERY": "aesthetic wallpapers",
+    // Cookidoo country domain and language (week plan, cookidoo.js)
+    "COOKIDOO_HOST": "cookidoo.de",
+    "COOKIDOO_LANG": "de-DE"
+  },
+  // Cookidoo token store. Wrangler creates the namespace on first deploy; seed the refresh token (SETUP.md).
+  "kv_namespaces": [{ "binding": "COOKIDOO_KV" }]
   // Secrets — set via: wrangler secret put SECRET_NAME
   // Required: GOOGLE_SERVICE_EMAIL, GOOGLE_SERVICE_KEY (PEM private key from service account JSON)
   // Required: CAL_ALEX (Fauzan), CAL_JORDAN (Amanda)  (Google Calendar IDs, e.g. user@gmail.com)

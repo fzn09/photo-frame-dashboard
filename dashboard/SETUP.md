@@ -239,6 +239,34 @@ Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off
 
 ---
 
+## 12. Cookidoo week plan (backend only so far)
+
+`/api/meals` returns the Cookidoo planner week; `/api/meals/img` proxies recipe pictures from `assets.tmecosys.com`.
+The Worker never logs in. It refreshes an OAuth token that you seed once into Workers KV. The API is unofficial
+(reverse-engineered by [miaucl/cookidoo-api](https://github.com/miaucl/cookidoo-api)) and can change without notice.
+
+1. Deploy once so Wrangler creates the `COOKIDOO_KV` namespace (`kv_namespaces` in `wrangler.jsonc`).
+2. On your PC, get the refresh token (needs Python 3.13 and your Cookidoo email and password):
+
+   ```sh
+   pip install cookidoo-api
+   EMAIL=you@example.com PASSWORD=... python ../scripts/cookidoo-refresh-token.py
+   ```
+
+3. Store it. Use the literal output of step 2 as the value:
+
+   ```sh
+   npx wrangler kv key put tokens '{"refresh":"<token>"}' --binding COOKIDOO_KV --remote
+   ```
+
+4. Check: open `/api/meals` on the Worker with the access cookie. An empty `days` list means a free week; a 502
+   with `wrangler tail` showing `Cookidoo token refresh 4xx` means the token is wrong or revoked, repeat from step 2.
+
+Vars: `COOKIDOO_HOST` (default `cookidoo.de`), `COOKIDOO_LANG` (default `de-DE`). The refresh token is a credential:
+do not commit it or paste it into chats.
+
+---
+
 ## Quick reference: all configuration
 
 | Key | Where | Description |
@@ -258,6 +286,8 @@ Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off
 | `BRING_FRIDGE_LIST` | var (optional) | Bring! list for the Fridge view, default `fridge` |
 | `TICKTICK_TOKEN` | secret (optional) | TickTick Open API token for the Chores view |
 | `TICKTICK_PROJECT` | var (optional) | TickTick list for the Chores view, default `Chores` |
-| `VIEWS` | var | Comma list of views shown on the frame (section 12) |
+| `VIEWS` | var | Comma list of views shown on the frame (section 11) |
+| `COOKIDOO_HOST` / `COOKIDOO_LANG` | vars | Cookidoo domain and language, default `cookidoo.de` / `de-DE` |
+| `COOKIDOO_KV` | KV binding | Holds the Cookidoo token pair (section 12) |
 | `BRING_EMAIL` | secret | Bring! account email |
 | `BRING_PASSWORD` | secret | Bring! account password |
