@@ -101,7 +101,7 @@
       ['normal', 'empty', 'busy'].map(function (m) {
         return '<button data-cal="' + m + '" class="' + (App.calMode === m ? 'is-on' : '') + '">' + { normal: 'Normal day', empty: 'Empty day', busy: 'Overloaded' }[m] + '</button>';
       }).join('') + '</div></div>' +
-      '<p class="demo-note">Keyboard: <b>D</b> demo · <b>A</b> ambient · <b>N</b> night · <b>1–7</b> views</p>' +
+      '<p class="demo-note">Keyboard: <b>D</b> demo · <b>A</b> ambient · <b>N</b> night · <b>1–8</b> views</p>' +
       '</div>';
   }
   App.openDemo = function () {
@@ -148,8 +148,8 @@
       if (k === 'a') App.setMode('ambient');
       if (k === 'n') App.setMode('night');
       if (k === 'escape') { closeDemo(); App.closeSheet(); }
-      var views = ['home', 'calendar', 'tasks', 'shopping', 'fridge', 'kitchen', 'photos'];
-      if (k >= '1' && k <= '7' && App.enabled(views[+k - 1])) App.go(views[+k - 1]);
+      var views = ['home', 'calendar', 'tasks', 'shopping', 'fridge', 'meals', 'kitchen', 'photos'];
+      if (k >= '1' && k <= '8' && App.enabled(views[+k - 1])) App.go(views[+k - 1]);
     });
   });
 })();

@@ -207,14 +207,40 @@ window.DATA = (function () {
     ]
   };
 
+  // ---------------------------------------------------------------- meals (mock — replaced by /api/meals at runtime)
+  function mealDate(d) { var x = new Date(base); x.setDate(x.getDate() + d); return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); }
+  var meal = function (id, name, min) { return { id: id, name: name, min: min, img: '', photo: '' }; };
+  var meals = {
+    device: 'TM6',
+    days: [
+      { date: mealDate(0), recipes: [meal('sample-pesto', 'Farfalle al Pesto', 25), meal('sample-curry', 'Gemüse-Curry mit Reis', 45)] },
+      { date: mealDate(2), recipes: [meal('sample-suppe', 'Kürbissuppe mit Feta', 35)] }
+    ]
+  };
+  var recipe = function (id, name, total, active, kcal, ing, steps) {
+    return { id: id, name: name, img: '', total: total, active: active, level: 'Easy', serves: '4 Portionen', kcal: kcal, per: 'Portion', tm: 'TM5, TM6, TM7',
+      ingredients: ing.map(function (i) { return { q: i[0], name: i[1], note: '' }; }), steps: steps };
+  };
+  var recipes = {
+    'sample-pesto': recipe('sample-pesto', 'Farfalle al Pesto', 25, 10, 540,
+      [['60 g', 'Parmesan'], ['50 g', 'Basilikum'], ['40 g', 'Pinienkerne'], ['100 g', 'Olivenöl'], ['400 g', 'Farfalle'], ['200 g', 'Kirschtomaten']],
+      [['Parmesan zerkleinern. ', '10 Sek./Stufe 10', ''], ['Basilikum, Pinienkerne und Öl zugeben. ', '15 Sek./Stufe 7', ''], ['Farfalle garen und mit dem Pesto mischen.']]),
+    'sample-curry': recipe('sample-curry', 'Gemüse-Curry mit Reis', 45, 20, 480,
+      [['250 g', 'Basmatireis'], ['150 g', 'Zwiebeln'], ['30 g', 'Currypaste'], ['400 g', 'Kokosmilch'], ['300 g', 'Blumenkohl'], ['200 g', 'Karotten']],
+      [['Zwiebeln zerkleinern. ', '5 Sek./Stufe 5', ''], ['Currypaste andünsten. ', '3 Min./120°C/Stufe 1', ''], ['Kokosmilch und Gemüse garen. ', '20 Min./100°C/Stufe 1', '']]),
+    'sample-suppe': recipe('sample-suppe', 'Kürbissuppe mit Feta', 35, 12, 310,
+      [['1 kg', 'Hokkaido-Kürbis'], ['100 g', 'Zwiebeln'], ['800 g', 'Gemüsebrühe'], ['100 g', 'Sahne'], ['100 g', 'Feta']],
+      [['Zwiebeln zerkleinern. ', '5 Sek./Stufe 5', ''], ['Kürbis und Brühe garen. ', '22 Min./100°C/Stufe 1', ''], ['Sahne zugeben und pürieren.']])
+  };
+
   return {
     // views shown on the frame; the Worker's VIEWS var overrides this (same default as views.js)
-    views: ['home', 'calendar', 'tasks', 'shopping', 'fridge', 'kitchen', 'photos'],
+    views: ['home', 'calendar', 'tasks', 'shopping', 'fridge', 'meals', 'kitchen', 'photos'],
     people: people, family: family, ALL: ALL,
     events: events, busyExtras: busyExtras,
     chores: chores, choreUsuals: choreUsuals,
     catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals, fridge: fridge, fridgeUsuals: fridgeUsuals,
-    weather: weather, webcams: webcams, photos: photos, transit: transit,
+    weather: weather, webcams: webcams, photos: photos, transit: transit, meals: meals, recipes: recipes,
     _gid: function () { return 'g' + (++gid); },
     _eid: function () { return 'e' + (++n); }
   };

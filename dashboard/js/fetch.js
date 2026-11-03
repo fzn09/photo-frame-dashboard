@@ -55,6 +55,12 @@
     App.emit('fridge');
   }
 
+  function updateMeals(data) {
+    D.meals = { days: data.days || [], device: data.device || '' };
+    App.emit('data');
+    App.emit('meals');
+  }
+
   // Write-through to Bring! via the Worker. op: 'add' (also qty/note change, add back) | 'done' | 'remove'.
   // The Worker answers 503 when writes or Bring! aren't configured: that's mock mode, stay silent.
   var TOKEN = import.meta.env.VITE_DASH_TOKEN || '';
@@ -175,7 +181,7 @@
     var now = Date.now(), never = false, oldest = now;
     Object.keys(feeds).forEach(function (k) {
       var f = feeds[k];
-      if (f.off || k === 'config' || (k === 'fridge' && !App.enabled('fridge')) || (k === 'chores' && !App.enabled('tasks'))) return;
+      if (f.off || k === 'config' || (k === 'fridge' && !App.enabled('fridge')) || (k === 'chores' && !App.enabled('tasks')) || (k === 'meals' && !App.enabled('meals'))) return;
       if (!f.ok) never = true;
       else if (now - f.ok > 2 * f.every) oldest = Math.min(oldest, f.ok);
     });
@@ -200,5 +206,6 @@
     pullFridge = poll('fridge', updateFridge, 5, function () { return fridgeWrites > 0 || !App.enabled('fridge'); });
     pullChores = poll('chores', updateChores, 5, function () { return choreWrites > 0 || !App.enabled('tasks'); });
     poll('transit',  updateTransit,   1);
+    poll('meals',    updateMeals,    30, function () { return !App.enabled('meals'); });
   });
 })();

@@ -95,8 +95,13 @@ import { daysLeft } from '../../calc.js';
         '<span class="h-ev-t">' + (cur ? 'Now' : App.fmt.time(e.start, false)) + '</span>' +
         '<span class="h-ev-n">' + App.esc(e.title) + '</span>' + (shared ? App.dots(e.people, 12) : '') + '</button>';
     };
-    var all = live().filter(App.isFamily), together = all.slice(0, 2), cap = together.length ? 1 : 3;
+    // A meal is shared, so today's plan sits above the columns too. It costs one row of events.
+    var meals = App.mealsOn(now), band = meals.length > 0;
+    var all = live().filter(App.isFamily), together = all.slice(0, band ? 1 : 2), cap = together.length ? 1 : band ? 2 : 3;
     return ageTag('calendar') +
+      (band ? '<div class="h-mband">' + meals.slice(0, 3).map(function (r) {
+        return '<button class="h-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<b>' + App.esc(r.name) + '</b></button>';
+      }).join('') + '</div>' : '') +
       (together.length ? '<div class="h-together">' + together.map(function (e) { return row(e, true); }).join('') + '</div>' : '') +
       D.people.map(function (p) {
         var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
@@ -237,6 +242,8 @@ import { daysLeft } from '../../calc.js';
           '<button class="h-photo" data-go="photos"><div class="h-photo-stage"></div><div class="h-photo-cap"></div></button>' +
           '</div></div>';
         el.addEventListener('click', function (e) {
+          var m = e.target.closest('[data-meal]');
+          if (m) { App.recipeSheet(m.dataset.meal); return; }
           var ev = e.target.closest('[data-ev]');
           if (ev) { App.eventSheet(App.findEvent(ev.dataset.ev)); return; }
           var g = e.target.closest('[data-go]');

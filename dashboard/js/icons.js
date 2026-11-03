@@ -38,6 +38,7 @@ window.ICONS = {
   film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
   fridge: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 10h14M9 5v2M9 13v3"/>',
   utensils:'<path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.5 1.5-3.5 4-3.5 8h3.5"/>',
+  jug:'<path d="M6 9h11v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3zM17 11h2a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-1M8 9V6l1-2h5l1 2v3"/>',
   sunrise: '<path d="M3 18h18M6 14a6 6 0 0 1 12 0M12 4v3M4.9 8.9l1.4 1.4M19.1 8.9l-1.4 1.4"/><path d="M8 21h8"/>',
   away: '<path d="M14 4h5v16h-5"/><path d="M4 12h11M11 8l4 4-4 4"/>',
   // weather

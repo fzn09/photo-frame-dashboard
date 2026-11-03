@@ -1,5 +1,5 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/img (Cookidoo week plan, cookidoo.js)
+// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/recipe + /api/meals/img (Cookidoo week plan, cookidoo.js)
 // All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
 //
 // Access gate: the whole site (page, assets and /api/*) needs the `hq` cookie, which holds DASH_TOKEN.
@@ -7,7 +7,7 @@
 // token too, so gating only /api would protect nothing: anyone with the URL would get the token.
 
 import { parseViews } from './views.js';
-import { handleMeals, handleMealImage } from './cookidoo.js';
+import { handleMeals, handleMealRecipe, handleMealImage } from './cookidoo.js';
 
 // Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
 const JSON_CORS = { 'Content-Type': 'application/json' };
@@ -51,6 +51,7 @@ export default {
       if (pathname === '/api/transit')  return await handleTransit(env);
       if (pathname === '/api/photos')   return await handlePhotos(env);
       if (pathname === '/api/meals')    return await handleMeals(env);
+      if (pathname === '/api/meals/recipe') return await handleMealRecipe(env, url);
       if (pathname === '/api/meals/img') return await handleMealImage(url);
     } catch (err) {
       console.error(pathname, err); // details stay in the Worker logs (wrangler tail), not in the response

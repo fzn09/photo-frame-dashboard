@@ -239,9 +239,11 @@ Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off
 
 ---
 
-## 12. Cookidoo week plan (backend only so far)
+## 12. Cookidoo meals
 
-`/api/meals` returns the Cookidoo planner week; `/api/meals/img` proxies recipe pictures from `assets.tmecosys.com`.
+The Meals view, Today and Calendar show the Cookidoo planner week. `/api/meals` returns the week and the paired Thermomix
+model, `/api/meals/recipe` one recipe, and `/api/meals/img` proxies recipe pictures from `assets.tmecosys.com`. Live cook
+state is not available: Cookidoo has no endpoint for it. To hide the view, drop `meals` from `VIEWS`.
 The Worker never logs in. It refreshes an OAuth token that you seed once into Workers KV. The API is unofficial
 (reverse-engineered by [miaucl/cookidoo-api](https://github.com/miaucl/cookidoo-api)) and can change without notice.
 

@@ -107,7 +107,7 @@ dashboard/
 │   ├── slideshow.js    ← ambient/slideshow mode
 │   ├── diag.js         ← diagnostics / demo controls
 │   ├── fetch.js        ← polls /api/*, merges into window.DATA, fires App.emit('data')
-│   └── views/          ← home, calendar, tasks, shopping, fridge, kitchen, photos, ambient
+│   └── views/          ← home, calendar, tasks, shopping, fridge, meals, kitchen, photos, ambient
 ├── css/                ← tokens.css, base.css, views/*.css
 ├── public/             ← PWA manifest and icons
 └── kiosk/              ← Android WebView kiosk app (see below)

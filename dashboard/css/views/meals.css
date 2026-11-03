@@ -1,0 +1,77 @@
+/* Meals: week strip, then the chosen day's recipes. The recipe sheet is shared with Today and Calendar. */
+.m { height: 100%; display: flex; flex-direction: column; gap: var(--gap); }
+.m-head { display: flex; align-items: center; gap: 16px; height: 60px; flex: none; }
+.m-head h1 { font-size: 52px; line-height: 1; }
+.m-head small { font-size: var(--fs-body); color: var(--ink-2); }
+.m-age { font-size: var(--fs-min); font-weight: 700; color: var(--amber-ink); }
+.m-age[hidden] { display: none; }
+.m-device { margin-left: auto; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 18px 0 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-min); color: var(--ink-2); }
+.m-device b { font-weight: 700; color: var(--ink); }
+.m-time { min-height: 20px; font-size: var(--fs-min); color: var(--mute); font-variant-numeric: tabular-nums; }
+.m-noimg { display: grid; place-items: center; background: rgb(var(--ov) / .07); color: var(--mute); }
+.m-empty { flex: 1; display: grid; place-items: center; text-align: center; font-size: var(--fs-l); line-height: 1.15; color: var(--mute); }
+.m-empty i { color: var(--ink); }
+
+.mc-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; flex: none; }
+.mc-day { display: grid; grid-template-columns: 1fr auto; align-items: center; min-width: 0; height: 84px; padding: 8px 10px 8px 12px; border-radius: var(--r-s); background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+.mc-day:active { transform: scale(.97); }
+.mc-day b { display: block; font-family: var(--serif); font-size: var(--fs-body); font-weight: 400; line-height: 1.1; }
+.mc-day .num { font-size: var(--fs-l); line-height: 1; }
+.mc-day.is-today .num { color: var(--accent); }
+.mc-day.is-past { opacity: .62; }
+.mc-day.is-on { background: var(--ink); color: var(--paper); box-shadow: none; opacity: 1; }
+.mc-day.is-on .num { color: inherit; }
+.mc-day.is-on.is-today { background: var(--accent); color: var(--on-accent); }
+.mc-th { display: flex; }
+.mc-th img, .mc-th .m-noimg { display: grid; width: 46px; height: 46px; margin-left: -20px; border-radius: 50%; object-fit: cover; background: rgb(var(--ov) / .12); box-shadow: 0 0 0 2px var(--paper); }
+.mc-th :first-child { margin-left: 0; }
+
+.mc-main { flex: 1; min-height: 0; display: flex; gap: var(--gap); overflow-x: auto; }
+.mc-card { flex: 1 0 372px; min-width: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+button.mc-card { display: flex; }
+.mc-card:active { transform: scale(.985); }
+.mc-card > img { flex: 1 1 0; width: 100%; height: 0; min-height: 260px; object-fit: cover; background: rgb(var(--ov) / .07); }
+.mc-in { flex: none; width: 100%; display: flex; flex-direction: column; padding: 12px 18px; overflow: hidden; }
+.mc-t { margin-bottom: 2px; font-family: var(--serif); font-size: var(--fs-l); line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-meta { display: flex; align-items: baseline; gap: 12px; min-height: 30px; font-size: var(--fs-min); color: var(--ink-2); }
+.mc-meta .num { font-size: var(--fs-m); line-height: 1.1; color: var(--ink); }
+.mc-in .r-ing { columns: 2; column-gap: 24px; margin-top: 8px; }
+.mc-in .r-ing li { grid-template-columns: 74px 1fr; padding: 6px 0; break-inside: avoid; }
+.mc-in .r-ing span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-main[data-n="3"] .r-ing { columns: 1; }
+.mc-main[data-n="1"] .mc-card { flex-direction: row; }
+.mc-main[data-n="1"] .mc-card > img { width: 50%; height: auto; flex: 1 1 50%; }
+.mc-main[data-n="1"] .mc-in { flex: 1 1 50%; width: 50%; }
+.mc-main[data-n="1"] .r-ing { columns: 1; }
+.mc-main[data-n="1"] .mc-t { white-space: normal; }
+.mc-card--plain .mc-in { flex: 1; }
+.mc-card--plain .mc-t { font-size: var(--fs-xl); white-space: normal; }
+.mc-main[data-n="1"] .mc-more, .mc-card--plain .mc-more { margin-top: 14px; }
+.mc-in .r-ing .mc-note { display: block; border-bottom: 0; color: var(--mute); }
+.mc-more { margin-top: auto; padding-top: 6px; font-size: var(--fs-min); font-weight: 700; color: var(--ink-2); }
+
+/* recipe sheet */
+.sheet--recipe { width: 1020px; height: 680px; overflow: hidden; }
+.sheet--recipe .sheet-pad { height: 100%; padding: 22px 24px; }
+.sheet--recipe .r-title { padding-right: 70px; }
+.r { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+.r-top { flex: none; display: grid; grid-template-columns: 250px 1fr; gap: 20px; }
+.r-top > img, .r-top > .m-noimg { width: 250px; height: 180px; border-radius: var(--r-s); object-fit: cover; background: rgb(var(--ov) / .07); }
+.r-title { margin: 2px 0 10px; font-family: var(--serif); font-size: 44px; line-height: 1.02; }
+.r-facts { display: flex; gap: 26px; margin: 0; }
+.r-facts dt { font-size: var(--fs-min); color: var(--mute); }
+.r-facts dd { margin: 0; font-size: var(--fs-m); line-height: 1.15; font-weight: 800; font-stretch: 75%; font-variant-numeric: tabular-nums; }
+.r-note { margin-top: 10px; font-size: var(--fs-min); color: var(--mute); }
+.r-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 270px 1fr; gap: 24px; margin-top: 16px; }
+.r-col { min-height: 0; overflow-y: auto; }
+.r-col::after { content: ''; display: block; position: sticky; bottom: 0; height: 36px; background: linear-gradient(rgba(0, 0, 0, 0), var(--raise)); pointer-events: none; } /* fades only while more is below */
+.r-col h3 { margin-bottom: 6px; font-family: var(--serif); font-size: var(--fs-l); line-height: 1.1; }
+.r-ing li { display: grid; grid-template-columns: 78px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-body); line-height: 1.2; }
+.r-ing b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.r-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.r-steps li { counter-increment: step; display: grid; grid-template-columns: 34px 1fr; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-body); line-height: 1.32; }
+.r-steps li::before { content: counter(step); font-family: var(--serif); font-size: var(--fs-l); line-height: 1; color: var(--mute); }
+.r-tts { font-weight: 700; white-space: nowrap; }
+.r-wait { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; font-size: var(--fs-l); line-height: 1.15; }
+.r-wait i { color: var(--mute); }
+.r-wait .btn { margin-top: 18px; font-family: var(--sans); }

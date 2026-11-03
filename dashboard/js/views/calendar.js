@@ -87,15 +87,15 @@
   function dayView() {
     var day = V.date;
     var fam = App.timedOn(day).filter(App.isFamily);
-    var allDay = App.allDayOn(day);
-    var ad = allDay.length ? '<div class="allday"><div class="gutter label">All day</div><div class="allday-grid" style="grid-template-columns:repeat(' + D.people.length + ',1fr)">' + allDay.map(function (e) {
+    var allDay = App.allDayOn(day), meals = App.mealsOn(day);
+    var ad = allDay.length || meals.length ? '<div class="allday"><div class="gutter label">All day</div><div class="allday-grid" style="grid-template-columns:repeat(' + D.people.length + ',1fr)">' + allDay.map(function (e) {
       var fam2 = App.isFamily(e);
       var idx = D.people.map(function (p) { return p.id; }).indexOf(e.people[0]);
       var col = fam2 ? '1 / -1' : (idx + 1) + ' / span 1';
       var s = App.dayStart(day), spanDays = Math.round((e.end - e.start) / 864e5), dayN = Math.round((s - e.start) / 864e5) + 1;
       return '<button class="ad' + (e.start < s ? ' ad--cont' : '') + '" data-ev="' + e.id + '" style="grid-column:' + col + ';' + App.pstyle(App.evColor(e)) + '">' +
         (e.start < s ? App.icon('left', 16) : '') + App.esc(e.title) + (spanDays > 1 ? ' <small>Day ' + dayN + ' of ' + spanDays + '</small>' : '') + '</button>';
-    }).join('') + '</div></div>' : '';
+    }).join('') + (meals.length ? '<div class="ad-meals">' + meals.map(function (r) { return '<button class="ad-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<span>' + App.esc(r.name) + '</span></button>'; }).join('') + '</div>' : '') + '</div></div>' : '';
     var grid = '<div class="grid-scroll"><div class="grid" style="height:' + (END - START) * PX + 'px">' +
       '<div class="hours">' + hoursCol() + '</div>' +
       '<div class="lanes" style="grid-template-columns:repeat(' + D.people.length + ',1fr)">' + D.people.map(function (p) {
@@ -127,7 +127,7 @@
   function threeDay() {
     var days = [0, 1, 2].map(function (i) { return App.addDays(V.date, i); });
     var now = App.now();
-    var anyAllDay = days.some(function (d) { return App.allDayOn(d).length; });
+    var anyAllDay = days.some(function (d) { return App.allDayOn(d).length || App.mealsOn(d).length; });
     var head = '<div class="lanes-head"><div class="gutter"></div>' + days.map(function (d) {
       var today = App.sameDay(d, now);
       return '<div class="day-head' + (today ? ' is-today' : '') + '"><span class="num">' + d.getDate() + '</span><b>' + App.fmt.rel(d) + '</b><small>' + App.fmt.monthShort(d) + '</small></div>';
@@ -140,6 +140,8 @@
         var a = Math.max(0, Math.round((e.start - s0) / 864e5)), b = Math.min(3, Math.round((e.end - s0) / 864e5));
         return '<button class="ad' + (e.start < s0 ? ' ad--cont' : '') + '" data-ev="' + e.id + '" style="grid-column:' + (a + 1) + ' / ' + (b + 1) + ';' + App.pstyle(App.evColor(e)) + '">' +
           (e.start < s0 ? App.icon('left', 16) : '') + App.esc(e.title) + (e.end > s3 ? App.icon('right', 16) : '') + '</button>';
+      }).join('') + days.map(function (d, i) {
+        return App.mealsOn(d).map(function (r) { return '<button class="ad-meal" data-meal="' + App.esc(r.id) + '" style="grid-column:' + (i + 1) + '">' + App.mealThumb(r) + '<span>' + App.esc(r.name) + '</span></button>'; }).join('');
       }).join('') + '</div></div>';
     }
     var grid = '<div class="grid-scroll"><div class="grid" style="height:' + (END - START) * PX + 'px">' +
@@ -160,16 +162,17 @@
     var now = App.now();
     return '<div class="week">' + [0, 1, 2, 3, 4, 5, 6].map(function (i) {
       var d = App.addDays(V.date, i), today = App.sameDay(d, now);
-      var ad = App.allDayOn(d), list = App.timedOn(d), max = 7 - ad.length, more = list.length - max;
+      var ad = App.allDayOn(d), meals = App.mealsOn(d), list = App.timedOn(d), max = 7 - ad.length - meals.length, more = list.length - max;
       return '<div class="wk-col' + (today ? ' is-today' : '') + '" data-day="' + (+d) + '">' +
         '<div class="wk-head"><b>' + App.fmt.dayShort(d) + '</b><span class="num">' + d.getDate() + '</span></div>' +
+        meals.map(function (r) { return '<button class="wk-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<span>' + App.esc(r.name) + '</span></button>'; }).join('') +
         ad.map(function (e) { return '<button class="wk-ad" data-ev="' + e.id + '" style="' + App.pstyle(App.evColor(e)) + '">' + App.esc(e.title) + '</button>'; }).join('') +
         list.slice(0, max).map(function (e) {
           return '<button class="wk-ev' + (e.end <= now ? ' is-past' : '') + '" data-ev="' + e.id + '" style="' + App.pstyle(App.evColor(e)) + '">' +
             '<span class="wk-t">' + App.fmt.time(e.start, false) + '</span><span class="wk-n">' + App.esc(e.title) + '</span></button>';
         }).join('') +
         (more > 0 ? '<button class="wk-more" data-day="' + (+d) + '">+' + more + ' more</button>' : '') +
-        (!list.length && !ad.length ? '<div class="wk-free serif"><i>Free</i></div>' : '') +
+        (!list.length && !ad.length && !meals.length ? '<div class="wk-free serif"><i>Free</i></div>' : '') +
         '</div>';
     }).join('') + '</div>';
   }
@@ -232,6 +235,7 @@
 
   function onClick(e) {
     var t;
+    if ((t = e.target.closest('[data-meal]'))) return App.recipeSheet(t.dataset.meal);
     if ((t = e.target.closest('[data-ev]'))) return App.eventSheet(App.findEvent(t.dataset.ev));
     if ((t = e.target.closest('[data-more]'))) return moreSheet(t.dataset.more.split(','));
     if ((t = e.target.closest('[data-nav]'))) return nav(+t.dataset.nav);
