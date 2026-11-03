@@ -10,7 +10,7 @@
   <script>
     // Best guess before the app boots, so the 3 a.m. reload never flashes the day palette at night.
     // App.applyTheme() corrects it with the real sunset.
-    (function () { var h = new Date().getHours(); if (h >= 18 || h < 7) document.documentElement.dataset.theme = 'dark'; })();
+    (function () { var h = new Date().getHours(); if (/[?&]theme=midnight/.test(location.search)) document.documentElement.dataset.theme = 'midnight'; else if (h >= 18 || h < 7) document.documentElement.dataset.theme = 'dark'; })();
   </script>
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">

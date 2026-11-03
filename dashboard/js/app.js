@@ -37,12 +37,12 @@
   App.isNight = function () { var h = App.now().getHours(); return h >= 22 || h < 6; };
 
   // Light by day (Silver & Walnut), dark from sunset to 07:00 (Walnut Evening). Sunset comes from the weather feed;
-  // 18:00 until it has loaded. Sets html[data-theme]; runs at boot and every minute.
+  // 18:00 until it has loaded. ?theme=midnight pins the original all-dark palette. Sets html[data-theme]; runs at boot and every minute.
   App.applyTheme = function () {
     var n = App.now(), h = n.getHours() + n.getMinutes() / 60, sun = D.weather && D.weather.sun && D.weather.sun.split(':');
     var dusk = sun ? +sun[0] + sun[1] / 60 : 18;
     if (isNaN(dusk)) dusk = 18;
-    var t = h >= dusk || h < 7 ? 'dark' : 'light';
+    var t = /[?&]theme=midnight/.test(location.search) ? 'midnight' : h >= dusk || h < 7 ? 'dark' : 'light';
     if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
   };
 

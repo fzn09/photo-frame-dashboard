@@ -285,3 +285,35 @@
   --warm: #FF8A57;
   --warm-rgb: 255 138 87;
 }
+
+/* Midnight: the original all-dark look (blue-black, one orange accent). Opt-in with ?theme=midnight; never set by the clock. */
+:root[data-theme="midnight"] {
+  --paper: #02070A;
+  --paper-2: #0D1820;
+  --card: rgba(255, 255, 255, .05);
+  --raise: #13222C;
+  --mod: rgba(8, 22, 32, .78);
+  --mod-line: rgba(255, 255, 255, .14);
+  --card-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  --ink: #EEF3F6;
+  --ink-rgb: 238 243 246;
+  --ink-2: #C3CDD3;
+  --mute: #A3B1BA;
+  --line: rgba(255, 255, 255, .13);
+  --ov: 255 255 255;
+  --rail: #02070A;
+  --rail-on: rgba(252, 115, 77, .10);
+  --g1: rgba(2, 151, 222, .30);
+  --g2: rgba(252, 115, 77, .22);
+  --hero-a: rgba(8, 22, 32, .92); --hero-b: rgba(252, 115, 77, .62); --hero-ink: #EEF3F6; --hero-ink-2: #C3CDD3;
+  --accent: #FC734D;
+  --accent-rgb: 252 115 77;
+  --on-accent: #02070A;
+  --glow: #0297DE;
+  --alert: #FC734D;
+  --alert-rgb: 252 115 77;
+  --amber-ink: #FF9500;
+  --on-amber: #02070A;
+  --warm: #FC734D;
+  --warm-rgb: 252 115 77;
+}
