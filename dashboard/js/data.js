@@ -109,55 +109,18 @@ window.DATA = (function () {
   busyExtras = busyExtras.filter(adults);
 
   // ---------------------------------------------------------------- chores
-  var routines = [
-    { id: 'morning', name: 'Morning', range: '6 – 11 AM', from: 0, to: 11 },
-    { id: 'after', name: 'After school', range: '11 AM – 5 PM', from: 11, to: 17 },
-    { id: 'evening', name: 'Evening', range: '5 – 10 PM', from: 17, to: 24 }
-  ];
-  var cid = 0;
-  function chore(r, who, title, emoji, stars, done, extra) {
-    return Object.assign({ id: 'c' + (++cid), r: r, who: who, title: title, emoji: emoji, stars: stars, done: !!done }, extra || {});
-  }
+  // One list (sample until TickTick answers /api/chores). who: a person id or 'any'.
   var chores = [
-    chore('morning', 'maya', 'Make bed', '🛏️', 1, true),
-    chore('morning', 'maya', 'Brush teeth', '🪥', 1, true),
-    chore('morning', 'maya', 'Pack backpack', '🎒', 1, true),
-    chore('morning', 'otto', 'Make bed', '🛏️', 1, true),
-    chore('morning', 'otto', 'Brush teeth', '🪥', 1, true),
-    chore('morning', 'otto', 'Get dressed', '👕', 1, false),
-    chore('morning', 'alex', 'School drop-off', '🚗', 0, true),
-    chore('morning', 'jordan', 'Pack lunches', '🥪', 0, true),
-    chore('morning', 'any', 'Feed Biscuit', '🐶', 1, true),
-
-    chore('after', 'maya', 'Unpack lunchbox', '🥪', 1, true),
-    chore('after', 'maya', 'Homework', '📚', 2, false),
-    chore('after', 'maya', 'Pack soccer bag', '⚽', 1, false),
-    chore('after', 'otto', 'Unpack lunchbox', '🥪', 1, true),
-    chore('after', 'otto', 'Read for 20 min', '📖', 2, false),
-    chore('after', 'otto', 'Practice piano', '🎹', 2, false),
-    chore('after', 'otto', 'Tidy the Lego', '🧱', 1, false),
-    chore('after', 'alex', 'Take out recycling', '♻️', 0, false, { overdue: true }),
-    chore('after', 'alex', 'Call the plumber', '☎️', 0, true),
-    chore('after', 'jordan', 'Fold laundry', '🧺', 0, false),
-    chore('after', 'jordan', 'Order Zoe’s gift', '🎁', 0, true),
-    chore('after', 'any', 'Water the plants', '🪴', 1, false),
-    chore('after', 'any', 'Empty dishwasher', '🍽️', 2, false),
-    chore('after', 'any', 'Walk Biscuit', '🐕', 2, true),
-
-    chore('evening', 'maya', 'Set the table', '🍴', 1, false),
-    chore('evening', 'maya', 'Lay out clothes', '👕', 1, false),
-    chore('evening', 'maya', 'Shower', '🚿', 1, false),
-    chore('evening', 'otto', 'Clear plates', '🍽️', 1, false),
-    chore('evening', 'otto', 'Bath', '🛁', 1, false),
-    chore('evening', 'otto', 'Lay out clothes', '👕', 1, false),
-    chore('evening', 'alex', 'Lock up', '🔐', 0, false),
-    chore('evening', 'jordan', 'Run dishwasher', '🫧', 0, false),
-    chore('evening', 'any', 'Wipe counters', '🧽', 1, false),
-    chore('evening', 'any', 'Garbage to curb', '🗑️', 2, false)
+    { id: 'c1', who: 'alex', title: 'Take out recycling', overdue: true, done: false },
+    { id: 'c2', who: 'jordan', title: 'Fold laundry', done: false },
+    { id: 'c3', who: 'any', title: 'Water the plants', done: false },
+    { id: 'c4', who: 'any', title: 'Empty dishwasher', time: '6:00 PM', done: false },
+    { id: 'c5', who: 'alex', title: 'Lock up', time: '10:00 PM', done: false },
+    { id: 'c6', who: 'jordan', title: 'Run dishwasher', done: false },
+    { id: 'c7', who: 'alex', title: 'Call the plumber', done: true, doneAt: Date.now() }
   ];
-  chores = chores.filter(function (c) { return c.who === 'any' || ALL.indexOf(c.who) > -1; });
-  var stars = {};
-  var week = {};
+  // Quick-add tiles at the bottom of the Chores view
+  var choreUsuals = ['Take out trash', 'Empty dishwasher', 'Laundry', 'Vacuum', 'Water plants', 'Clean bathroom', 'Change sheets', 'Wipe counters'];
 
   // ---------------------------------------------------------------- shopping
   var catOrder = {
@@ -187,50 +150,6 @@ window.DATA = (function () {
   var fridge = [];
   var fridgeUsuals = ['Milk 2%', 'Eggs', 'Butter', 'Cheddar', 'Greek yogurt', 'Cream cheese', 'Parmesan', 'Oat milk', 'Chicken thighs', 'Bacon', 'Baby spinach', 'Tomatoes'];
   var usuals = ['Milk 2%', 'Eggs', 'Bananas', 'Bread', 'Apples', 'Coffee beans', 'Greek yogurt', 'Cheddar', 'Butter', 'Baby spinach', 'Chicken thighs', 'Paper towels'];
-
-  // ---------------------------------------------------------------- home control
-  var rooms = [
-    { id: 'kitchen', name: 'Kitchen' },
-    { id: 'living', name: 'Living Room' },
-    { id: 'entry', name: 'Entry + Garage' },
-    { id: 'upstairs', name: 'Upstairs' },
-    { id: 'yard', name: 'Backyard' }
-  ];
-  var devices = [
-    { id: 'k-pend', room: 'kitchen', type: 'light', name: 'Pendants', on: true, level: 80 },
-    { id: 'k-under', room: 'kitchen', type: 'light', name: 'Under Cabinet', on: true, level: 55 },
-    { id: 'k-island', room: 'kitchen', type: 'light', name: 'Island', on: false, level: 100 },
-    { id: 'k-speaker', room: 'kitchen', type: 'blind', name: 'Window Shade', pos: 100 },
-    { id: 'l-lamp', room: 'living', type: 'light', name: 'Floor Lamp', on: true, level: 45 },
-    { id: 'l-ceil', room: 'living', type: 'light', name: 'Ceiling', on: false, level: 100 },
-    { id: 'l-blinds', room: 'living', type: 'blind', name: 'Blinds', pos: 60 },
-    { id: 'l-fire', room: 'living', type: 'light', name: 'Mantel', on: false, level: 70 },
-    { id: 'e-door', room: 'entry', type: 'lock', name: 'Front Door', locked: true },
-    { id: 'e-porch', room: 'entry', type: 'light', name: 'Porch', on: true, level: 100 },
-    { id: 'g-door', room: 'entry', type: 'garage', name: 'Garage', state: 'closed' },
-    { id: 'g-side', room: 'entry', type: 'lock', name: 'Side Door', locked: true },
-    { id: 'u-maya', room: 'upstairs', type: 'light', name: 'Bedside Lamp', on: true, level: 30 },
-    { id: 'u-otto', room: 'upstairs', type: 'light', name: 'Nightlight', on: false, level: 15 },
-    { id: 'u-hall', room: 'upstairs', type: 'light', name: 'Hallway', on: false, level: 60 },
-    { id: 'u-bath', room: 'upstairs', type: 'light', name: 'Bathroom', on: false, level: 100 },
-    { id: 'y-string', room: 'yard', type: 'light', name: 'String Lights', on: false, level: 100, flaky: true },
-    { id: 'y-back', room: 'yard', type: 'lock', name: 'Back Door', locked: true },
-    { id: 'y-flood', room: 'yard', type: 'light', name: 'Floodlight', on: false, level: 100 }
-  ];
-  var climate = { current: 20.5, set: 21.5, mode: 'heat', humidity: 42, outside: 14 };
-  var media = { room: 'Kitchen', title: 'Harvest Moon', artist: 'Neil Young', playing: true, volume: 35, seed: 'harvest-vinyl' };
-  var cameras = [
-    { id: 'c-front', name: 'Front Porch', seed: 'porch-steps' },
-    { id: 'c-drive', name: 'Driveway', seed: 'driveway-maple' },
-    { id: 'c-yard', name: 'Backyard', seed: 'garden-yard' }
-  ];
-  var scenes = [
-    { id: 'morning', name: 'Morning', icon: 'sunrise', set: { 'k-pend': 100, 'k-under': 80, 'l-blinds': 100, 'l-lamp': 0, 'u-hall': 60 } },
-    { id: 'dinner', name: 'Dinner', icon: 'utensils', set: { 'k-pend': 55, 'k-under': 30, 'k-island': 70, 'l-lamp': 40, 'l-ceil': 0 } },
-    { id: 'movie', name: 'Movie', icon: 'film', set: { 'k-pend': 0, 'k-under': 15, 'k-island': 0, 'l-lamp': 15, 'l-ceil': 0, 'l-blinds': 0, 'l-fire': 30 } },
-    { id: 'away', name: 'Away', icon: 'away', set: { 'k-pend': 0, 'k-under': 0, 'k-island': 0, 'l-lamp': 0, 'l-ceil': 0, 'l-fire': 0, 'u-maya': 0, 'u-hall': 0, 'e-porch': 100 } },
-    { id: 'night', name: 'Goodnight', icon: 'moon', set: { 'k-pend': 0, 'k-under': 10, 'k-island': 0, 'l-lamp': 0, 'l-ceil': 0, 'l-fire': 0, 'u-hall': 10, 'u-otto': 15, 'e-porch': 0 } }
-  ];
 
   // ---------------------------------------------------------------- live city cams (Photos view -> Live)
   // type: 'img' = JPEG the view re-fetches every `every` s (safest on the frame's A33);
@@ -277,52 +196,6 @@ window.DATA = (function () {
     { seed: 'pumpkins', o: 'l', date: '2025-10-25', place: "Chudleigh's", from: 'maya', tag: 'fall25' }
   ];
 
-  // ---------------------------------------------------------------- AI agent usage (CodexBar-style)
-  // left = minutes until the window resets; win = window length in minutes (for pace)
-  var H5 = 300, DAY = 1440, WEEK = 10080, MONTH = 43200;
-  var agents = [
-    {
-      id: 'claude', name: 'Claude', plan: 'Max 20×', color: '#D97757', rgb: '217 119 87', status: 'ok',
-      meters: [
-        { label: 'Session', win: H5, used: 62, left: 134 },
-        { label: 'Weekly · all models', win: WEEK, used: 41, left: 4680 }
-      ],
-      tokens: 3.1, cost: 21.4, week: [2.2, 3.8, 2.9, 4.4, 1.6, 0.8, 3.1]
-    },
-    {
-      id: 'codex', name: 'Codex', plan: 'ChatGPT Pro', color: '#10A37F', rgb: '16 163 127', status: 'ok',
-      meters: [
-        { label: 'Session', win: H5, used: 88, left: 38 },
-        { label: 'Weekly', win: WEEK, used: 57, left: 7320 }
-      ],
-      tokens: 4.6, cost: 17.9, week: [3.1, 2.4, 5.2, 4.0, 2.2, 1.1, 4.6]
-    },
-    {
-      id: 'cursor', name: 'Cursor', plan: 'Pro+', color: '#EEF3F6', rgb: '238 243 246', status: 'ok',
-      meters: [
-        { label: 'Included usage', win: MONTH, used: 76, left: 17280, detail: '$45.60 of $60' },
-        { label: 'On-demand', win: MONTH, used: 16, left: 17280, detail: '$8.20 of $50 cap' }
-      ],
-      tokens: 1.8, cost: 6.3, week: [1.2, 1.9, 0.7, 2.3, 1.5, 0.4, 1.8]
-    },
-    {
-      id: 'gemini', name: 'Gemini', plan: 'AI Ultra', color: '#3F6FE4', rgb: '63 111 228', status: 'ok',
-      meters: [
-        { label: 'Requests · daily', win: DAY, used: 16, left: 522, detail: '320 of 2,000' },
-        { label: 'Pro model · daily', win: DAY, used: 52, left: 522, detail: '104 of 200' }
-      ],
-      tokens: 0.9, cost: 0, week: [0.4, 1.1, 0.6, 0.2, 0.9, 1.3, 0.9]
-    },
-    {
-      id: 'copilot', name: 'Copilot', plan: 'Pro+', color: '#8957E5', rgb: '137 87 229', status: 'degraded', incident: 'Elevated errors on coding agent',
-      meters: [
-        { label: 'Premium requests', win: MONTH, used: 75, left: 17280, detail: '1,124 of 1,500' },
-        { label: 'Coding agent', win: MONTH, used: 38, left: 17280, detail: '19 of 50 sessions' }
-      ],
-      tokens: 1.2, cost: 0, week: [0.9, 1.4, 1.1, 0.8, 1.6, 0.3, 1.2]
-    }
-  ];
-
   // ---------------------------------------------------------------- transit (mock — replaced by /api/transit at runtime)
   var transit = {
     stop: 'Gleisdreieck',
@@ -336,13 +209,12 @@ window.DATA = (function () {
 
   return {
     // views shown on the frame; the Worker's VIEWS var overrides this (same default as views.js)
-    views: ['home', 'calendar', 'shopping', 'fridge', 'kitchen', 'photos'],
+    views: ['home', 'calendar', 'tasks', 'shopping', 'fridge', 'kitchen', 'photos'],
     people: people, family: family, ALL: ALL,
     events: events, busyExtras: busyExtras,
-    routines: routines, chores: chores, stars: stars, week: week,
+    chores: chores, choreUsuals: choreUsuals,
     catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals, fridge: fridge, fridgeUsuals: fridgeUsuals,
-    rooms: rooms, devices: devices, climate: climate, media: media, cameras: cameras, scenes: scenes,
-    weather: weather, webcams: webcams, photos: photos, agents: agents, transit: transit,
+    weather: weather, webcams: webcams, photos: photos, transit: transit,
     _gid: function () { return 'g' + (++gid); },
     _eid: function () { return 'e' + (++n); }
   };

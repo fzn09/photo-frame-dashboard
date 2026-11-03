@@ -96,9 +96,7 @@ A **family smart-home dashboard**: a touch-friendly web app for a wall-mounted f
 dashboard/
 ├── index.html          ← shell: nav rail + one <section> per view
 ├── worker.js           ← Cloudflare Worker: /api/* proxy, everything else is static assets
-├── ha-map.js           ← pure Home Assistant ↔ dashboard shape mapping (used by the Worker)
 ├── SETUP.md            ← one-time live-data setup (weather, BVG, Google Calendar, Bring!, HA)
-├── test/ha-map.test.mjs← check for ha-map.js
 ├── vite.config.js, wrangler.jsonc, package.json
 ├── js/
 │   ├── main.js         ← import order (modules attach to window.App)
@@ -109,7 +107,7 @@ dashboard/
 │   ├── slideshow.js    ← ambient/slideshow mode
 │   ├── diag.js         ← diagnostics / demo controls
 │   ├── fetch.js        ← polls /api/*, merges into window.DATA, fires App.emit('data')
-│   └── views/          ← home, calendar, tasks, shopping, fridge, kitchen, photos, control, agents, ambient
+│   └── views/          ← home, calendar, tasks, shopping, fridge, kitchen, photos, ambient
 ├── css/                ← tokens.css, base.css, views/*.css
 ├── public/             ← PWA manifest and icons
 └── kiosk/              ← Android WebView kiosk app (see below)
@@ -124,7 +122,6 @@ dashboard/
 | `GET /api/weather` | Open-Meteo (no key) | lat/lon/timezone from `wrangler.jsonc` vars; 503 if unset |
 | `GET /api/calendar` | Google Calendar | service account (`GOOGLE_SERVICE_EMAIL`, `GOOGLE_SERVICE_KEY`), one calendar ID secret per person |
 | `GET/POST /api/shopping` | Bring! | `BRING_EMAIL`/`BRING_PASSWORD`; POST ops `add` / `done` / `remove` |
-| `GET/POST /api/home` | Home Assistant | optional `HA_URL`/`HA_TOKEN`; mapping in `ha-map.js` |
 | `GET /api/transit` | BVG transport.rest (no key) | stop from `BVG_STOP_ID` / `BVG_STOP_NAME` |
 | `GET /api/config` | `VIEWS` var | which views the frame shows; parsed by `views.js` |
 

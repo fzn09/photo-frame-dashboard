@@ -11,8 +11,6 @@ import './views/shopping.js';
 import './views/fridge.js';
 import './views/kitchen.js';
 import './views/photos.js';
-import './views/control.js';
-import './views/agents.js';
 import './views/ambient.js';
 import './diag.js';
 import './fetch.js';
