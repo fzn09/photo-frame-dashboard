@@ -47,17 +47,14 @@ export function press(s, key) {
   return { ...s, acc: +s.display, op: key, fresh: true };
 }
 
-// ---- kitchen conversions: [label, fn, from unit, to unit]. No g<->cups: that depends on the ingredient.
+// ---- kitchen conversions: [label, fn, from unit, to unit]. Into metric only: the kitchen reads US recipes,
+// it doesn't write them. No g<->cups: that depends on the ingredient.
 const r2 = x => Math.round(x * 100) / 100;
 export const CONV = {
-  'ml-cup':  ['ml → cup', x => x / 236.588, 'ml', 'cup'],
   'cup-ml':  ['cup → ml', x => x * 236.588, 'cup', 'ml'],
-  'ml-tbsp': ['ml → tbsp', x => x / 14.787, 'ml', 'tbsp'],
   'tbsp-ml': ['tbsp → ml', x => x * 14.787, 'tbsp', 'ml'],
   'tsp-ml':  ['tsp → ml', x => x * 4.929, 'tsp', 'ml'],
-  'g-oz':    ['g → oz', x => x / 28.3495, 'g', 'oz'],
   'oz-g':    ['oz → g', x => x * 28.3495, 'oz', 'g'],
-  'c-f':     ['°C → °F', x => x * 9 / 5 + 32, '°C', '°F'],
   'f-c':     ['°F → °C', x => (x - 32) * 5 / 9, '°F', '°C'],
   'x0.5':    ['× ½', x => x / 2, '', ''],
   'x1.5':    ['× 1.5', x => x * 1.5, '', ''],

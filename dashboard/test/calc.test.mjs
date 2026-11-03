@@ -20,7 +20,6 @@ assert.equal(run('9 = 3'), '3', 'typing after = starts a new number');
 assert.equal(run('1 2 3 4 5 6 7 8 9 0 1 2 3'), '123456789012', '12 digit cap');
 assert.equal(fmt(1 / 3), '0.333333333333');
 
-assert.equal(convert('c-f', 180), 356);
 assert.equal(convert('f-c', 356), 180);
 assert.equal(convert('cup-ml', 1), 236.59);
 assert.equal(convert('x0.5', 250), 125);

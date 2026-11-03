@@ -1,7 +1,7 @@
 // Ambient (idle photo frame) and Night (dim red clock) overlays.
 (function () {
   'use strict';
-  var D = window.DATA, $ = App.$;
+  var $ = App.$;
   var amb = { show: null }, shiftTimer = null;
 
   function ambientInfo() {
@@ -11,15 +11,13 @@
       '<div class="amb-right">' +
       '<div class="amb-wx">' + App.icon(w.cond, 44) + '<span class="num">' + w.temp + '°</span><small>' + w.summary + '</small></div>' +
       (next ? '<div class="amb-next" style="' + App.pstyle(App.evColor(next)) + '"><i></i>' + App.esc(next.title) + ' · ' + App.fmt.time(next.start) + '</div>' : '') +
-      '<div class="amb-who">' + D.people.map(function (p) { return App.avatar(p, 34, p.home ? '' : 'avatar--away'); }).join('') + '</div>' +
       '</div>';
   }
   function nightInfo() {
     var n = App.now(), tomorrow = App.addDays(n, n.getHours() < 6 ? 0 : 1);
     var first = App.timedOn(tomorrow)[0], w = App.weatherNow();
     return '<div class="nt-time num">' + App.fmt.time(n, false) + '</div>' +
-      '<div class="nt-line">' + App.icon(w.cond, 26) + ' ' + w.temp + '° · ' + (first ? 'First up ' + App.fmt.rel(first.start).toLowerCase() + ': <b>' + App.esc(first.title) + '</b> ' + App.fmt.time(first.start) + ' · ' + App.person(first.people[0]).name : 'Nothing early tomorrow') + '</div>' +
-      '<div class="nt-lock">' + App.icon('lock', 20) + ' House locked · alarm armed</div>';
+      '<div class="nt-line">' + App.icon(w.cond, 26) + ' ' + w.temp + '° · ' + (first ? 'First up ' + App.fmt.rel(first.start).toLowerCase() + ': <b>' + App.esc(first.title) + '</b> ' + App.fmt.time(first.start) + ' · ' + App.person(first.people[0]).name : 'Nothing early tomorrow') + '</div>';
   }
 
   function paint() {

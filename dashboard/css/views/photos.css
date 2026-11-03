@@ -28,7 +28,7 @@
 }
 .cap { position: absolute; left: 44px; bottom: 40px; z-index: 2; color: #fff; max-width: 70%; opacity: .92; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }
 .cap-kicker { font-variant-numeric: tabular-nums; font-size: var(--fs-min); font-weight: 400; }
-.cap-kicker b { color: var(--accent); font-weight: 400; }
+.cap-kicker b { font-weight: 700; }
 .cap-date { font-size: 88px; line-height: .95; margin-top: 8px; }
 .cap--m .cap-date { font-size: 60px; }
 

@@ -29,19 +29,20 @@ import { withExpiry, daysLeft } from '../../calc.js';
 
   function listHTML() {
     if (!D.fridge.length) return '<div class="s-empty serif">Fridge is empty.<br><i>Tap what’s in it on the right.</i></div>';
-    var order = ['Use soon'].concat(D.catOrder.all, ['Other']);
+    // A shopping list is sorted by aisle; a fridge by what goes off first. "Use first" leads as its own shelf.
+    var order = ['Use first'].concat(D.catOrder.all, ['Other']);
     var key = function (f) { var d = left(f); return d === null ? 999 : d; };
-    return order.map(function (cat) {
-      var items = D.fridge.filter(function (f) { return (soon(f) ? 'Use soon' : f.cat) === cat; })
+    return order.map(function (cat, i) {
+      var items = D.fridge.filter(function (f) { return (soon(f) ? 'Use first' : f.cat) === cat; })
         .sort(function (a, b) { return key(a) - key(b); });
-      return items.length ? '<div class="s-cat"><div class="s-cat-h"><span class="label">' + cat + '</span><span class="label">' + items.length + '</span></div>' + items.map(row).join('') + '</div>' : '';
+      return items.length ? '<div class="s-cat' + (i ? '' : ' f-first') + '"><div class="s-cat-h"><span class="label">' + cat + '</span><span class="label">' + items.length + '</span></div>' + items.map(row).join('') + '</div>' : '';
     }).join('');
   }
 
   function tile(name) {
     var on = find(name);
     return '<button class="s-tile' + (on ? ' is-on' : '') + '" data-add="' + App.esc(name) + '">' +
-      '<b>' + App.esc(name) + '</b><span>' + (on ? App.icon('check', 16) + 'In fridge' + (on.qty > 1 ? ' ×' + on.qty : '') : App.categorize(name)) + '</span></button>';
+      '<b>' + App.esc(name) + '</b><span>' + (on ? App.icon('check', 16) + 'In fridge' + (on.qty > 1 ? ' ×' + on.qty : '') : App.icon('plus', 16) + 'Put in') + '</span></button>';
   }
   function suggestHTML() {
     var q = V.query.trim().toLowerCase();
@@ -58,7 +59,7 @@ import { withExpiry, daysLeft } from '../../calc.js';
   function paintSuggest() { V.el.querySelector('.s-suggest').innerHTML = suggestHTML(); }
   function paintHead() {
     var n = D.fridge.filter(soon).length;
-    V.el.querySelector('.s-count').innerHTML = '<span class="num">' + D.fridge.length + '</span> ' + (D.fridge.length === 1 ? 'item' : 'items') + (n ? ' · <span class="num">' + n + '</span> to use soon' : '');
+    V.el.querySelector('.s-count').innerHTML = '<span class="num">' + D.fridge.length + '</span> ' + (D.fridge.length === 1 ? 'item' : 'items') + (n ? ' · <span class="num">' + n + '</span> to use first' : '');
   }
   function render() {
     V.el.innerHTML = '<div class="shop">' +

@@ -108,7 +108,7 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 }
 .avatar--away { background: transparent; color: var(--c); box-shadow: inset 0 0 0 3px var(--c); }
 .dots { display: inline-flex; gap: 4px; align-items: center; }
-.dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--card); }
+.dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--card); display: inline-grid; place-items: center; color: var(--c-ink); font-style: normal; font-weight: 900; font-stretch: 70%; line-height: 1; }
 
 .btn {
   min-height: var(--tap); padding: 0 28px;
@@ -194,7 +194,7 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   font-size: var(--fs-body); font-weight: 800; font-stretch: 75%; letter-spacing: .08em; text-transform: uppercase;
 }
 .toast-undo:active { background: rgb(var(--ov) / .2); }
-.toast:not(:has(.toast-undo)) { padding-right: 28px; }
+.toast--plain { padding-right: 28px; } /* no action button (app.js); :has() isn't in WebView 106 */
 
 /* ---------------------------------------------------------------- sheets */
 .sheet-layer { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; pointer-events: none; }

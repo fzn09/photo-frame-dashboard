@@ -71,12 +71,14 @@ import { daysLeft } from '../../calc.js';
       ? '<div class="h-hero-count num"><em>in</em>' + Math.round(mins) + '<small>min</small></div>'
       : '<div class="h-hero-count num"><em>at</em>' + App.fmt.time(e.start, false) + '<small>' + App.fmt.ampm(e.start) + '</small></div>';
     var leavePill = '';
+    // the card warms to orange only when it is time-critical: leave within 15 min, or starting within 15
+    var soon = e.travel ? leave <= 15 : mins <= 15;
     if (e.travel) {
       leavePill = leave <= 0
         ? '<span class="pill pill--alert"><i class="pulse"></i>Leave now</span>'
         : '<span class="pill' + (leave <= 15 ? ' pill--soon' : '') + '">' + App.icon('car', 20) + 'Leave in ' + App.fmt.mins(leave) + '</span>';
     }
-    return '<button class="h-hero" style="' + App.pstyle(p) + '" data-ev="' + e.id + '">' + ageTag('calendar') +
+    return '<button class="h-hero' + (soon ? ' is-soon' : '') + '" style="' + App.pstyle(p) + '" data-ev="' + e.id + '">' + ageTag('calendar') +
       '<div class="h-hero-main">' +
       '  <div class="label label--on">Next up · ' + App.esc(whoText) + '</div>' +
       '  <div class="h-hero-title serif">' + App.esc(e.title) + '</div>' +
@@ -85,27 +87,31 @@ import { daysLeft } from '../../calc.js';
       '</div>' + big + '</button>';
   }
 
-  // Events everyone is in show once, above the columns (two dots); each column keeps only that person's own.
+  // Events everyone is in show once, above the columns (initials); each column keeps only that person's own.
+  // The Next up card's event is left out: it is already the biggest thing on the screen.
   function lanes() {
-    var now = App.now();
-    var live = function (pid) { return App.timedOn(now, pid).filter(function (e) { return e.end > now; }); };
-    var row = function (e, shared) {
-      var cur = e.start <= now;
-      return '<button class="h-ev' + (cur ? ' is-now' : '') + '" data-ev="' + e.id + '">' +
+    var now = App.now(), hero = App.nextEvent();
+    var live = function (pid) { return App.timedOn(now, pid).filter(function (e) { return e.end > now && !(hero && e.id === hero.id); }); };
+    var row = function (e, shared, tmrw) {
+      var cur = !tmrw && e.start <= now;
+      return '<button class="h-ev' + (cur ? ' is-now' : '') + (tmrw ? ' h-ev--tmrw' : '') + '" data-ev="' + e.id + '">' +
         '<span class="h-ev-t">' + (cur ? 'Now' : App.fmt.time(e.start, false)) + '</span>' +
-        '<span class="h-ev-n">' + App.esc(e.title) + '</span>' + (shared ? App.dots(e.people, 12) : '') + '</button>';
+        '<span class="h-ev-n">' + (tmrw ? '<small>Tomorrow</small>' : '') + App.esc(e.title) + '</span>' + (shared ? App.dots(e.people, 24) : '') + '</button>';
     };
-    var all = live().filter(App.isFamily), together = all.slice(0, 2), cap = together.length ? 1 : 3;
+    // 48px rows in a 220px card: one shared row leaves room for 2 own rows, none leaves room for 3.
+    // "+N more" sits in the lane head (no row of its own) and counts what is left of that person's day, shared or not.
+    var all = live().filter(App.isFamily), together = all.slice(0, 1), cap = together.length ? 2 : 3;
     return ageTag('calendar') +
-      (together.length ? '<div class="h-together">' + together.map(function (e) { return row(e, true); }).join('') + '</div>' : '') +
+      (together.length ? '<div class="h-together">' + row(together[0], true) + '</div>' : '') +
       D.people.map(function (p) {
         var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
         var shown = list.slice(0, cap), more = list.length - shown.length + all.length - together.length;
+        var first = !shown.length && App.timedOn(App.addDays(now, 1), p.id)[0];
         return '<div class="h-lane" style="' + App.pstyle(p) + '">' +
-          '<div class="h-lane-head">' + App.avatar(p, 30) + '<b>' + p.name + '</b></div>' +
+          '<div class="h-lane-head"><b>' + p.name + '</b>' +
+          (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more</button>' : '') + '</div>' +
           (shown.length ? shown.map(function (e) { return row(e); }).join('') :
-            '<div class="h-free serif">' + (together.length ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
-          (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more</button>' : '') +
+            '<div class="h-free serif"><i>Free</i> the rest of today</div>' + (first ? row(first, false, true) : '')) +
           '</div>';
       }).join('');
   }
@@ -137,7 +143,7 @@ import { daysLeft } from '../../calc.js';
     return '<div class="label">Chores</div>' +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>' + (open.length ? 'to do today' : 'all done today') + '</small></div>' +
       '<ul class="h-recent">' + open.slice(0, 3).map(function (c) {
-        return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i>' + App.esc(c.title) +
+        return '<li>' + App.dots([c.who], 22) + App.esc(c.title) +
           (c.overdue ? '<span class="h-exp is-due">Overdue</span>' : c.time ? '<span class="h-exp">' + App.esc(c.time) + '</span>' : '') + '</li>';
       }).join('') + '</ul>';
   }
@@ -256,7 +262,11 @@ import { daysLeft } from '../../calc.js';
     V.el.querySelector('.h-clock').innerHTML = clock();
     V.el.querySelector('.h-hero-slot').innerHTML = hero();
     V.el.querySelector('.h-transit').innerHTML = transit();
-    if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
+    // lanes leave out the Next up event, so they follow it when it changes
+    var next = App.nextEvent(), id = next && next.id;
+    if (n.getMinutes() === 0 || id !== V.heroId) V.el.querySelector('.h-lanes').innerHTML = lanes();
+    V.heroId = id;
+    if (n.getMinutes() === 0) V.el.querySelector('.h-weather').innerHTML = weather();
     ages();
   });
   App.on('data', function () { if (App.current === 'home') paint(); });

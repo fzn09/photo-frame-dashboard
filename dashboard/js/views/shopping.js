@@ -116,7 +116,7 @@
   }
   function render() {
     V.el.innerHTML = '<div class="shop">' +
-      '<header class="s-head"><div><div class="label">Shared list</div><h1 class="serif">Groceries</h1></div><div class="s-count"></div></header>' +
+      '<header class="s-head"><div><div class="label">Shared list</div><h1 class="serif">Shopping</h1></div><div class="s-count"></div></header>' +
       '<div class="s-list"></div>' +
       '<aside class="s-side">' +
       '  <div class="s-add">' +

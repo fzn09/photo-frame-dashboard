@@ -79,9 +79,12 @@
 .h-hero {
   display: flex; flex-direction: column; justify-content: space-between; gap: 4px; width: 100%;
   padding: 14px 20px; border-radius: var(--r); overflow: hidden; position: relative; color: var(--hero-ink);
-  background: linear-gradient(160deg, var(--hero-a) 30%, var(--hero-b));
-  box-shadow: inset 0 0 0 1px var(--mod-line);
+  background: var(--mod);
+  box-shadow: inset 0 0 0 1px var(--mod-line), var(--card-shadow);
 }
+/* calm by default; orange only when it is time to go (home.js: is-soon), so "Leave now" is the loudest thing on the wall */
+.h-hero:not(.is-soon) { --hero-ink: var(--ink); --hero-ink-2: var(--ink-2); }
+.h-hero.is-soon { background: linear-gradient(160deg, var(--hero-a) 30%, var(--hero-b)); box-shadow: inset 0 0 0 1px var(--mod-line); }
 .h-hero-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .h-hero .label--on { color: var(--hero-ink-2); opacity: 1; }
 .h-hero .serif i { color: var(--hero-ink); }
@@ -90,6 +93,9 @@
 .h-hero-meta { font-size: var(--fs-body); color: var(--hero-ink-2); }
 .h-hero-foot { display: flex; align-items: center; gap: 14px; margin-top: 2px; }
 .h-hero-foot .dots i { box-shadow: 0 0 0 2px var(--paper); }
+/* leave-by is the most actionable line on the wall: sized to read from the kitchen, not as a mono tag */
+.h-hero .pill { height: 52px; padding: 0 20px; font-family: var(--sans); font-size: var(--fs-m); font-weight: 600; }
+.h-hero .pill .i { width: 24px; height: 24px; }
 .h-hero-count { font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 8px; margin-top: auto; font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: 80px; line-height: .85; letter-spacing: 0; }
 .h-hero-count em, .h-hero-count small { font-family: var(--sans); font-style: normal; font-size: 26px; font-weight: 500; letter-spacing: 0; }
 .h-hero--empty { justify-content: center; }
@@ -102,18 +108,22 @@
 .h-lane { display: flex; flex-direction: column; min-width: 0; }
 .h-lane-head { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--c); }
 .h-lane-head::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
-.h-lane-head .avatar { display: none; }
 .h-lane-head b { font-family: var(--serif); font-weight: 400; font-size: var(--fs-l); line-height: 1; }
-.h-ev { display: flex; align-items: baseline; gap: 12px; width: 100%; min-width: 0; padding: 6.5px 0; border-bottom: 1px solid var(--line); text-align: left; } /* 44px tap row */
+/* 48px tap rows (wet fingers). Budget in home.js lanes(): 220px of card holds head + 3 rows, or shared row + head + 2 */
+.h-ev { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; min-height: 48px; border-bottom: 1px solid var(--line); text-align: left; }
 .h-together { grid-column: 1 / -1; margin-bottom: 10px; }
-.h-together .h-ev:first-child { padding-top: 0; }
-.h-ev .dots { flex: none; align-self: center; }
+.h-together .h-ev { margin-top: -8px; }
+.h-ev .dots { flex: none; }
 .h-ev .dots i { box-shadow: 0 0 0 2px var(--paper); }
 .h-ev-t { min-width: 58px; flex: none; font-size: 20px; font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .h-ev-n { flex: 1; min-width: 0; font-size: 26px; font-weight: 500; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-ev-n small { font-family: var(--serif); font-style: italic; font-size: 24px; font-weight: 400; color: var(--ink-2); margin-right: 8px; }
 .h-ev.is-now .h-ev-t { color: var(--accent); }
+.h-ev--tmrw { border-bottom: 0; }
+.h-ev--tmrw .h-ev-n { color: var(--ink-2); }
 .h-free { font-family: var(--serif); font-size: 26px; color: var(--ink-2); padding-top: 12px; line-height: 1.1; }
-.h-more { min-height: 36px; font-size: var(--fs-body); font-weight: 600; color: var(--accent); text-align: left; }
+/* in the lane head, so it costs no row height; negative margin keeps the head 44px while the target is 48 */
+.h-more { margin: -10px -6px -10px auto; min-height: 48px; padding: 0 6px; font-size: var(--fs-body); font-weight: 600; color: var(--ink-2); }
 
 /* ---- shopping + fridge: count, then the list */
 .h-stat { display: flex; align-items: baseline; gap: 10px; }
@@ -134,8 +144,8 @@
 /* nothing to buy and nothing in the fridge: two short cards, wider photo */
 .stage:not([data-off~="photos"]) .home[data-lean] .h-photo { flex-grow: 2; }
 .h-exp { margin-left: auto; padding-left: 8px; font-size: var(--fs-min); font-weight: 500; color: var(--mute); }
-.h-exp.is-due { color: var(--accent); }
-.h-recent .h-who { width: 10px; height: 10px; background: var(--c); }
+.h-exp.is-due { font-size: var(--fs-body); font-weight: 700; color: var(--accent); }
+.h-recent .dots { flex: none; }
 
 /* ---- photo */
 .h-photo { position: relative; display: block; width: 100%; border-radius: var(--r); overflow: hidden; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--mod-line); }

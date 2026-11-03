@@ -104,8 +104,13 @@
     size = size || 48;
     return '<span class="avatar ' + (cls || '') + '" style="' + App.pstyle(p) + ';width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.46) + 'px">' + (p.id === 'family' ? '★' : p.name[0]) + '</span>';
   };
+  // 20px and up carry the initial, so whose it is never rests on colour alone
   App.dots = function (ids, size) {
-    return '<span class="dots">' + ids.map(function (id) { return '<i style="' + App.pstyle(id) + (size ? ';width:' + size + 'px;height:' + size + 'px' : '') + '"></i>'; }).join('') + '</span>';
+    return '<span class="dots">' + ids.map(function (id) {
+      var p = App.person(id), big = size >= 20;
+      return '<i style="' + App.pstyle(p) + (size ? ';width:' + size + 'px;height:' + size + 'px' : '') + (big ? ';font-size:' + Math.round(size * .5) + 'px' : '') + '">' +
+        (big ? (p.id === 'family' ? '★' : p.name[0]) : '') + '</i>';
+    }).join('') + '</span>';
   };
 
   // ------------------------------------------------------------ calendar helpers
@@ -231,7 +236,7 @@
     var ms = opts.ms || 5000;
     var act = opts.action || (opts.undo && { label: App.icon('undo', 22) + 'Undo', fn: opts.undo });
     var t = document.createElement('div');
-    t.className = 'toast' + (opts.tone ? ' toast--' + opts.tone : '');
+    t.className = 'toast' + (opts.tone ? ' toast--' + opts.tone : '') + (act ? '' : ' toast--plain');
     t.style.setProperty('--ms', ms + 'ms');
     t.innerHTML = (opts.icon ? App.icon(opts.icon, 26) : '') + '<span class="toast-msg">' + html + '</span>' +
       (act ? '<button class="toast-undo">' + act.label + '</button>' : '');
@@ -302,9 +307,12 @@
   var idleSec = 0;
   function onIdleTick() {
     idleSec++;
-    var blocked = $('#takeover').classList.contains('is-open');
+    // a view can hold the screen (Kitchen while a timer counts down)
+    var blocked = $('#takeover').classList.contains('is-open') || (App.idleHold && App.idleHold());
     if (App.mode !== 'day' || blocked) return;
-    if (idleSec === App.idle.home && App.current !== 'home') { App.closeSheet(); App.go('home'); }
+    // an open sheet stays up past the 60 s jump home; ambient still takes over at 120 s
+    var sheet = $('#sheetLayer').classList.contains('is-open');
+    if (idleSec === App.idle.home && App.current !== 'home' && !sheet) App.go('home');
     if (idleSec >= App.idle.ambient) {
       App.closeSheet();
       App.go('home');

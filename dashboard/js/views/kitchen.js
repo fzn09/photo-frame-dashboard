@@ -1,4 +1,4 @@
-// Kitchen: pocket calculator (left), conversions of the number on screen + countdown timers (right).
+// Kitchen: pocket calculator (left), countdown timers then conversions of the number on screen (right).
 // Works offline: no fetches. Timers tick off App's 'second' event and live here, so they keep running
 // on other views; a finished one wakes the screen, jumps here and beeps every 5 s for a minute.
 import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
@@ -18,6 +18,9 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
     V.el.querySelector('.k-display').textContent = S.display;
     V.el.querySelector('.k-line').textContent = S.op ? fmt(S.acc) + ' ' + OPS[S.op] : V.line;
     App.$$('[data-key]', V.el).forEach(function (b) { b.classList.toggle('is-op', S.fresh && S.op === b.dataset.key); });
+    // the custom chip names the timer it would start: whatever number is on the calculator
+    var x = +S.display, ok = x > 0 && x <= 600;
+    V.el.querySelector('.k-chip--screen span').textContent = ok ? fmt(x) + ' min' : 'Key in min';
   }
   function conv(id) {
     var x = +S.display, c = CONV[id];
@@ -113,13 +116,14 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
           '" data-key="' + k[0] + '">' + (k[1] || k[0]) + '</button>';
       }).join('') + '</div>' +
       '</section>' +
+      // timers first: they are what gets used with flour on your hands; conversions are an occasional tool
       '<section class="k-side">' +
-      '  <div class="label">Convert the number on screen</div>' +
-      '  <div class="k-conv">' + Object.keys(CONV).map(function (id) { return '<button class="k-chip" data-conv="' + id + '">' + CONV[id][0] + '</button>'; }).join('') + '</div>' +
       '  <div class="label">Timers</div>' +
       '  <div class="k-presets">' + PRESETS.map(function (m) { return '<button class="k-chip" data-preset="' + m + '">' + m + ' min</button>'; }).join('') +
-      '    <button class="k-chip k-chip--screen" data-preset="screen">' + App.icon('clock', 20) + ' Screen min</button></div>' +
+      '    <button class="k-chip k-chip--screen" data-preset="screen">' + App.icon('clock', 20) + '<span></span></button></div>' +
       '  <div class="k-timers"></div>' +
+      '  <div class="label">Convert the number on the calculator</div>' +
+      '  <div class="k-conv">' + Object.keys(CONV).map(function (id) { return '<button class="k-chip" data-conv="' + id + '">' + CONV[id][0] + '</button>'; }).join('') + '</div>' +
       '</section></div>';
     paintCalc();
     paintTimers();
@@ -141,6 +145,12 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
       paintTimers();
     }
   }
+
+  // A countdown on screen holds off idle (home jump and ambient) so it stays readable across the room,
+  // but only in its last 30 min: a long roast must not hold a static bright screen for hours (burn-in).
+  App.idleHold = function () {
+    return App.current === 'kitchen' && T.some(function (t) { return !t.done && t.end - Date.now() < 30 * 60000; });
+  };
 
   App.register('kitchen', {
     show: function (el) {
