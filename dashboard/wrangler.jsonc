@@ -19,6 +19,8 @@
     "BVG_STOP_ID": "900110001",
     // Display name shown in the transit widget
     "BVG_STOP_NAME": "S+U Schönhauser Allee",
+    // Minutes to walk to the stop; departures leaving sooner are hidden
+    "BVG_WALK_MIN": "10",
     // Views the frame shows (rail order). Valid: home, calendar, tasks, shopping, fridge, kitchen, photos, control, agents.
     // "home" is always on. Unknown names are ignored. Change + redeploy; the frame picks it up within ~5 min.
     "VIEWS": "home,calendar,shopping,fridge,kitchen,photos",

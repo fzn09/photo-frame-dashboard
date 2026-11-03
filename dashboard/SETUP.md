@@ -245,6 +245,7 @@ Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off
 | `WEATHER_TZ` | `wrangler.jsonc` vars | IANA timezone |
 | `BVG_STOP_ID` | `wrangler.jsonc` vars | BVG stop ID |
 | `BVG_STOP_NAME` | `wrangler.jsonc` vars | Stop display name |
+| `BVG_WALK_MIN` | `wrangler.jsonc` vars | Walk time to the stop; earlier departures are hidden |
 | `GOOGLE_SERVICE_EMAIL` | secret | Service account email |
 | `GOOGLE_SERVICE_KEY` | secret | Service account PEM private key |
 | `CAL_ALEX` | secret | Google Calendar ID for Fauzan |

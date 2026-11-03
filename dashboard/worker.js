@@ -332,10 +332,12 @@ async function handleTransit(env) {
   const stopId = env.BVG_STOP_ID;
   if (!stopId) return new Response(JSON.stringify({ stop: '', departures: [] }), { status: 503, headers: JSON_CORS });
 
-  const res  = await fetch(`https://v6.bvg.transport.rest/stops/${stopId}/departures?results=6&duration=45`);
+  // Skip departures that leave before you could walk to the stop
+  const when = new Date(Date.now() + (+env.BVG_WALK_MIN || 0) * 60e3).toISOString();
+  const res  = await fetch(`https://v6.bvg.transport.rest/stops/${stopId}/departures?results=6&duration=45&when=${when}`);
   const data = await res.json();
 
-  const departures = (data.departures || []).map(d => ({
+  const departures = (data.departures || []).slice(0, 6).map(d => ({
     line:      d.line?.name      || '?',
     direction: d.direction       || '?',
     when:      d.when,
