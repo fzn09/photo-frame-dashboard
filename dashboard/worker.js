@@ -352,19 +352,21 @@ async function handleTransit(env) {
 // ---- Unsplash stock photos for the slideshow (key stays here) --------------
 
 async function handlePhotos(env) {
+  // /photos/random returns a new set on every call. Search and the editorial feed return the same
+  // top 30 each time, so the slideshow never saw new photos. Orientation is not filtered here:
+  // the frame keeps portraits for pair/polaroid layouts and picks landscape for cover slides.
   const q = env.PHOTO_QUERY;
-  const api = q
-    ? 'https://api.unsplash.com/search/photos?per_page=30&query=' + encodeURIComponent(q)
-    : 'https://api.unsplash.com/photos?per_page=30';
+  const api = 'https://api.unsplash.com/photos/random?count=30' + (q ? '&query=' + encodeURIComponent(q) : '');
   const r = await fetch(api, { headers: { Authorization: 'Client-ID ' + (env.UNSPLASH_KEY || '') } });
   if (!r.ok) throw new Error('Unsplash ' + r.status);
   const body = await r.json();
-  const out = (body.results || body).map(p => ({
+  const out = (Array.isArray(body) ? body : [body]).map(p => ({
     id: p.id,
     o: p.height > p.width ? 'p' : 'l',
     url: p.urls.raw,
     photographer: p.user.name,
     alt: p.alt_description || ''
   }));
-  return new Response(JSON.stringify(out), { headers: { ...JSON_CORS, 'Cache-Control': 'max-age=3600' } });
+  // Short cache: the frame refetches hourly and a 3600 s cache could serve it the previous set.
+  return new Response(JSON.stringify(out), { headers: { ...JSON_CORS, 'Cache-Control': 'max-age=600' } });
 }
