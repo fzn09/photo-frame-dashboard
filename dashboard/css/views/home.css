@@ -1,5 +1,5 @@
 /* Home / Today. 12-column grid in the 1156 x 752 content box, never scrolls.
-   Row 1: clock | weather | transit. Row 2: next up | people. Row 3: shopping | fridge | photo.
+   Row 1: clock | weather | transit. Row 2: next up | people. Row 3: shopping | fridge | chores | photo.
    Every module except the clock and photo is a .card (same padding, radius and label). */
 .home {
   height: 100%;
@@ -10,28 +10,16 @@
   grid-template-areas:
     "clock clock clock clock weather weather weather weather weather transit transit transit"
     "hero  hero  hero  hero  hero    lanes   lanes   lanes   lanes   lanes   lanes   lanes"
-    "shop  shop  shop  shop  fridge  fridge  fridge  fridge  photo   photo   photo   photo";
+    "row   row   row   row   row     row     row     row     row     row     row     row";
 }
 .h-clock { grid-area: clock; } .h-weather { grid-area: weather; } .h-transit { grid-area: transit; }
 .h-hero-slot { grid-area: hero; } .h-lanes { grid-area: lanes; }
-.h-shop { grid-area: shop; } .h-fridge { grid-area: fridge; } .h-photo { grid-area: photo; }
-.home > * { min-width: 0; min-height: 0; overflow: hidden; }
-.home > .card { display: flex; flex-direction: column; gap: 10px; }
-
-/* views switched off in VIEWS (data-off is set by App.setViews): the neighbours take the space */
-.stage[data-off~="photos"] .h-photo, .stage[data-off~="fridge"] .h-fridge { display: none; }
-.stage[data-off~="photos"] .home { grid-template-areas:
-  "clock clock clock clock weather weather weather weather weather transit transit transit"
-  "hero  hero  hero  hero  hero    lanes   lanes   lanes   lanes   lanes   lanes   lanes"
-  "shop  shop  shop  shop  shop    shop    fridge  fridge  fridge  fridge  fridge  fridge"; }
-.stage[data-off~="fridge"] .home { grid-template-areas:
-  "clock clock clock clock weather weather weather weather weather transit transit transit"
-  "hero  hero  hero  hero  hero    lanes   lanes   lanes   lanes   lanes   lanes   lanes"
-  "shop  shop  shop  shop  shop    shop    shop    shop    photo   photo   photo   photo"; }
-.stage[data-off~="photos"][data-off~="fridge"] .home { grid-template-areas:
-  "clock clock clock clock weather weather weather weather weather transit transit transit"
-  "hero  hero  hero  hero  hero    lanes   lanes   lanes   lanes   lanes   lanes   lanes"
-  "shop  shop  shop  shop  shop    shop    shop    shop    shop    shop    shop    shop"; }
+/* bottom row: equal columns. A view switched off in VIEWS (data-off, set by App.setViews) drops out and the rest widen */
+.h-row { grid-area: row; display: flex; gap: var(--gap); }
+.h-row > * { flex: 1 1 0; }
+.home > *, .h-row > * { min-width: 0; min-height: 0; overflow: hidden; }
+.home .card { display: flex; flex-direction: column; gap: 10px; }
+.stage[data-off~="photos"] .h-photo, .stage[data-off~="fridge"] .h-fridge, .stage[data-off~="tasks"] .h-chores { display: none; }
 
 /* ---- clock: no card, it is the anchor (168px serif, digits ~19 mm) */
 .h-clock { display: flex; flex-direction: column; justify-content: center; padding-left: 4px; }
@@ -127,6 +115,7 @@
 .h-recent i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
 .h-exp { margin-left: auto; padding-left: 8px; font-size: var(--fs-min); font-weight: 500; color: var(--mute); }
 .h-exp.is-due { color: var(--accent); }
+.h-recent .h-who { width: 10px; height: 10px; background: var(--c); }
 
 /* ---- photo */
 .h-photo { position: relative; display: block; width: 100%; border-radius: var(--r); overflow: hidden; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--mod-line); }

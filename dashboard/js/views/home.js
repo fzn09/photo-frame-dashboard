@@ -108,6 +108,19 @@ import { daysLeft } from '../../calc.js';
       }).join('') + '</ul>';
   }
 
+  // Open chores, overdue first then timed (same order as the Chores view). Dot = whose chore.
+  function chores() {
+    var open = D.chores.filter(function (c) { return !c.done; }).sort(function (a, b) {
+      return ((b.overdue ? 1 : 0) - (a.overdue ? 1 : 0)) || ((a.time ? 0 : 1) - (b.time ? 0 : 1));
+    });
+    return '<div class="label">Chores</div>' +
+      '<div class="h-stat"><span class="num">' + open.length + '</span><small>' + (open.length ? 'to do today' : 'all done today') + '</small></div>' +
+      '<ul class="h-recent">' + open.slice(0, 3).map(function (c) {
+        return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i>' + App.esc(c.title) +
+          (c.overdue ? '<span class="h-exp is-due">Overdue</span>' : c.time ? '<span class="h-exp">' + App.esc(c.time) + '</span>' : '') + '</li>';
+      }).join('') + '</ul>';
+  }
+
   function fridge() {
     var key = function (f) { var d = daysLeft(f.note, App.now()); return d === null ? 999 : d; };
     var next = D.fridge.slice().sort(function (a, b) { return key(a) - key(b); }).slice(0, 3);
@@ -171,6 +184,7 @@ import { daysLeft } from '../../calc.js';
     el.querySelector('.h-shop').innerHTML = shopping();
     el.querySelector('.h-transit').innerHTML = transit();
     if (App.enabled('fridge')) el.querySelector('.h-fridge').innerHTML = fridge();
+    if (App.enabled('tasks')) el.querySelector('.h-chores').innerHTML = chores();
   }
 
   function photoCaption(s) {
@@ -188,10 +202,12 @@ import { daysLeft } from '../../calc.js';
           '<div class="h-transit card"></div>' +
           '<div class="h-hero-slot"></div>' +
           '<div class="h-lanes card" style="grid-template-columns:repeat(' + D.people.length + ',1fr)"></div>' +
+          '<div class="h-row">' +
           '<div class="h-shop card" data-go="shopping"></div>' +
           '<div class="h-fridge card" data-go="fridge"></div>' +
+          '<div class="h-chores card" data-go="tasks"></div>' +
           '<button class="h-photo" data-go="photos"><div class="h-photo-stage"></div><div class="h-photo-cap"></div></button>' +
-          '</div>';
+          '</div></div>';
         el.addEventListener('click', function (e) {
           var ev = e.target.closest('[data-ev]');
           if (ev) { App.eventSheet(App.findEvent(ev.dataset.ev)); return; }
@@ -216,6 +232,7 @@ import { daysLeft } from '../../calc.js';
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
   App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) V.el.querySelector('.h-fridge').innerHTML = fridge(); });
+  App.on('chores', function () { if (App.current === 'home' && App.enabled('tasks')) V.el.querySelector('.h-chores').innerHTML = chores(); });
   App.on('views', function () {
     if (!V.el || !V.el.firstChild) return;
     paint();
