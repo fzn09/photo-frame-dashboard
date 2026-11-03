@@ -1,295 +1,463 @@
-# Live Data Setup
+# Dashboard setup
 
-This guide covers the one-time setup to connect the dashboard to live data.
-The dashboard runs on mock data without any of this — complete sections in any order.
+This guide takes the dashboard from sample data to live data on the frame. Do Part 1 first, because the
+deployed site does not open without `DASH_TOKEN`. The feeds in Part 2 are independent, so connect them in any
+order and skip the ones you don't need. A feed with no credentials keeps its sample data.
+
+**Contents**
+
+- [Part 1: Prepare](#part-1-prepare)
+  - [Step 1. Run it locally](#step-1-run-it-locally)
+  - [Step 2. Create the access token](#step-2-create-the-access-token)
+  - [Step 3. Create the local secrets file](#step-3-create-the-local-secrets-file)
+- [Part 2: Connect the feeds](#part-2-connect-the-feeds)
+  - [Weather](#weather)
+  - [BVG departures](#bvg-departures)
+  - [Google Calendar](#google-calendar)
+  - [Bring! shopping and fridge](#bring-shopping-and-fridge)
+  - [TickTick chores](#ticktick-chores)
+  - [Cookidoo meals](#cookidoo-meals)
+  - [Unsplash photos](#unsplash-photos)
+  - [Live cams](#live-cams)
+- [Part 3: Test and deploy](#part-3-test-and-deploy)
+  - [Step 4. Test locally](#step-4-test-locally)
+  - [Step 5. Add the secrets to Cloudflare](#step-5-add-the-secrets-to-cloudflare)
+  - [Step 6. Deploy](#step-6-deploy)
+- [Part 4: Set up the frame](#part-4-set-up-the-frame)
+  - [Step 7. Point the kiosk at your dashboard](#step-7-point-the-kiosk-at-your-dashboard)
+  - [Step 8. Set the frame's time zone](#step-8-set-the-frames-time-zone)
+  - [Step 9. Choose which views to show](#step-9-choose-which-views-to-show)
+- [Reference](#reference)
+  - [Configuration](#configuration)
+  - [What each feed needs](#what-each-feed-needs)
+  - [API routes](#api-routes)
+  - [Troubleshooting](#troubleshooting)
 
 ---
 
-## 1. Weather (Open-Meteo — nothing to install)
+## Part 1: Prepare
 
-Open-Meteo is completely free with no API key. The defaults in `wrangler.jsonc` are already set to Berlin.
-If your frame is elsewhere, update these three vars in `wrangler.jsonc`:
+### Step 1. Run it locally
 
-```jsonc
-"WEATHER_LAT": "52.52",   // your latitude
-"WEATHER_LON": "13.41",   // your longitude
-"WEATHER_TZ": "Europe/Berlin"  // IANA timezone, e.g. "America/New_York"
+```sh
+cd dashboard
+npm install
+npm run dev      # http://localhost:5173, sample data only
 ```
 
----
+`npm run dev` needs no credentials. Add `?demo` to the URL for the demo tools, or `?demo=0` to turn them off.
 
-## 2. BVG transit departures
+### Step 2. Create the access token
 
-Find your nearest stop ID:
+`DASH_TOKEN` does two jobs:
 
-1. Open `https://v6.bvg.transport.rest/locations?query=YourStopName` in a browser
-2. Copy the `id` of the result you want (e.g. `"900058101"`)
-3. Update `wrangler.jsonc`:
+- **It gates the whole site.** Without the secret, the deployed Worker answers 503 to everything. With it, every
+  page, asset and `/api/*` call needs the access cookie.
+- **It guards writes.** `POST` calls also need a matching `X-Dash-Token` header.
 
-```jsonc
-"BVG_STOP_ID": "900058101",
-"BVG_STOP_NAME": "Gleisdreieck"
-```
+1. Make a random token:
 
-No API key needed — BVG transport.rest is a public API.
+   ```sh
+   node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+   ```
 
----
+2. Put it in `dashboard/.env` (git-ignored), so the build can bake it into the page:
 
-## 3. Google Calendar (service account)
+   ```ini
+   VITE_DASH_TOKEN=<token>
+   ```
 
-### 3a. Create a service account
+3. Use the same value for `DASH_TOKEN` in Step 3 and Step 5.
 
-1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Create a new project (or select an existing one)
-3. Enable the **Google Calendar API** (APIs & Services → Library)
-4. Go to **IAM & Admin → Service Accounts → Create Service Account**
-5. Name it anything (e.g. `dashboard-reader`), click through without granting roles
-6. On the service account page, go to **Keys → Add Key → Create new key → JSON**
-7. Download the JSON file — keep it safe, never commit it
+### Step 3. Create the local secrets file
 
-### 3b. Share each calendar with the service account
-
-1. Open Google Calendar in a browser for each family member
-2. Settings → click the calendar → **Share with specific people**
-3. Add the `client_email` from the JSON file (looks like `dashboard-reader@project.iam.gserviceaccount.com`)
-4. Set permission to **See all event details**
-
-### 3c. Collect the values you'll need as secrets
-
-From the downloaded JSON file:
-- `client_email` → becomes `GOOGLE_SERVICE_EMAIL`
-- `private_key` (the full PEM block including `-----BEGIN PRIVATE KEY-----`) → becomes `GOOGLE_SERVICE_KEY`
-
-From each person's calendar settings page (Settings → the calendar → *Integrate calendar*), the **Calendar ID** (e.g. `alex@gmail.com` or a long `@group.calendar.google.com` address):
-- `CAL_ALEX` — Fauzan
-- `CAL_JORDAN` — Amanda (share her calendar with the service account too)
-
-The dashboard shows only these two people. The ids `alex`/`jordan` are internal and match `js/data.js`.
-
----
-
-## 4. Bring! shopping list
-
-Just your Bring! account credentials — no extra setup:
-- `BRING_EMAIL` — your Bring! login email
-- `BRING_PASSWORD` — your Bring! password
-
-The Worker fetches the first list in your account on every request.
-
----
-
-## 5. Create `.dev.vars` for local testing
-
-Create `dashboard/.dev.vars` (already in `.gitignore`):
+Create `dashboard/.dev.vars` (git-ignored). `npm run dev:live` reads it. Start with the token, and add a line for
+each feed you connect in Part 2:
 
 ```ini
+DASH_TOKEN=<token>
 GOOGLE_SERVICE_EMAIL=dashboard-reader@your-project.iam.gserviceaccount.com
-GOOGLE_SERVICE_KEY=-----BEGIN PRIVATE KEY-----
-MIIEvAIBADANBgkqh...
------END PRIVATE KEY-----
+GOOGLE_SERVICE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqh...\n-----END PRIVATE KEY-----\n"
 CAL_ALEX=fauzan@gmail.com
 CAL_JORDAN=amanda@gmail.com
 BRING_EMAIL=your@email.com
 BRING_PASSWORD=yourpassword
-DASH_TOKEN=<random string, see section 8>
+TICKTICK_TOKEN=<token>
+UNSPLASH_KEY=<access key>
 ```
 
-Put `GOOGLE_SERVICE_KEY` on one line with literal `\n` between the parts (as in the downloaded JSON). The Worker handles that.
-
-> **Note:** `WEATHER_*` and `BVG_*` values are plain vars in `wrangler.jsonc`, not secrets — no need to add them here.
+Keep `GOOGLE_SERVICE_KEY` on one line with literal `\n`, as in the downloaded JSON. Values such as `WEATHER_*` and
+`BVG_*` are plain vars in `wrangler.jsonc`, so they don't belong here.
 
 ---
 
-## 6. Test locally
+## Part 2: Connect the feeds
 
-```bash
-cd dashboard
-npm run dev:live
+### Weather
+
+**Needs:** nothing. Open-Meteo is free and has no API key.
+
+The defaults are set to Berlin. If the frame is elsewhere, edit these vars in `wrangler.jsonc`:
+
+```jsonc
+"WEATHER_LAT": "52.52",
+"WEATHER_LON": "13.41",
+"WEATHER_TZ": "Europe/Berlin"   // IANA name, e.g. "America/New_York"
 ```
 
-Open the dashboard and check the **Network tab** in DevTools. You should see four `/api/*` requests returning 200:
+The dashboard also uses the sunset from this feed to switch between the day and evening palettes.
 
-| Endpoint | Expected response |
+### BVG departures
+
+**Needs:** a stop ID. BVG transport.rest is public and has no API key.
+
+1. Open `https://v6.bvg.transport.rest/locations?query=YourStopName` in a browser.
+2. Copy the `id` of the stop you want.
+3. Update `wrangler.jsonc`:
+
+   ```jsonc
+   "BVG_STOP_ID": "900110001",
+   "BVG_STOP_NAME": "S+U Schönhauser Allee",
+   "BVG_WALK_MIN": "10"            // departures leaving sooner than this are hidden
+   ```
+
+### Google Calendar
+
+**Needs:** a Google service account and one calendar ID per person.
+
+1. **Create the service account.**
+   1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create or select a project.
+   2. Enable the **Google Calendar API** (APIs & Services → Library).
+   3. Go to **IAM & Admin → Service Accounts → Create Service Account**, name it (e.g. `dashboard-reader`) and
+      click through without granting roles.
+   4. On its page, go to **Keys → Add Key → Create new key → JSON** and download the file. Never commit it.
+2. **Share each calendar.** In Google Calendar, open Settings → the calendar → **Share with specific people**, add
+   the `client_email` from the JSON file, and choose **See all event details**. Do this for both people.
+3. **Collect the values.**
+
+   | Value | Comes from | Becomes |
+   |---|---|---|
+   | `client_email` | JSON file | `GOOGLE_SERVICE_EMAIL` |
+   | `private_key` (the full PEM block) | JSON file | `GOOGLE_SERVICE_KEY` |
+   | Fauzan's Calendar ID | Calendar settings → *Integrate calendar* | `CAL_ALEX` |
+   | Amanda's Calendar ID | Calendar settings → *Integrate calendar* | `CAL_JORDAN` |
+
+The ids `alex` and `jordan` are internal and match `js/data.js`.
+
+### Bring! shopping and fridge
+
+**Needs:** your Bring! email and password in `BRING_EMAIL` and `BRING_PASSWORD`.
+
+| View | List it uses | If that list is missing |
+|---|---|---|
+| Shopping | Named `home`, or set `BRING_LIST` | The first list in the account |
+| Fridge | Named `Fridge`, or set `BRING_FRIDGE_LIST` | Stays empty and writes nothing |
+
+Names match without regard to case. Checking off, adding and deleting items writes back to Bring!. Quantity is kept
+in the item note as `2× …`, and fridge expiry dates as `bis 3.11.`, so both read naturally in the Bring! app.
+
+### TickTick chores
+
+**Needs:** a TickTick Open API token in `TICKTICK_TOKEN`. Without it, the Chores view shows sample chores.
+
+The view reads a list named `Chores`, or the one set in `TICKTICK_PROJECT`.
+
+- **Who:** tag a task `Fauzan` or `Amanda`. Untagged tasks are for *Anyone*.
+- **What shows:** open tasks due today, overdue tasks and undated tasks, in one list.
+- **Ticking:** completes the task in TickTick 5 s later, after the Undo toast. Repeating tasks move to their next date.
+- **Quick-add tiles:** add a usual chore (`choreUsuals` in `js/data.js`) as an undated task tagged with the person.
+
+Get the token once, because the Open API has no app passwords:
+
+1. Go to <https://developer.ticktick.com/manage> → *New App* and set the redirect URL to `http://localhost:8080`.
+2. Open this URL with your client id, approve, and copy `code=` from the address bar. The page itself fails to load,
+   which is expected:
+
+   ```text
+   https://ticktick.com/oauth/authorize?scope=tasks:read%20tasks:write&client_id=<ID>&state=x&redirect_uri=http://localhost:8080&response_type=code
+   ```
+
+3. Exchange the code:
+
+   ```sh
+   curl -u <ID>:<SECRET> -d code=<CODE> -d grant_type=authorization_code -d "scope=tasks:read tasks:write" -d redirect_uri=http://localhost:8080 https://ticktick.com/oauth/token
+   ```
+
+4. Put `access_token` in `.dev.vars` as `TICKTICK_TOKEN`, and add it to Cloudflare in Step 5.
+
+The token lasts months, not forever (`expires_in` is in seconds). When chores fall back to sample data and
+`wrangler tail` shows `TickTick projects: 401`, repeat steps 2 to 4.
+
+### Cookidoo meals
+
+**Needs:** a refresh token stored once in Workers KV. Your Cookidoo password stays on your PC: the Worker never logs
+in, it only refreshes the token.
+
+The Cookidoo API is unofficial, reverse-engineered by
+[miaucl/cookidoo-api](https://github.com/miaucl/cookidoo-api), and can change without notice.
+
+**What it powers**
+
+| Where | What shows |
 |---|---|
-| `/api/weather` | `{ hi, lo, t, c, p }` |
-| `/api/calendar` | array of event objects |
-| `/api/shopping` | array of `{ name, note }` items |
-| `/api/transit` | `{ stop, departures: [...] }` |
+| Meals view | The week as day tiles, the chosen day's recipes, and "Thermomix · paired" |
+| Recipe sheet | Ingredients, steps with Thermomix settings, times, level, servings, energy and compatible models |
+| Today | A shared band of today's meals above the two people |
+| Calendar | Meals with the all-day items in Today, 3 Day and Week |
 
-If an endpoint returns 503, the required secret or var is missing. If it returns a non-JSON error, check the Worker logs in the terminal running `wrangler dev`.
+**What Cookidoo cannot provide**
 
----
+- **Live Thermomix status.** Cook state has no endpoint. It reaches the phone app as a push message, so the dashboard
+  shows only the paired model. Vorwerk describes remote monitoring as a TM7 feature, and showing it here would need
+  an always-on listener outside the Worker.
+- **A meal time.** The plan stores recipes per day, with no lunch or dinner slot, time or servings, so nothing on the
+  dashboard implies a time.
+- **Next week.** `/api/meals` returns the week containing today, Monday to Sunday.
 
-## 7. Deploy to Cloudflare
+**Set it up**
 
-### 7a. Push secrets
-
-Run once per secret (replace the value when prompted):
-
-```bash
-wrangler secret put GOOGLE_SERVICE_EMAIL
-wrangler secret put GOOGLE_SERVICE_KEY
-wrangler secret put CAL_ALEX
-wrangler secret put CAL_JORDAN
-wrangler secret put BRING_EMAIL
-wrangler secret put BRING_PASSWORD
-wrangler secret put DASH_TOKEN
-```
-
-`DASH_TOKEN` must be the same value you put in `dashboard/.env` as `VITE_DASH_TOKEN` **before** `npm run deploy` (it is baked into the build).
-
-### 7b. Deploy
-
-```bash
-npm run deploy
-```
-
-Confirm the live URL shows real calendar events, current weather, your Bring! list, and live BVG departures.
-
----
-
----
-
-## 8. Write access (DASH_TOKEN): shopping
-
-Checking off, adding and deleting items on the Shopping view is written back to Bring! through
-`POST /api/shopping`. Writes need the
-`X-Dash-Token` header to equal the `DASH_TOKEN` secret. Without it they answer 503/401 and the
-dashboard just keeps its local state.
-
-1. Make a random token: `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`
-2. `dashboard/.dev.vars`: `DASH_TOKEN=<token>`  ·  `dashboard/.env` (gitignored): `VITE_DASH_TOKEN=<token>`
-3. Deploy: `wrangler secret put DASH_TOKEN` (same value), then `npm run build` + deploy.
-
-The token ships inside the page JavaScript, so it stops casual misuse only. Keep the Worker URL private.
-Which Bring! list is used: the one named `home`, else the first; override with a `BRING_LIST` var.
-Quantity is stored in the Bring! item note as `2× …`.
-
-The Fridge view (`fridge` in `VIEWS`) uses a second Bring! list through `/api/fridge`: create a list
-named `Fridge` in the Bring! app (override the name with a `BRING_FRIDGE_LIST` var). There is no
-fallback list, so without it the view stays empty and nothing is written. Expiry dates are kept in the
-item note as `bis 3.11.`, so they read naturally in the Bring! app too.
-
-### Chores (TickTick)
-
-The Chores view (`tasks` in `VIEWS`) reads a TickTick list named `Chores` (override with a
-`TICKTICK_PROJECT` var) through TickTick's free Open API. Without a token it shows sample chores.
-
-- **Who:** tag a task `Fauzan` or `Amanda`; untagged tasks are for *Anyone*.
-- Shown as one list: open tasks due today, overdue ones, and undated ones.
-- Ticking one completes it in TickTick 5 s later (after the Undo toast); repeating tasks move to their next date.
-- The tiles at the bottom add a usual chore (list in `js/data.js`, `choreUsuals`) for the picked person:
-  a new undated task in the list, tagged with their name.
-
-One-time token (the Open API has no app passwords):
-
-1. <https://developer.ticktick.com/manage> → *New App*. Set the redirect URL to `http://localhost:8080`.
-2. Open in a browser (fill in the client id), approve, and copy `code=` from the address bar it lands on
-   (the page itself fails to load, that's fine):
-   `https://ticktick.com/oauth/authorize?scope=tasks:read%20tasks:write&client_id=<ID>&state=x&redirect_uri=http://localhost:8080&response_type=code`
-3. Exchange it:
-   `curl -u <ID>:<SECRET> -d code=<CODE> -d grant_type=authorization_code -d "scope=tasks:read tasks:write" -d redirect_uri=http://localhost:8080 https://ticktick.com/oauth/token`
-4. Put `access_token` in `.dev.vars` as `TICKTICK_TOKEN=…` and `wrangler secret put TICKTICK_TOKEN`.
-
-The token lasts months, not forever (check `expires_in`, in seconds). When chores fall back to sample
-data and `wrangler tail` shows `TickTick projects: 401`, repeat steps 2–4.
-
----
-
-## 9. Live cams (Photos → Live)
-
-Cams are listed in `js/data.js` (`webcams`). Shipped: two berlin.de JPEG cams (Mitte, Charlottenburg), refreshed
-every 60 s, credited on screen. Types: `img` (JPEG, safest on the frame), `yt` (YouTube live id; only if the owner allows
-embedding), `hls` (.m3u8 through the WebView's own player; desktop Chrome can't play it). One feed runs at a time.
-Check a feed before adding it: it must be https, return the image without a referer check, and its site's terms must allow it.
-
----
-
-## 10. Frame time zone (the clock is live now)
-
-The frame was set to `America/New_York`. Set it to Berlin over ADB, then restart the kiosk
-(see `kiosk/README.md#time-zone`):
-
-```bash
-adb shell setprop persist.sys.timezone Europe/Berlin
-adb shell service call alarm 3 s16 Europe/Berlin
-adb shell am force-stop com.wesbos.homehq
-adb shell am start -n com.wesbos.homehq/.MainActivity
-```
-
----
-
-## 11. Choosing which views the frame shows
-
-The `VIEWS` var in `wrangler.jsonc` lists the views on the rail, in rail order. Default:
-`"home,calendar,shopping,fridge,kitchen,photos"`. Valid names:
-`home` (Today, always on), `calendar`, `tasks` (Chores), `shopping`, `fridge`, `kitchen` (calculator, conversions, timers), `photos`.
-Unknown names are ignored; an empty/invalid value falls back to the default.
-
-To change it: edit `VIEWS`, then `npm run deploy`. The frame polls `/api/config` every 5 minutes and applies the
-list without a reload (if it is showing a view that just got hidden, it goes back to Today). The last list is
-cached in the frame's localStorage, so a reboot without Wi-Fi still shows the right views.
-
-Views are built when first opened and rebuilt after data changes the next time they are selected. Today also drops
-the cards of hidden views (Chores and the photo tile) and the layout reflows. With Photos hidden the screensaver
-shows only the clock and weather. `GET /api/config` shows what the Worker currently serves.
-
-Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off on the frame. Open the page with
-`?demo` to turn them on (remembered), `?demo=0` to turn them off.
-
----
-
-## 12. Cookidoo meals
-
-The Meals view, Today and Calendar show the Cookidoo planner week. `/api/meals` returns the week and the paired Thermomix
-model, `/api/meals/recipe` one recipe, and `/api/meals/img` proxies recipe pictures from `assets.tmecosys.com`. Live cook
-state is not available: Cookidoo has no endpoint for it. To hide the view, drop `meals` from `VIEWS`.
-The Worker never logs in. It refreshes an OAuth token that you seed once into Workers KV. The API is unofficial
-(reverse-engineered by [miaucl/cookidoo-api](https://github.com/miaucl/cookidoo-api)) and can change without notice.
-
-1. Deploy once so Wrangler creates the `COOKIDOO_KV` namespace (`kv_namespaces` in `wrangler.jsonc`).
-2. On your PC, get the refresh token (needs Python 3.13 and your Cookidoo email and password):
+1. Check the KV namespace. `wrangler.jsonc` already holds the `COOKIDOO_KV` id for this deployment. On a new fork,
+   remove the `id` line and deploy once, so Wrangler creates a namespace for you.
+2. Get the refresh token. This needs Python 3.13. Run it from `dashboard/` in a POSIX shell, such as Git Bash on
+   Windows:
 
    ```sh
    pip install cookidoo-api
    EMAIL=you@example.com PASSWORD=... python ../scripts/cookidoo-refresh-token.py
    ```
 
-3. Store it. Use the literal output of step 2 as the value:
+3. Store the printed token, in the same shell:
 
    ```sh
    npx wrangler kv key put tokens '{"refresh":"<token>"}' --binding COOKIDOO_KV --remote
    ```
 
-4. Check: open `/api/meals` on the Worker with the access cookie. An empty `days` list means a free week; a 502
-   with `wrangler tail` showing `Cookidoo token refresh 4xx` means the token is wrong or revoked, repeat from step 2.
+4. After you deploy (Step 6), open `/api/meals` on the Worker with the access cookie:
 
-Vars: `COOKIDOO_HOST` (default `cookidoo.de`), `COOKIDOO_LANG` (default `de-DE`). The refresh token is a credential:
-do not commit it or paste it into chats.
+   | Result | Meaning |
+   |---|---|
+   | `days` holds your recipes | Working |
+   | `days` is empty | Nothing is planned this week |
+   | 502, and `wrangler tail` shows `Cookidoo token refresh 4xx` | Token wrong or revoked: repeat from step 2 |
+
+The refresh token is a credential, so don't commit it or paste it into chats. To use another country, set
+`COOKIDOO_HOST` and `COOKIDOO_LANG`. To hide meals everywhere, drop `meals` from `VIEWS`.
+
+### Unsplash photos
+
+**Needs:** a free access key from [unsplash.com/developers](https://unsplash.com/developers) in `UNSPLASH_KEY`.
+
+`/api/photos` returns a fresh stock set for the slideshow. Set the search term in the `PHOTO_QUERY` var, or remove
+it to use any photo. Without a key, the slideshow keeps its sample photos.
+
+### Live cams
+
+**Needs:** nothing. Cams appear under Photos → Live and are listed in `js/data.js` (`webcams`). Two berlin.de JPEG
+cams ship, refresh every 60 s and are credited on screen. One feed runs at a time.
+
+| Type | What it is | Note |
+|---|---|---|
+| `img` | JPEG | Safest on the frame |
+| `yt` | YouTube live id | Only if the owner allows embedding |
+| `hls` | `.m3u8`, played by the WebView | Desktop Chrome can't play it |
+
+Before you add a feed, check that it uses https, returns the image without a referer check, and that its site's
+terms allow it.
 
 ---
 
-## Quick reference: all configuration
+## Part 3: Test and deploy
+
+### Step 4. Test locally
+
+```sh
+cd dashboard
+npm run build       # dev:live serves dist/
+npm run dev:live
+```
+
+Open the printed URL with `?key=<token>` once to set the access cookie. Then check the Network tab in DevTools:
+
+| Endpoint | Expected response |
+|---|---|
+| `/api/weather` | Weather object |
+| `/api/calendar` | Array of events |
+| `/api/shopping` | Array of `{ name, note }` |
+| `/api/transit` | `{ stop, departures: [...] }` |
+| `/api/meals` | `{ days: [...], device }` |
+
+Run the checks too. They need no credentials or network:
+
+```sh
+node test/views.test.mjs
+node test/gate.test.mjs
+node test/cookidoo.test.mjs
+node test/calc.test.mjs
+node test/type-floor.test.mjs
+```
+
+### Step 5. Add the secrets to Cloudflare
+
+Run this once per secret and paste the value when asked. Include only the feeds you use:
+
+```sh
+npx wrangler secret put DASH_TOKEN
+npx wrangler secret put GOOGLE_SERVICE_EMAIL
+npx wrangler secret put GOOGLE_SERVICE_KEY
+npx wrangler secret put CAL_ALEX
+npx wrangler secret put CAL_JORDAN
+npx wrangler secret put BRING_EMAIL
+npx wrangler secret put BRING_PASSWORD
+npx wrangler secret put TICKTICK_TOKEN
+npx wrangler secret put UNSPLASH_KEY
+```
+
+### Step 6. Deploy
+
+Make sure `VITE_DASH_TOKEN` in `dashboard/.env` matches `DASH_TOKEN`, because it is baked into the build:
+
+```sh
+npm run deploy
+```
+
+Open `https://<worker>/?key=<token>` and confirm that your calendar, weather, lists, departures and meals appear.
+The rail shows **Sample data** while any enabled feed has never loaded.
+
+---
+
+## Part 4: Set up the frame
+
+### Step 7. Point the kiosk at your dashboard
+
+Each device needs the access cookie once. It lasts a year. Save the URL with the key, so the frame sets its own
+cookie:
+
+```sh
+adb shell am start -n com.wesbos.homehq/.MainActivity --es url "https://<worker>/?key=<token>"
+```
+
+See the [kiosk guide](kiosk/README.md#dashboard-url) for more, including starting at boot.
+
+### Step 8. Set the frame's time zone
+
+The clock and the "today" of every view follow the frame's time zone. Set it over ADB, then restart the kiosk (see
+the [kiosk guide](kiosk/README.md#time-zone)):
+
+```sh
+adb shell setprop persist.sys.timezone Europe/Berlin
+adb shell service call alarm 3 s16 Europe/Berlin
+adb shell am force-stop com.wesbos.homehq
+adb shell am start -n com.wesbos.homehq/.MainActivity
+```
+
+### Step 9. Choose which views to show
+
+Edit the `VIEWS` var in `wrangler.jsonc`, then run `npm run deploy`. The rail order is fixed, so the order you write
+doesn't matter. Unknown names are ignored, and an empty or invalid value falls back to all views.
+
+| Name | Rail label | What it does | Feed |
+|---|---|---|---|
+| `home` | Today | Always on: clock, weather, departures, next up, people, meals, and a card per enabled view | All |
+| `calendar` | Calendar | Today, 3 Day, Week and Month | Google Calendar, Cookidoo |
+| `tasks` | Chores | Shared list with quick-add tiles | TickTick |
+| `shopping` | Shopping | List with write-back | Bring! |
+| `fridge` | Fridge | Contents and expiry dates | Bring! |
+| `meals` | Meals | Week plan and recipes | Cookidoo |
+| `kitchen` | Kitchen | Calculator, conversions and timers | None |
+| `photos` | Photos | Slideshow and live cams | Unsplash, cams |
+
+The frame checks `/api/config` every 5 minutes and applies the list without a reload. If it is showing a view that
+just got hidden, it returns to Today. The last list is cached on the frame, so a reboot without Wi-Fi keeps it.
+Today drops the cards of hidden views and reflows. With Photos hidden, the screensaver shows only the clock and
+weather.
+
+---
+
+## Reference
+
+### Configuration
+
+**Vars, in `wrangler.jsonc`**
+
+| Key | Required | Description |
+|---|---|---|
+| `WEATHER_LAT`, `WEATHER_LON` | For weather | Location for Open-Meteo |
+| `WEATHER_TZ` | No | IANA time zone, also used for "today" in the Cookidoo call |
+| `BVG_STOP_ID` | For departures | BVG stop ID |
+| `BVG_STOP_NAME` | No | Stop name shown on screen |
+| `BVG_WALK_MIN` | No | Walk time to the stop; sooner departures are hidden |
+| `VIEWS` | No | Views on the frame ([Step 9](#step-9-choose-which-views-to-show)) |
+| `PHOTO_QUERY` | No | Unsplash search term |
+| `BRING_LIST` | No | Shopping list name, default `home` |
+| `BRING_FRIDGE_LIST` | No | Fridge list name, default `fridge` |
+| `TICKTICK_PROJECT` | No | Chores list name, default `Chores` |
+| `COOKIDOO_HOST` | No | Cookidoo domain, default `cookidoo.de` |
+| `COOKIDOO_LANG` | No | Cookidoo language, default `de-DE` |
+
+**Secrets, set with `wrangler secret put`**
+
+| Key | Required | Description |
+|---|---|---|
+| `DASH_TOKEN` | Yes | Site gate and write guard |
+| `GOOGLE_SERVICE_EMAIL` | For calendar | Service account email |
+| `GOOGLE_SERVICE_KEY` | For calendar | Service account PEM private key |
+| `CAL_ALEX` | For calendar | Fauzan's Calendar ID |
+| `CAL_JORDAN` | For calendar | Amanda's Calendar ID |
+| `BRING_EMAIL`, `BRING_PASSWORD` | For shopping and fridge | Bring! login |
+| `TICKTICK_TOKEN` | For chores | TickTick Open API token |
+| `UNSPLASH_KEY` | For stock photos | Unsplash access key |
+
+**Other**
 
 | Key | Where | Description |
 |---|---|---|
-| `WEATHER_LAT` | `wrangler.jsonc` vars | Latitude for Open-Meteo |
-| `WEATHER_LON` | `wrangler.jsonc` vars | Longitude for Open-Meteo |
-| `WEATHER_TZ` | `wrangler.jsonc` vars | IANA timezone |
-| `BVG_STOP_ID` | `wrangler.jsonc` vars | BVG stop ID |
-| `BVG_STOP_NAME` | `wrangler.jsonc` vars | Stop display name |
-| `BVG_WALK_MIN` | `wrangler.jsonc` vars | Walk time to the stop; earlier departures are hidden |
-| `GOOGLE_SERVICE_EMAIL` | secret | Service account email |
-| `GOOGLE_SERVICE_KEY` | secret | Service account PEM private key |
-| `CAL_ALEX` | secret | Google Calendar ID for Fauzan |
-| `CAL_JORDAN` | secret | Google Calendar ID for Amanda |
-| `DASH_TOKEN` | secret (+ `VITE_DASH_TOKEN` in `.env`) | Guards the write endpoints |
-| `BRING_LIST` | var (optional) | Bring! list name, default `home` |
-| `BRING_FRIDGE_LIST` | var (optional) | Bring! list for the Fridge view, default `fridge` |
-| `TICKTICK_TOKEN` | secret (optional) | TickTick Open API token for the Chores view |
-| `TICKTICK_PROJECT` | var (optional) | TickTick list for the Chores view, default `Chores` |
-| `VIEWS` | var | Comma list of views shown on the frame (section 11) |
-| `COOKIDOO_HOST` / `COOKIDOO_LANG` | vars | Cookidoo domain and language, default `cookidoo.de` / `de-DE` |
-| `COOKIDOO_KV` | KV binding | Holds the Cookidoo token pair (section 12) |
-| `BRING_EMAIL` | secret | Bring! account email |
-| `BRING_PASSWORD` | secret | Bring! account password |
+| `VITE_DASH_TOKEN` | `dashboard/.env` | Same value as `DASH_TOKEN`, baked in at build time |
+| `COOKIDOO_KV` | KV binding in `wrangler.jsonc` | Holds the Cookidoo token pair under the key `tokens` |
+
+### What each feed needs
+
+| Feed | Account | Secret or setup | Without it |
+|---|---|---|---|
+| Weather | None | Vars have defaults | Sample data if lat/lon are unset |
+| BVG | None | `BVG_STOP_ID` | Sample data |
+| Google Calendar | Google | Service account | Sample data |
+| Bring! | Bring! | Login | Sample data |
+| TickTick | TickTick | `TICKTICK_TOKEN` | Sample chores |
+| Cookidoo | Cookidoo | Refresh token in KV | Sample meals until the token is stored |
+| Unsplash | Unsplash | `UNSPLASH_KEY` | Sample photos |
+
+### API routes
+
+Every route needs the access cookie, except that the manifest and icons are public. Reads are polled by the page, and
+a failed poll keeps the last good data.
+
+| Route | Source | Page polls | Notes |
+|---|---|---|---|
+| `GET /api/config` | `VIEWS` var | 5 min | Which views to show |
+| `GET /api/weather` | Open-Meteo | 30 min | Forecast and sunset |
+| `GET /api/calendar` | Google Calendar | 5 min | Both people's events |
+| `GET /api/transit` | BVG transport.rest | 1 min | Departures from your stop |
+| `GET`, `POST /api/shopping` | Bring! | 2 min | `POST` ops: `add`, `done`, `remove` |
+| `GET`, `POST /api/fridge` | Bring! | 5 min | Same ops, on the fridge list |
+| `GET`, `POST /api/chores` | TickTick | 5 min | `POST` completes a task, or adds one with `op: 'add'` |
+| `GET /api/photos` | Unsplash | When the slideshow needs more | Stock photo set |
+| `GET /api/meals` | Cookidoo | 30 min | `{ days, device }`: the week and paired model |
+| `GET /api/meals/recipe?id=<id>` | Cookidoo | On demand | One recipe; add `&custom=1` for your own |
+| `GET /api/meals/img?u=<url>` | `assets.tmecosys.com` | On demand | Image proxy, that host only |
+
+Writes also need the `X-Dash-Token` header. The page sets it from `VITE_DASH_TOKEN`.
+
+### Troubleshooting
+
+| What you see | Likely cause | Fix |
+|---|---|---|
+| `DASH_TOKEN is not set` on every page | Secret missing | [Step 5](#step-5-add-the-secrets-to-cloudflare) |
+| `Open this dashboard with its key link.` | No access cookie on this device | Open `/?key=<token>` once |
+| `Wrong key` | Token doesn't match | Compare with the `DASH_TOKEN` secret |
+| An `/api/*` route answers 503 | That feed has no credentials or var | Connect it in Part 2 |
+| An `/api/*` route answers 502 | The upstream service failed | Run `wrangler tail` for the reason |
+| Writes fail with a sync toast | `VITE_DASH_TOKEN` differs from `DASH_TOKEN` | Match them and run `npm run deploy` |
+| Rail shows **Sample data** | An enabled feed has never loaded | Check which `/api/*` call fails |
+| Chores back to sample data | TickTick token expired | Repeat the [token steps](#ticktick-chores) |
+| Meals don't update | Cookidoo token revoked | Repeat the [Cookidoo steps](#cookidoo-meals) |
+| `dev:live` shows an old build or a busy port | Stale `workerd` process or hashed files | Use a fresh port, and restart wrangler after each build |

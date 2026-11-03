@@ -8,6 +8,38 @@ Turn a cheap Android photo frame into a family dashboard: unlock it, root it, re
 
 ▶️ **Watch the video: [https://youtu.be/ZLycoUMltNI](https://youtu.be/ZLycoUMltNI)**
 
+## What's in this repo
+
+Notes and scripts from getting full control of locked-down Android photo frames: getting ADB,
+backing up the firmware, getting root, removing the vendor app, and running our own launcher,
+browser and kiosk app. These are records of the units their owners tested, not universal flashing
+guides.
+
+It has two halves:
+
+| Part | What it is | Start here |
+|---|---|---|
+| **Frame takeover** | Per-device guides and tooling: ADB, backups, root, kiosk | [Which frame do you have?](#which-frame-do-you-have) |
+| **The dashboard** | A family dashboard for the frame, with live calendar, shopping, meals and more | [The dashboard](#the-dashboard) |
+
+**Contents**
+
+- [Working frames](#working-frames)
+- [Which frame do you have?](#which-frame-do-you-have)
+- [The dashboard](#the-dashboard)
+  - [What it shows](#what-it-shows)
+  - [Try it locally](#try-it-locally)
+  - [Go live](#go-live)
+  - [Keeping it running on the frame](#keeping-it-running-on-the-frame)
+- [Community builds](#community-builds)
+- [For agents: start here](#for-agents-start-here)
+  - [Rules we learned the hard way](#rules-we-learned-the-hard-way)
+  - [Check for updates, and send back what you find](#check-for-updates-and-send-back-what-you-find)
+  - [Keep a private record of each frame](#keep-a-private-record-of-each-frame)
+  - [Phase map](#phase-map)
+- [Other docs](#other-docs)
+- [Privacy](#privacy)
+
 ## Working frames
 
 <a href="https://amzn.to/4zneGNM"><img src="docs/images/devices/B0GHR65YYX.jpg" width="110" alt="10.1&quot; frame from the video (now often ships the PF1007L)" title="10.1&quot; frame from the video (now often ships the PF1007L)"></a>
@@ -21,23 +53,6 @@ Turn a cheap Android photo frame into a family dashboard: unlock it, root it, re
 
 Frames confirmed to work (Amazon affiliate links). See the **[device index](docs/devices.md)** for every
 frame, which board it has, and where to start.
-
-## Community builds
-
-More than 70 people have shared their hacked frames in [Community builds](docs/community-builds.md): LCARS
-interfaces, retro weather channels, chess puzzles, Linux on a frame, family dashboards and more.
-
-<a href="docs/community-builds.md"><img src="docs/images/community/JesseWaites-11.jpg" height="90" alt="Star Trek LCARS interface" title="Star Trek LCARS interface"></a>
-<a href="docs/community-builds.md"><img src="docs/images/community/derekparks-dev-14.jpg" height="90" alt="Retro weather-channel display" title="Retro weather-channel display"></a>
-<a href="docs/community-builds.md"><img src="docs/images/community/tushargugnani-10.jpg" height="90" alt="Chess puzzles and analytics" title="Chess puzzles and analytics"></a>
-<a href="docs/community-builds.md"><img src="docs/images/community/redp314-23.jpg" height="90" alt="Omarchy Linux on an A33 frame" title="Omarchy Linux on an A33 frame"></a>
-<a href="docs/community-builds.md"><img src="docs/images/community/rida-18.jpg" height="90" alt="Family dashboard" title="Family dashboard"></a>
-<a href="docs/community-builds.md"><img src="docs/images/community/onurceri-36.jpg" height="90" alt="FamilyOS" title="FamilyOS"></a>
-
-Notes and scripts from getting full control of locked-down Android photo frames: getting ADB,
-backing up the firmware, getting root, removing the vendor app, and running our own launcher,
-browser and kiosk app. These are records of the units their owners tested, not universal flashing
-guides.
 
 ## Which frame do you have?
 
@@ -65,11 +80,68 @@ Settings → About before you follow any guide:
 
 ## The dashboard
 
-[`dashboard/`](dashboard) is the family dashboard we run on the BIUFRAME (it uses mock data): a Vite
-web app deployed to Cloudflare Workers. `dashboard/kiosk/` is a small full-screen WebView Android app,
-built without Gradle, that shows it. Hold two fingers still for 1.5 s to open a menu for the
-launcher, Android settings, and reloading. On frames without system navigation, optional floating
-**Back** and **Dashboard** buttons help; see the [kiosk guide](dashboard/kiosk/README.md).
+[`dashboard/`](dashboard) is a family dashboard for a wall-mounted frame: a vanilla-JS Vite app served by a Cloudflare
+Worker, with no runtime dependencies. [`dashboard/kiosk/`](dashboard/kiosk) is a small full-screen WebView Android app,
+built without Gradle, that shows it. It runs on sample data until you connect your own accounts.
+
+### What it shows
+
+| View | What you get | Live data from |
+|---|---|---|
+| **Today** | Clock, weather, departures, next event, both people's day, today's meals, and a card per view | All feeds |
+| **Calendar** | Today, 3 Day, Week and Month, with meals beside the all-day items | Google Calendar, Cookidoo |
+| **Chores** | Shared list, overdue first, with quick-add tiles | TickTick |
+| **Shopping** | List with write-back | Bring! |
+| **Fridge** | What's inside and what expires soon | Bring! |
+| **Meals** | Week strip, the day's recipes, ingredients and step-by-step details | Cookidoo |
+| **Kitchen** | Calculator, conversions and up to three timers | None, works offline |
+| **Photos** | Slideshow and live cams | Unsplash, public cams |
+
+It also has a day palette and an evening palette that switch at sunset, an idle slideshow, and a dim night clock. You
+can choose which views appear with one setting.
+
+The Cookidoo integration is unofficial and read-only. It shows the planned week, recipe details and the paired
+Thermomix model. Live Thermomix status isn't available, because Cookidoo has no endpoint for it.
+[What Cookidoo can and can't provide](dashboard/SETUP.md#cookidoo-meals).
+
+### Try it locally
+
+```sh
+cd dashboard
+npm install
+npm run dev      # http://localhost:5173, sample data, no accounts needed
+```
+
+### Go live
+
+Follow [dashboard/SETUP.md](dashboard/SETUP.md). In short:
+
+1. Create the access token. The deployed site won't open without it.
+2. Connect the feeds you want. Each is optional.
+3. Add your secrets to Cloudflare and run `npm run deploy`.
+4. Save your dashboard's URL on the frame.
+
+### Keeping it running on the frame
+
+Hold two fingers still for 1.5 s to open a menu for the launcher, Android settings and reloading. On frames without
+system navigation, optional floating **Back** and **Dashboard** buttons help. See the
+[kiosk guide](dashboard/kiosk/README.md).
+
+Building for a frame has real limits: its browser is an old WebView, and it can't reach many third-party hosts. Read
+[building-for-the-frame.md](docs/building-for-the-frame.md) before you change the page, and
+[ARCHITECTURE.md](ARCHITECTURE.md) for how the pieces fit together.
+
+## Community builds
+
+More than 70 people have shared their hacked frames in [Community builds](docs/community-builds.md): LCARS
+interfaces, retro weather channels, chess puzzles, Linux on a frame, family dashboards and more.
+
+<a href="docs/community-builds.md"><img src="docs/images/community/JesseWaites-11.jpg" height="90" alt="Star Trek LCARS interface" title="Star Trek LCARS interface"></a>
+<a href="docs/community-builds.md"><img src="docs/images/community/derekparks-dev-14.jpg" height="90" alt="Retro weather-channel display" title="Retro weather-channel display"></a>
+<a href="docs/community-builds.md"><img src="docs/images/community/tushargugnani-10.jpg" height="90" alt="Chess puzzles and analytics" title="Chess puzzles and analytics"></a>
+<a href="docs/community-builds.md"><img src="docs/images/community/redp314-23.jpg" height="90" alt="Omarchy Linux on an A33 frame" title="Omarchy Linux on an A33 frame"></a>
+<a href="docs/community-builds.md"><img src="docs/images/community/rida-18.jpg" height="90" alt="Family dashboard" title="Family dashboard"></a>
+<a href="docs/community-builds.md"><img src="docs/images/community/onurceri-36.jpg" height="90" alt="FamilyOS" title="FamilyOS"></a>
 
 ## For agents: start here
 
@@ -163,6 +235,15 @@ trusting it, and remember that a past approval is not permission for a new write
 
 ## Other docs
 
+**Project**
+
+- [ARCHITECTURE.md](ARCHITECTURE.md): how the repository and the dashboard fit together
+- [dashboard/SETUP.md](dashboard/SETUP.md): live data, configuration and API reference
+- [PRODUCT.md](PRODUCT.md): who the dashboard is for and its constraints
+- [docs/building-for-the-frame.md](docs/building-for-the-frame.md): what the frame's browser can run
+
+**Research**
+
 - Skylight Wi-Fi investigation: [live-diagnostics.md](docs/live-diagnostics.md),
   [native-wifi-root-tests.md](docs/native-wifi-root-tests.md),
   [wifi-firmware-candidate.md](docs/wifi-firmware-candidate.md),
@@ -179,3 +260,6 @@ trusting it, and remember that a past approval is not permission for a new write
 `backups/`, `diagnostics/`, `log/`, loader query output and machine-local settings are excluded by
 `.gitignore`. They hold full flash dumps, decompiled vendor code, signing keys, and the unit's
 identifiers. Do not commit them, and do not publish dumps or vendor APKs.
+
+The dashboard's `dashboard/.env` and `dashboard/.dev.vars` are excluded too. They hold your access token and account
+credentials. The Cookidoo refresh token is also a credential, so keep it out of the repo and out of chats.

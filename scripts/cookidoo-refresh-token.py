@@ -1,4 +1,4 @@
-"""Print a Cookidoo refresh token for the dashboard Worker (dashboard/SETUP.md, section 12).
+"""Print a Cookidoo refresh token for the dashboard Worker (dashboard/SETUP.md, Cookidoo meals).
 
 Needs `pip install cookidoo-api` and EMAIL / PASSWORD in the environment. The token is a credential:
 the script prints it to stdout only. Do not save it in the repo.
