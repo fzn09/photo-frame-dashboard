@@ -58,18 +58,62 @@
   // Write-through to Bring! via the Worker. op: 'add' (also qty/note change, add back) | 'done' | 'remove'.
   // The Worker answers 503 when writes or Bring! aren't configured: that's mock mode, stay silent.
   var TOKEN = import.meta.env.VITE_DASH_TOKEN || '';
-  function bringPost(endpoint, op, g, after) {
+  function post(endpoint, body, label, after) {
     fetch('/api/' + endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Dash-Token': TOKEN },
-      body: JSON.stringify({ op: op, name: g.name, qty: g.qty, note: g.note || '' })
+      body: JSON.stringify(body)
     })
-      .then(function (r) { if (!r.ok && r.status !== 503) return Promise.reject(r.status); })
+      .then(function (r) { if (!r.ok && r.status !== 503) return Promise.reject(r.status); return true; })
       .catch(function (err) {
         console.warn('[fetch] ' + endpoint + ' write failed:', err);
-        App.toast('Couldn’t sync <b>' + App.esc(g.name) + '</b> to Bring!', { tone: 'error', icon: 'bolt' });
+        App.toast('Couldn’t sync <b>' + App.esc(label) + '</b>', { tone: 'error', icon: 'bolt' });
+        return false;
       })
       .then(after);
+  }
+  function bringPost(endpoint, op, g, after) {
+    post(endpoint, { op: op, name: g.name, qty: g.qty, note: g.note || '' }, g.name, after);
+  }
+  var choreWrites = 0, pullChores;
+  App.choreSync = function (c) {
+    choreWrites++;
+    post('chores', { id: c.id, projectId: c.projectId }, c.title, function (ok) {
+      if (!ok) { c.done = false; delete c.doneAt; } // still open in TickTick: un-tick so it can be tried again
+      if (--choreWrites === 0 && pullChores) pullChores();
+    });
+  };
+  // New chore from the quick-add tiles. The next pull swaps the local copy for TickTick's task.
+  App.choreAdd = function (c) {
+    choreWrites++;
+    var p = App.person(c.who);
+    post('chores', { op: 'add', title: c.title, tag: c.who === 'any' ? '' : p.name }, c.title, function () {
+      if (--choreWrites === 0 && pullChores) pullChores();
+    });
+  };
+
+  // TickTick tasks -> chores: open tasks due today or earlier, plus undated ones. Who = a tag matching a
+  // person's name ("Fauzan"), else Anyone. Done this session stays visible (done) until midnight.
+  function updateChores(tasks) {
+    var today = new Date(App.now()); today.setHours(0, 0, 0, 0);
+    var end = today.getTime() + 86400000, old = {}, open = {};
+    D.chores.forEach(function (c) { old[c.id] = c; });
+    var list = tasks.filter(function (t) { return !t.due || new Date(t.due).getTime() < end; }).map(function (t) {
+      var due = t.due ? new Date(t.due) : null, o = old[t.id];
+      var tags = t.tags.map(function (s) { return s.toLowerCase(); });
+      var p = D.people.filter(function (p) { return tags.indexOf(p.name.toLowerCase()) > -1 || tags.indexOf(p.id) > -1; })[0];
+      open[t.id] = true;
+      return {
+        id: t.id, projectId: t.projectId, due: t.due,
+        title: t.title, who: p ? p.id : 'any',
+        time: due && !t.allDay ? App.fmt.time(due) : '', overdue: !!due && due < today,
+        done: !!(o && o.done && o.due === t.due), doneAt: o && o.doneAt // ticked here, write still in flight
+      };
+    });
+    var keepDone = D.chores.filter(function (c) { return c.done && c.projectId && !open[c.id] && c.doneAt >= today.getTime(); });
+    D.chores = list.concat(keepDone);
+    App.emit('data');
+    App.emit('chores');
   }
   var writes = 0, pullShopping;
   App.shopSync = function (op, g) {
@@ -124,7 +168,7 @@
     var now = Date.now(), never = false, oldest = now;
     Object.keys(feeds).forEach(function (k) {
       var f = feeds[k];
-      if (f.off || k === 'config' || (k === 'fridge' && !App.enabled('fridge'))) return;
+      if (f.off || k === 'config' || (k === 'fridge' && !App.enabled('fridge')) || (k === 'chores' && !App.enabled('tasks'))) return;
       if (!f.ok) never = true;
       else if (now - f.ok > 2 * f.every) oldest = Math.min(oldest, f.ok);
     });
@@ -147,6 +191,7 @@
     pullShopping = poll('shopping', updateShopping, 2, function () { return writes > 0; });
     // Each Bring! call logs in again, so the fridge list is only polled while its view is on
     pullFridge = poll('fridge', updateFridge, 5, function () { return fridgeWrites > 0 || !App.enabled('fridge'); });
+    pullChores = poll('chores', updateChores, 5, function () { return choreWrites > 0 || !App.enabled('tasks'); });
     poll('transit',  updateTransit,   1);
   });
 })();

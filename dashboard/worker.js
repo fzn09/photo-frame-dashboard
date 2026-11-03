@@ -1,5 +1,5 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
+// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream)
 // All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
 //
 // Access gate: the whole site (page, assets and /api/*) needs the `hq` cookie, which holds DASH_TOKEN.
@@ -45,6 +45,7 @@ export default {
         const which = pathname.slice(5);
         return await (request.method === 'POST' ? bringWrite(request, env, which) : bringRead(env, which));
       }
+      if (pathname === '/api/chores')   return await (request.method === 'POST' ? choresWrite(request, env) : choresRead(env));
       if (pathname === '/api/config')   return handleConfig(env);
       if (pathname === '/api/transit')  return await handleTransit(env);
       if (pathname === '/api/photos')   return await handlePhotos(env);
@@ -282,6 +283,69 @@ async function bringWrite(request, env, which) {
     })
   });
   if (!res.ok) throw new Error('Bring! write failed: ' + res.status);
+  return new Response('{"ok":true}', { headers: JSON_CORS });
+}
+
+// ---- TickTick chores (free Open API, OAuth token from SETUP.md) -------------
+
+const TICK = 'https://api.ticktick.com/open/v1/';
+
+// The list named TICKTICK_PROJECT (default "Chores", a leading emoji in the name is ignored), or null.
+async function tickProject(env, H) {
+  const res = await fetch(TICK + 'project', { headers: H });
+  if (!res.ok) throw new Error('TickTick projects: ' + res.status); // 401 = token expired, redo the SETUP.md step
+  const want = (env.TICKTICK_PROJECT || 'chores').toLowerCase();
+  return (await res.json()).find(p => (p.name || '').replace(/^[^\p{L}\p{N}]+/u, '').trim().toLowerCase() === want) || null;
+}
+const NO_LIST = () => new Response('{"error":"no TickTick list"}', { status: 404, headers: JSON_CORS });
+
+// Open tasks of the chores list. Filtering to today and mapping to people happens in the page.
+async function choresRead(env) {
+  if (!env.TICKTICK_TOKEN) return new Response('[]', { status: 503, headers: JSON_CORS });
+  const H = { Authorization: 'Bearer ' + env.TICKTICK_TOKEN };
+  const p = await tickProject(env, H);
+  if (!p) return NO_LIST();
+
+  const r = await fetch(`${TICK}project/${p.id}/data`, { headers: H });
+  if (!r.ok) throw new Error('TickTick data: ' + r.status); // 502, so the page keeps the last good chores
+  const data = await r.json();
+  // dueDate looks like "2026-11-03T22:00:00.000+0000"; add the colon so any Date parser takes it
+  const tasks = (data.tasks || []).filter(t => t.status === 0).map(t => ({
+    id: t.id,
+    projectId: t.projectId,
+    title: t.title || '',
+    due: t.dueDate ? new Date(t.dueDate.replace(/([+-]\d\d)(\d\d)$/, '$1:$2')).toISOString() : null,
+    allDay: !!t.isAllDay,
+    tags: t.tags || []
+  }));
+  return new Response(JSON.stringify(tasks), { headers: { ...JSON_CORS, 'Cache-Control': 'no-store' } });
+}
+
+// POST {id, projectId}: complete the task. Recurring tasks move on to their next date, like in the app.
+// POST {op:'add', title, tag?}: new undated task in the chores list, tagged with the person's name.
+async function choresWrite(request, env) {
+  const denied = guard(request, env);
+  if (denied) return denied;
+  if (!env.TICKTICK_TOKEN) return new Response('{}', { status: 503, headers: JSON_CORS });
+  const H = { Authorization: 'Bearer ' + env.TICKTICK_TOKEN };
+  const { op, id, projectId, title, tag } = await request.json();
+  if (op === 'add') {
+    if (!title || title.length > 200) return new Response('{"error":"bad request"}', { status: 400, headers: JSON_CORS });
+    const p = await tickProject(env, H);
+    if (!p) return NO_LIST();
+    const res = await fetch(TICK + 'task', {
+      method: 'POST',
+      headers: { ...H, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: p.id, title, tags: tag ? [tag] : [] })
+    });
+    if (!res.ok) throw new Error('TickTick add failed: ' + res.status);
+    return new Response('{"ok":true}', { headers: JSON_CORS });
+  }
+  if (!/^\w+$/.test(id || '') || !/^\w+$/.test(projectId || '')) return new Response('{"error":"bad request"}', { status: 400, headers: JSON_CORS });
+  const res = await fetch(`${TICK}project/${projectId}/task/${id}/complete`, {
+    method: 'POST', headers: H
+  });
+  if (!res.ok) throw new Error('TickTick complete failed: ' + res.status);
   return new Response('{"ok":true}', { headers: JSON_CORS });
 }
 

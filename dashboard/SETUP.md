@@ -170,6 +170,30 @@ named `Fridge` in the Bring! app (override the name with a `BRING_FRIDGE_LIST` v
 fallback list, so without it the view stays empty and nothing is written. Expiry dates are kept in the
 item note as `bis 3.11.`, so they read naturally in the Bring! app too.
 
+### Chores (TickTick)
+
+The Chores view (`tasks` in `VIEWS`) reads a TickTick list named `Chores` (override with a
+`TICKTICK_PROJECT` var) through TickTick's free Open API. Without a token it shows sample chores.
+
+- **Who:** tag a task `Fauzan` or `Amanda`; untagged tasks are for *Anyone*.
+- Shown as one list: open tasks due today, overdue ones, and undated ones.
+- Ticking one completes it in TickTick 5 s later (after the Undo toast); repeating tasks move to their next date.
+- The tiles at the bottom add a usual chore (list in `js/data.js`, `choreUsuals`) for the picked person:
+  a new undated task in the list, tagged with their name.
+
+One-time token (the Open API has no app passwords):
+
+1. <https://developer.ticktick.com/manage> → *New App*. Set the redirect URL to `http://localhost:8080`.
+2. Open in a browser (fill in the client id), approve, and copy `code=` from the address bar it lands on
+   (the page itself fails to load, that's fine):
+   `https://ticktick.com/oauth/authorize?scope=tasks:read%20tasks:write&client_id=<ID>&state=x&redirect_uri=http://localhost:8080&response_type=code`
+3. Exchange it:
+   `curl -u <ID>:<SECRET> -d code=<CODE> -d grant_type=authorization_code -d "scope=tasks:read tasks:write" -d redirect_uri=http://localhost:8080 https://ticktick.com/oauth/token`
+4. Put `access_token` in `.dev.vars` as `TICKTICK_TOKEN=…` and `wrangler secret put TICKTICK_TOKEN`.
+
+The token lasts months, not forever (check `expires_in`, in seconds). When chores fall back to sample
+data and `wrangler tail` shows `TickTick projects: 401`, repeat steps 2–4.
+
 ---
 
 ## 9. Live cams (Photos → Live)
@@ -231,6 +255,8 @@ Demo tools (clock long-press panel, keyboard shortcuts, the startup tip) are off
 | `DASH_TOKEN` | secret (+ `VITE_DASH_TOKEN` in `.env`) | Guards the write endpoints |
 | `BRING_LIST` | var (optional) | Bring! list name, default `home` |
 | `BRING_FRIDGE_LIST` | var (optional) | Bring! list for the Fridge view, default `fridge` |
+| `TICKTICK_TOKEN` | secret (optional) | TickTick Open API token for the Chores view |
+| `TICKTICK_PROJECT` | var (optional) | TickTick list for the Chores view, default `Chores` |
 | `VIEWS` | var | Comma list of views shown on the frame (section 12) |
 | `BRING_EMAIL` | secret | Bring! account email |
 | `BRING_PASSWORD` | secret | Bring! account password |

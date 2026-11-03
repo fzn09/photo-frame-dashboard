@@ -132,12 +132,7 @@
     return App.events().filter(function (e) { return e.id === id; })[0];
   };
 
-  // ------------------------------------------------------------ chores + weather helpers
-  App.currentRoutine = function () {
-    var h = App.now().getHours();
-    for (var i = 0; i < D.routines.length; i++) if (h >= D.routines[i].from && h < D.routines[i].to) return D.routines[i];
-    return D.routines[2];
-  };
+  // ------------------------------------------------------------ weather helpers
   App.weatherNow = function () {
     var W = D.weather, h = App.now().getHours();
     var rainAt = -1;
@@ -350,7 +345,8 @@
     fit(); // clock is live (offset 0); with ?demo, long-press the rail clock for demo times
     window.addEventListener('resize', fit);
     var cached = null;
-    try { cached = localStorage.getItem('hq-views'); } catch (e) { /* default list */ }
+    // dev server has no /api/config to correct a stale cache, so it uses data.js's default
+    try { if (!import.meta.env.DEV) cached = localStorage.getItem('hq-views'); } catch (e) { /* default list */ }
     App.setViews(cached ? cached.split(',') : D.views.slice(1)); // before the first App.go: no flash of hidden views
     // Switch tabs the instant a finger lands (pointerdown), not on release. Keyboard "clicks"
     // (detail === 0) still work.
