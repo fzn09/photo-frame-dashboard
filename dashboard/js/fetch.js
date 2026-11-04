@@ -151,7 +151,8 @@
     var f = feeds[endpoint] = { every: intervalMin * 60000, ok: 0, off: false }, fails = 0, timer;
     function run() {
       clearTimeout(timer); // a write's refresh calls run() early; keep a single timer
-      if (busy && busy()) { timer = setTimeout(run, f.every); return; } // a write is in flight: its own refresh follows
+      f.slept = !!(busy && busy());
+      if (f.slept) { timer = setTimeout(run, f.every); return; } // a write is in flight (its own refresh follows) or the view is off
       var wait = f.every;
       fetch('/api/' + endpoint)
         .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
@@ -163,9 +164,15 @@
         })
         .then(function () { if (!f.off) timer = setTimeout(run, wait); railStale(); });
     }
+    f.run = run;
     run();
     return run;
   }
+  // The view list cached at boot can miss a newly enabled view: wake its feed when /api/config turns it on,
+  // or the view shows sample data for a whole interval.
+  App.on('views', function () {
+    Object.keys(feeds).forEach(function (k) { if (feeds[k].slept) feeds[k].run(); });
+  });
 
   // Minutes a feed is overdue (last good response more than two intervals ago), else 0. Cards show it as a badge.
   // Measured on the monotonic clock: the frame's wall clock can jump when NTP syncs after boot.
