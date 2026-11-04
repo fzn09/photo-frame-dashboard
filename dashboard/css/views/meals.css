@@ -30,22 +30,20 @@
 .mc-card { flex: 1 0 372px; min-width: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 button.mc-card { display: flex; }
 .mc-card:active { transform: scale(.985); }
-.mc-card > img { flex: 1 1 0; width: 100%; height: 0; min-height: 260px; object-fit: cover; background: rgb(var(--ov) / .07); }
-.mc-in { flex: none; width: 100%; display: flex; flex-direction: column; padding: 12px 18px; overflow: hidden; }
-.mc-t { margin-bottom: 2px; font-family: var(--serif); font-size: var(--fs-l); line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-card > img { flex: 1 1 0; width: 100%; height: 0; min-height: 180px; object-fit: cover; background: rgb(var(--ov) / .07); }
+.mc-in { flex: none; width: 100%; display: flex; flex-direction: column; padding: 12px 18px; }
+.mc-t { margin-bottom: 2px; font-family: var(--serif); font-size: var(--fs-l); line-height: 1.05; }
 .mc-meta { display: flex; align-items: baseline; gap: 12px; min-height: 30px; font-size: var(--fs-min); color: var(--ink-2); }
 .mc-meta .num { font-size: var(--fs-m); line-height: 1.1; color: var(--ink); }
-.mc-in .r-ing { columns: 2; column-gap: 24px; margin-top: 8px; }
-.mc-in .r-ing li { grid-template-columns: 74px 1fr; padding: 6px 0; break-inside: avoid; }
-.mc-in .r-ing span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-in .r-ing { flex: none; columns: 2; column-gap: 24px; margin-top: 8px; }
+.mc-in .r-ing li { padding: 6px 0; break-inside: avoid; }
 .mc-main[data-n="3"] .r-ing { columns: 1; }
 .mc-main[data-n="1"] .mc-card { flex-direction: row; }
 .mc-main[data-n="1"] .mc-card > img { width: 50%; height: auto; flex: 1 1 50%; }
 .mc-main[data-n="1"] .mc-in { flex: 1 1 50%; width: 50%; }
 .mc-main[data-n="1"] .r-ing { columns: 1; }
-.mc-main[data-n="1"] .mc-t { white-space: normal; }
 .mc-card--plain .mc-in { flex: 1; }
-.mc-card--plain .mc-t { font-size: var(--fs-xl); white-space: normal; }
+.mc-card--plain .mc-t { font-size: var(--fs-xl); }
 .mc-main[data-n="1"] .mc-more, .mc-card--plain .mc-more { margin-top: 14px; }
 .mc-in .r-ing .mc-note { display: block; border-bottom: 0; color: var(--mute); }
 .mc-more { margin-top: auto; padding-top: 6px; font-size: var(--fs-min); font-weight: 700; color: var(--ink-2); }
@@ -62,12 +60,13 @@ button.mc-card { display: flex; }
 .r-facts dt { font-size: var(--fs-min); color: var(--mute); }
 .r-facts dd { margin: 0; font-size: var(--fs-m); line-height: 1.15; font-weight: 800; font-stretch: 75%; font-variant-numeric: tabular-nums; }
 .r-note { margin-top: 10px; font-size: var(--fs-min); color: var(--mute); }
-.r-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 270px 1fr; gap: 24px; margin-top: 16px; }
+.r-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 310px 1fr; gap: 24px; margin-top: 16px; }
 .r-col { min-height: 0; overflow-y: auto; }
 .r-col::after { content: ''; display: block; position: sticky; bottom: 0; height: 36px; background: linear-gradient(rgba(0, 0, 0, 0), var(--raise)); pointer-events: none; } /* fades only while more is below */
 .r-col h3 { margin-bottom: 6px; font-family: var(--serif); font-size: var(--fs-l); line-height: 1.1; }
-.r-ing li { display: grid; grid-template-columns: 78px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-body); line-height: 1.2; }
+.r-ing li { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-body); line-height: 1.2; }
 .r-ing b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.r-ing b, .r-ing span { min-width: 0; overflow-wrap: anywhere; } /* German compounds: never past the column */
 .r-steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
 .r-steps li { counter-increment: step; display: grid; grid-template-columns: 34px 1fr; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-body); line-height: 1.32; }
 .r-steps li::before { content: counter(step); font-family: var(--serif); font-size: var(--fs-l); line-height: 1; color: var(--mute); }
