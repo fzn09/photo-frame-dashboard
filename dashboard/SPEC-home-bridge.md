@@ -2,6 +2,9 @@
 
 Status: draft. Nothing here is implemented.
 
+Revision 3 (section 3a) replaces the always-on EC2 and the Cloudflare Tunnel in sections 1 and 3 with a scheduled fetch
+job that pushes to the Worker. Where they conflict, section 3a wins.
+
 ## 0. What changed from revision 1
 
 Revision 1 treated the fridge as a Bring! list and put a new bridge on EC2 for Home Assistant. Both were wrong.
@@ -129,6 +132,81 @@ found that the auth check let every path through before it.
 - Nothing secret goes into either repo. `deploy/env.example` holds placeholders.
 - Rotate `REWE_API_KEY` on EC2 and in the Worker together, then restart the service.
 
+## 3a. Run the fetch only when needed (cost strategy)
+
+The frame never needs EC2 itself. It needs the last parsed result. Only the fetch (Gmail IMAP, PDF parse, Bring!
+matching) is work, and that is a batch job of seconds to a few minutes. So the instance can be off between runs.
+
+### Change in the data path
+
+```text
+ schedule ──▶ EC2 starts ──▶ job: fetch eBon, parse, POST /api/ingest ──▶ instance stops itself
+                                                          │
+                                                          ▼
+                                       Worker writes KV {items, updated_at}
+                                                          ▲
+ Frame ── GET /api/fridge ── Worker reads KV (EC2 not involved)
+```
+
+- The Worker gets `POST /api/ingest`, guarded by a bearer secret (`INGEST_KEY`). It stores the payload in a KV key with
+  its `updated_at`. `GET /api/fridge` reads that key. An empty key answers 503, which keeps sample data.
+- The frame keeps working with EC2 off. It shows "updated N min ago" from the stored timestamp.
+- The instance only makes outbound calls (Gmail, Bring!, the Worker URL). The Cloudflare Tunnel, the `/frame/rewe`
+  route, `X-API-Key`, the WAF rule and the Cloudflare domain are no longer needed. `*.workers.dev` works for the ingest
+  URL.
+- State the frame writes ("used up") lives in the same KV and is applied by the Worker at read time, so a write never
+  waits for the instance.
+
+### The job
+
+Write the job as a command, for example `python -m rewe_job`. It calls `load_rewe_purchases(force_refresh=True)`, builds
+the payload and POSTs it. The same command runs on EC2, Lambda or a GitHub Actions runner, so the host can change later
+without touching the Worker or the page.
+
+### Host options
+
+| Host | Idle cost | Change to shoplister | Trade-off |
+|---|---|---|---|
+| EC2 started and stopped by schedule | EBS volume only. No compute while stopped | Smallest. SQLite and the downloaded PDFs persist on the volume | Boot time added to every run. You still patch an OS |
+| AWS Lambda on a schedule | Near zero, billed per run | Moderate. No local disk between runs, so processed-message state moves to KV or S3. `pdfplumber` is pure Python, `imap-tools` is too | Package size and arm64 build to verify |
+| GitHub Actions on a schedule | No AWS at all | Moderate. Same state point as Lambda. Secrets sit in GitHub | Scheduled runs can start late. Needs the repo on GitHub, which `fzn09/shoplister` is |
+
+Recommendation: build the job command first, run it on scheduled EC2, and move to Lambda or Actions only if the EBS
+volume and the OS upkeep still bother you. The EC2 variant needs the least refactoring.
+
+### EC2 start and stop
+
+1. **Start.** An EventBridge Scheduler schedule in `Europe/Berlin` calls `ec2:StartInstances` (universal target) with a
+   role scoped to this one instance.
+2. **Run.** A systemd `Type=oneshot` unit runs the job at boot, then `systemctl poweroff`. Instance-initiated shutdown
+   behaviour stays `stop`, so the volume survives.
+3. **Backstop.** `TimeoutStartSec=300` on the unit, plus a second schedule that calls `ec2:StopInstances` 20 minutes after
+   each start. A hung job cannot leave the instance running.
+4. **Maintenance.** If `/etc/shoplister/keep-on` exists, the unit skips the poweroff. Create it over SSM for patching,
+   delete it afterwards. Unattended upgrades only run while the instance is up, so schedule a monthly keep-on window.
+5. **Address.** Use the auto-assigned public IPv4 and no Elastic IP. AWS releases the auto-assigned address on stop and
+   bills a held Elastic IP also while it is stopped. Check current AWS pricing for both.
+6. **Failure signal.** The job POSTs a failure status to `/api/ingest` too, so the frame keeps showing the last good
+   data with its age instead of silence.
+
+### How often
+
+REWE sends the eBon after the purchase. The delay is unverified: compare receipt time with mail arrival in your Gmail.
+Starting point of three runs a day, evening-heavy, for example 12:30, 18:30 and 21:30. Linux EC2 bills per second after
+a 60 second minimum, so a run of about three minutes (boot plus job, unmeasured) is roughly 1 % of an always-on month at
+three runs a day. Measure one real run before relying on that.
+
+### Optional: refresh now
+
+A button on the frame could start an out-of-schedule run. The Worker must not hold AWS credentials, so it calls a Lambda
+function URL guarded by a secret, and that function calls `ec2:StartInstances`. Build it only if the schedule proves too
+slow in practice.
+
+### Costs that remain
+
+The EBS volume (16 GB), the EventBridge Scheduler calls (small, check pricing) and KV. The shoplister browser UI with
+Google login is unreachable while the instance is off. Start the instance manually with `keep-on` set when you want it.
+
 ## 4. Feature 2: Home Assistant
 
 Already built on `origin/live-data-and-view-updates`, `fix/frame-unattended`, `midnight-live-merged`,
@@ -178,7 +256,7 @@ Build B first. Measure A with a borrowed plug before committing. The display nev
 | Phase | Scope | Exit check |
 |---|---|---|
 | 0 | Decisions in section 7. Merge `harden-auth-and-bring-cache`. Choose the base branch | Recorded |
-| 1 | shoplister `/frame/rewe`, deploy to EC2, tunnel, `curl` with and without key | 200 with key, 401 without, no inbound rules |
+| 1 | `rewe_job` command, Worker `/api/ingest` and KV, scheduled EC2 start and stop (section 3a) | `curl` to `/api/ingest` is 401 without the bearer. One scheduled run updates `updated_at`, then the instance is `stopped` |
 | 2 | Worker route, `rewe-map.js`, fridge view | `node test/*.test.mjs` passes, `npm run build`, then check on the frame via `chrome://inspect` |
 | 3 | "Used up" flag, if wanted | Survives a service restart |
 | 4 | Merge HA branch, live test of `/api/home` | Light toggle works from the frame |
@@ -188,7 +266,8 @@ Build B first. Measure A with a borrowed plug before committing. The display nev
 
 1. Does the fridge view show recent purchases only, or purchases minus "used up" items?
 2. Is losing manual add acceptable?
-3. Do you have a domain on Cloudflare, or will you register one?
+3. Which host runs the fetch job (scheduled EC2, Lambda or GitHub Actions), and how many runs a day? A domain is not
+   needed in the push model.
 4. Which branch is the base for the merge?
 5. Is HA reachable from the internet today, and through which route?
 6. Is a metering plug on the TM6 acceptable?
