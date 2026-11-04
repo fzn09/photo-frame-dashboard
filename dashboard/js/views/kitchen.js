@@ -77,6 +77,7 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
     if (box) box.innerHTML = T.length ? T.map(timerHTML).join('') : '<div class="k-none">No timers running</div>';
     paintRail();
   }
+  App.timers = function () { return T.filter(function (t) { return !t.done; }).map(function (t) { return { end: t.end }; }); };
   function ring(t) {
     if (App.mode !== 'day') App.setMode('day');
     App.resetIdle();
