@@ -9,7 +9,7 @@ Two halves, see [ARCHITECTURE.md](ARCHITECTURE.md):
 1. **Frame takeover research** (`docs/`, `scripts/`): getting ADB, backing up flash, rooting and kiosking cheap Android photo frames. One doc per device, indexed in `docs/devices.md`.
 2. **The family dashboard** (`dashboard/`): a vanilla-JS Vite app served by a Cloudflare Worker, plus `dashboard/kiosk/`, a Gradle-free Android WebView app that shows it full screen.
 
-This checkout is `fzn09/photo-frame-dashboard`, a fork of `wesbos/photo-frame-dashboard` (`upstream` remote). The owner's frame is a SOMY M10R7 (Allwinner A33). Its private record lives in the git-ignored `frames/` junction; read `frames/SETUP.md` before any device work, since it records the current phase.
+This checkout is `fzn09/photo-frame-dashboard`, a fork of `wesbos/photo-frame-dashboard` (`upstream` remote). The owner's frame is an ENUOSUAM M10R7 (Rockchip RK3126, 1 GB, Android 6.0.1, WebView 44, no root); it runs the dashboard through Firefox, not the WebView kiosk. Its private record lives in the git-ignored `frames/` junction; read `frames/SETUP.md` before any device work, since it records the current phase.
 
 ## Device work: hard rules (from README)
 
@@ -50,7 +50,7 @@ Kiosk APK: `dashboard/kiosk/build.ps1` (Windows) or `build.sh`. The saved URL is
 - **Stage:** fixed 1280×800 design, scaled with a CSS transform. Left rail 76px, content 1156×752. Design tokens are in `css/tokens.css`, icons in `js/icons.js` via `App.icon()`.
 - The people are Fauzan (`alex`, `CAL_ALEX`) and Amanda (`jordan`, `CAL_JORDAN`). Location is Berlin (BVG, `Europe/Berlin`).
 
-## Frame constraints (Android 6, WebView 106, A33, ~1 GB RAM)
+## Frame constraints (Android 6, WebView 106 target, RK3126, ~1 GB RAM)
 
 [docs/building-for-the-frame.md](docs/building-for-the-frame.md) is the source of truth. The `frame-compat-reviewer` agent checks changes against it; run it after dashboard or Worker edits. The rules that bite most:
 
