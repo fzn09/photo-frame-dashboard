@@ -39,7 +39,9 @@ import { chips, mmss } from '../../glance.js';
     var first = App.timedOn(tomorrow)[0], w = App.weatherNow();
     var t = glance().filter(function (c) { return c.kind === 'timer'; })[0];
     return '<div class="nt-time num">' + App.fmt.time(n, false) + '</div>' +
-      '<div class="nt-line">' + App.icon(w.cond, 26) + ' ' + w.temp + '° · ' + (first ? 'First up ' + App.fmt.rel(first.start).toLowerCase() + ': <b>' + App.esc(first.title) + '</b> ' + App.fmt.time(first.start) + ' · ' + App.person(first.people[0]).name : 'Nothing early tomorrow') + '</div>' +
+      '<div class="nt-wx">' + App.icon(w.cond, 26) + '<span>' + w.temp + '°</span></div>' +
+      '<div class="nt-line">' + (first ? 'First up ' + App.fmt.rel(first.start).toLowerCase() + ': <b>' + App.esc(first.title) + '</b>' : 'Nothing early tomorrow') + '</div>' +
+      (first ? '<div class="nt-sub">' + App.fmt.time(first.start) + ' · ' + App.esc(App.person(first.people[0]).name) + '</div>' : '') +
       (t ? '<div class="nt-lock" data-tmr>' + App.icon('clock', 20) + '<span>' + t.text + '</span></div>' : '');
   }
 
