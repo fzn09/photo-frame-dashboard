@@ -298,7 +298,7 @@
   };
 
   // ------------------------------------------------------------ idle
-  App.idle = { home: 60, ambient: 120 };
+  App.idle = { home: 300, ambient: 600 };
   var idleSec = 0;
   function onIdleTick() {
     idleSec++;
