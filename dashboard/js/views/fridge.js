@@ -21,11 +21,11 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
   }
   function row(r) {
     return '<button class="f-row" data-rm="' + r.ids.join(' ') + '" aria-label="' + (V.showUsed ? 'Put back ' : 'Used up ') + App.esc(r.label) + '">' +
-      '<span class="f-name"><b>' + App.esc(r.label) + '</b><small>' + (r.qty > 1 ? '×' + r.qty + ' · ' : '') + bought(r) + (r.total ? ' · ' + EUR.format(r.total) : '') + '</small></span>' +
+      '<span class="f-name"><b>' + App.esc(r.label) + '</b><small>' + (r.qty > 1 ? '<em>×' + r.qty + '</em>' : '') + '<span>' + bought(r) + '</span>' + (r.total ? '<span class="f-eur">' + EUR.format(r.total) + '</span>' : '') + '</small></span>' +
       (V.showUsed ? '' : tag(r)) + '<span class="f-x">' + App.icon(V.showUsed ? 'plus' : 'x', 22) + '</span></button>';
   }
   function group(name, list) {
-    return list.length ? '<section class="f-sec"><div class="s-cat-h"><span class="label">' + name + '</span><span class="label">' + list.length + '</span></div>' + list.map(row).join('') + '</section>' : '';
+    return list.length ? '<section class="f-sec"><h2 class="f-h"><span class="serif">' + name + '</span><span class="f-n">' + list.length + '</span></h2>' + list.map(row).join('') + '</section>' : '';
   }
   function sections(list) {
     return '<div class="f-cols">' + SECTIONS.map(function (s) { return group(s, list.filter(function (r) { return r.section === s; })); }).join('') + '</div>';
