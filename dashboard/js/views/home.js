@@ -1,5 +1,5 @@
 // Home / Today: the glanceable overview. Never scrolls.
-import { daysLeft } from '../../calc.js';
+import { fridgeRows } from '../../calc.js';
 
 (function () {
   'use strict';
@@ -148,15 +148,13 @@ import { daysLeft } from '../../calc.js';
   }
 
   function fridge() {
-    var key = function (f) { var d = daysLeft(f.note, App.now()); return d === null ? 999 : d; };
-    var next = D.fridge.slice().sort(function (a, b) { return key(a) - key(b); }).slice(0, 3);
-    if (!D.fridge.length) return ageTag('fridge') + '<div class="label">Fridge</div><div class="h-calm serif"><i>Fridge is empty.</i> Tap to add what’s inside.</div>';
+    var inside = fridgeRows(D.fridge, App.now());
+    if (!inside.length) return ageTag('fridge') + '<div class="label">Fridge</div><div class="h-calm serif"><i>No receipts yet.</i></div>';
     return ageTag('fridge') + '<div class="label">Fridge</div>' +
-      '<div class="h-stat"><span class="num">' + D.fridge.length + '</span><small>items inside</small></div>' +
-      '<ul class="h-recent">' + next.map(function (f) {
-        var d = key(f);
-        return '<li><i></i>' + App.esc(f.name) + (d === 999 ? '' : '<span class="h-exp' + (d <= 1 ? ' is-due' : '') + '">' +
-          (d < 0 ? 'Expired' : d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d + ' days') + '</span>') + '</li>';
+      '<div class="h-stat"><span class="num">' + inside.length + '</span><small>items inside</small></div>' +
+      '<ul class="h-recent">' + inside.filter(function (r) { return r.state === 'soon'; }).slice(0, 3).map(function (r) {
+        return '<li><i></i>' + App.esc(r.label) + '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
+          (r.left === 0 ? 'Today' : r.left === 1 ? 'Tomorrow' : '~' + r.left + ' days') + '</span></li>';
       }).join('') + '</ul>';
   }
 
