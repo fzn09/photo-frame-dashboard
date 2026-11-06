@@ -51,8 +51,8 @@
     V.el.querySelector('.c-usuals').innerHTML = D.choreUsuals.map(tile).join('');
   }
   function paintHead() {
-    var n = open().length;
-    V.el.querySelector('.c-count').innerHTML = '<span class="num">' + n + '</span> to do';
+    var n = open().length, done = sorted().length - n;
+    V.el.querySelector('.c-count').innerHTML = '<span class="num">' + n + '</span> to do' + (done ? ' · ' + done + ' done' : '');
   }
   function render() {
     V.el.innerHTML = '<div class="chores">' +

@@ -21,7 +21,7 @@ import { fridgeRows } from '../../calc.js';
 
   function clock() {
     var n = App.now();
-    return '<div class="h-time num">' + App.fmt.time(n, false) + '<span class="h-ampm">' + App.fmt.ampm(n) + '</span></div>' +
+    return '<div class="h-time num">' + App.fmt.time(n) + '</div>' +
       '<div class="h-date"><b>' + App.fmt.day(n) + '</b> ' + App.fmt.month(n) + ' ' + n.getDate() + '</div>';
   }
 
@@ -69,7 +69,7 @@ import { fridgeRows } from '../../calc.js';
     var whoText = App.isFamily(e) ? 'Everyone' : who.join(' + ');
     var big = mins < 100
       ? '<div class="h-hero-count num"><em>in</em>' + Math.round(mins) + '<small>min</small></div>'
-      : '<div class="h-hero-count num"><em>at</em>' + App.fmt.time(e.start, false) + '<small>' + App.fmt.ampm(e.start) + '</small></div>';
+      : '<div class="h-hero-count num"><em>at</em>' + App.fmt.time(e.start) + '</div>';
     var leavePill = '';
     if (e.travel) {
       leavePill = leave <= 0

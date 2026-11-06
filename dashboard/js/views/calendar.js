@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var D = window.DATA;
-  var PX = 72, START = 6, END = 23; // 72px per hour, 6 AM → 11 PM
+  var PX = 96, START = 6, END = 23; // 96px per hour: a 30 min event is 48px, the tap floor, 06:00 → 23:00
   var V = { mode: 'day', date: null, el: null, scroll: null };
   var MODES = [['day', 'Today'], ['3day', '3 Day'], ['week', 'Week'], ['month', 'Month']];
 
@@ -72,7 +72,7 @@
   function hoursCol() {
     var h = '';
     for (var i = START; i <= END; i++) {
-      h += '<div class="hr" style="top:' + (i - START) * PX + 'px"><span>' + (i === 12 ? 'Noon' : (i % 12 || 12) + (i < 12 ? ' AM' : ' PM')) + '</span></div>';
+      h += '<div class="hr" style="top:' + (i - START) * PX + 'px"><span>' + (i < 10 ? '0' : '') + i + ':00' + '</span></div>';
     }
     return h;
   }
@@ -300,7 +300,7 @@
     var now = App.now();
     var st = { who: [], day: 0, time: '15:30', dur: 60, title: '' };
     var days = [0, 1, 2, 3, 4];
-    var times = [['08:00', '8 AM'], ['12:00', 'Noon'], ['15:30', '3:30 PM'], ['16:30', '4:30 PM'], ['18:00', '6 PM'], ['19:30', '7:30 PM']];
+    var times = [['08:00', '08:00'], ['12:00', '12:00'], ['15:30', '15:30'], ['16:30', '16:30'], ['18:00', '18:00'], ['19:30', '19:30']];
     var ideas = ['Soccer', 'Playdate', 'Dentist', 'Dinner out', 'Swim', 'Birthday party'];
     App.sheet(
       '<div class="sheet-pad add">' +

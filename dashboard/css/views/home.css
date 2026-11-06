@@ -25,7 +25,6 @@
 /* ---- clock: no card, it is the anchor (168px serif, digits ~19 mm) */
 .h-clock { display: flex; flex-direction: column; justify-content: center; padding-left: 4px; }
 .h-time { font-variant-numeric: tabular-nums; font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: var(--fs-clock); line-height: .78; letter-spacing: -.025em; display: flex; align-items: flex-start; }
-.h-ampm { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: var(--fs-l); color: var(--ink-2); margin: 10px 0 0 6px; }
 .h-date { font-family: var(--serif); font-size: var(--fs-l); margin-top: 16px; color: var(--ink-2); }
 .h-date b { font-weight: 400; font-style: italic; color: var(--ink); margin-right: 6px; }
 
@@ -104,7 +103,7 @@
 .h-lane-head::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
 .h-lane-head .avatar { display: none; }
 .h-lane-head b { font-family: var(--serif); font-weight: 400; font-size: var(--fs-l); line-height: 1; }
-.h-ev { display: flex; align-items: baseline; gap: 12px; width: 100%; min-width: 0; padding: 6.5px 0; border-bottom: 1px solid var(--line); text-align: left; } /* 44px tap row */
+.h-ev { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; min-height: 48px; padding: 4px 0; border-bottom: 1px solid var(--line); text-align: left; } /* 48px tap row */
 .h-together { grid-column: 1 / -1; margin-bottom: 10px; }
 .h-together .h-ev:first-child { padding-top: 0; }
 .h-ev .dots { flex: none; align-self: center; }
@@ -139,7 +138,7 @@
 
 /* ---- today's meals: shared, so a band above the two people, no time */
 .h-mband { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
-.h-meal { flex: 1 1 0; min-width: 0; min-height: 44px; display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; }
+.h-meal { flex: 1 1 0; min-width: 0; min-height: 48px; display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; }
 .h-meal img, .h-meal .m-noimg { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: rgb(var(--ov) / .07); }
 .h-meal b { font-size: var(--fs-body); font-weight: 500; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

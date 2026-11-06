@@ -38,4 +38,4 @@ Sample data lives in dashboard/js/data.js. Real Cookidoo data is available only 
 - Readable from across the room; nothing below 16 px.
 - Show only what the feed really knows; a stale or missing feed says so.
 - The page survives alone: last good data, never a blank screen.
-- Orange means time-critical and nothing else.
+- Orange is the warm accent of the house (counts, today, selection). The red-orange alert tone (`--alert`) is reserved for time-critical items: overdue, leave now, expiring.

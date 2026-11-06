@@ -92,7 +92,7 @@
     return '<div class="demo-panel">' +
       '<div class="demo-head"><div><div class="label label--light">Prototype</div><h2 class="serif">Demo controls</h2></div><button class="demo-x" data-demo-close>' + App.icon('x', 28) + '</button></div>' +
       '<div class="demo-sec"><div class="label label--light">Time of day · now ' + App.fmt.time(t) + '</div><div class="demo-grid">' +
-      '<button data-time="7:10">7:10 AM</button><button data-time="15:18">3:18 PM</button><button data-time="19:45">7:45 PM</button><button data-time="23:40">11:40 PM</button><button data-time="real">Real time</button></div></div>' +
+      '<button data-time="7:10">07:10</button><button data-time="15:18">15:18</button><button data-time="19:45">19:45</button><button data-time="23:40">23:40</button><button data-time="real">Real time</button></div></div>' +
       '<div class="demo-sec"><div class="label label--light">Modes</div><div class="demo-grid">' +
       '<button data-mode="ambient">Ambient</button><button data-mode="night">Night</button><button data-fastidle>' + (App.idle.home < 60 ? 'Idle: fast ✓' : 'Idle: fast') + '</button><button data-about>About</button></div></div>' +
       '<div class="demo-sec"><div class="label label--light">Alerts</div><div class="demo-grid">' +

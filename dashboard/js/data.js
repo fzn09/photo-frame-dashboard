@@ -114,8 +114,8 @@ window.DATA = (function () {
     { id: 'c1', who: 'alex', title: 'Take out recycling', overdue: true, done: false },
     { id: 'c2', who: 'jordan', title: 'Fold laundry', done: false },
     { id: 'c3', who: 'any', title: 'Water the plants', done: false },
-    { id: 'c4', who: 'any', title: 'Empty dishwasher', time: '6:00 PM', done: false },
-    { id: 'c5', who: 'alex', title: 'Lock up', time: '10:00 PM', done: false },
+    { id: 'c4', who: 'any', title: 'Empty dishwasher', time: '18:00', done: false },
+    { id: 'c5', who: 'alex', title: 'Lock up', time: '22:00', done: false },
     { id: 'c6', who: 'jordan', title: 'Run dishwasher', done: false },
     { id: 'c7', who: 'alex', title: 'Call the plumber', done: true, doneAt: Date.now() }
   ];

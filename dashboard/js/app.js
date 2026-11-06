@@ -50,21 +50,13 @@
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var MON_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
   App.fmt = {
-    time: function (d, ampm) {
+    // 24-hour clock, as in Berlin: "07:05", "16:30". The old second argument (AM/PM switch) is ignored.
+    time: function (d) {
       var h = d.getHours(), m = d.getMinutes();
-      var s = (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m;
-      return ampm === false ? s : s + ' ' + (h >= 12 ? 'PM' : 'AM');
+      return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
     },
-    // "4 PM", "3:45 PM"
-    hour: function (d) {
-      var h = d.getHours(), m = d.getMinutes();
-      return (h % 12 || 12) + (m ? ':' + (m < 10 ? '0' : '') + m : '') + ' ' + (h >= 12 ? 'PM' : 'AM');
-    },
-    ampm: function (d) { return d.getHours() >= 12 ? 'PM' : 'AM'; },
-    range: function (a, b) {
-      var same = App.fmt.ampm(a) === App.fmt.ampm(b);
-      return (same ? App.fmt.time(a, false) : App.fmt.time(a)) + ' – ' + App.fmt.time(b);
-    },
+    hour: function (d) { return App.fmt.time(d); },
+    range: function (a, b) { return App.fmt.time(a) + ' – ' + App.fmt.time(b); },
     day: function (d) { return DAYS[d.getDay()]; },
     dayShort: function (d) { return DAYS[d.getDay()].slice(0, 3); },
     month: function (d) { return MONTHS[d.getMonth()]; },
@@ -167,7 +159,7 @@
     var W = D.weather, h = App.now().getHours(), out = [];
     for (var i = 0; i < count; i++) {
       var x = (h + i) % 24;
-      out.push({ h: x, t: W.t[x], c: W.c[x], p: W.p[x], label: i === 0 ? 'Now' : ((x % 12 || 12) + (x >= 12 ? 'p' : 'a')) });
+      out.push({ h: x, t: W.t[x], c: W.c[x], p: W.p[x], label: i === 0 ? 'Now' : (x < 10 ? '0' : '') + x + ':00' });
     }
     return out;
   };
@@ -337,7 +329,7 @@
     App.emit('second', n);
     if (n.getMinutes() !== lastMin) {
       lastMin = n.getMinutes();
-      $('#railClock').innerHTML = '<b>' + App.fmt.time(n, false) + '</b><span>' + App.fmt.ampm(n) + '</span>';
+      $('#railClock').innerHTML = '<b>' + App.fmt.time(n) + '</b>';
       App.emit('minute', n);
     }
     onIdleTick();

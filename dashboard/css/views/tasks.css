@@ -6,7 +6,7 @@
 .c-count .num { font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: 52px; color: var(--accent); }
 
 /* one list, read top to bottom then into the second column (the stage is too wide for one) */
-.c-list { flex: 1; min-height: 0; overflow-y: auto; }
+.c-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; } /* the add panel follows the list instead of sitting far below it */
 .c-rows { columns: 2; column-gap: 32px; }
 .c-row {
   display: flex; align-items: center; gap: 14px; break-inside: avoid;

@@ -84,7 +84,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 .rail-clock { margin-top: auto; padding: 10px 0; text-align: center; line-height: 1; position: relative; overflow: hidden; }
 .rail-clock.is-holding { background: var(--paper-2); }
 .rail-clock b { display: block; font-family: var(--serif); font-size: 30px; font-weight: 400; font-variant-numeric: tabular-nums; }
-.rail-clock span { font-size: var(--fs-min); font-weight: 700; letter-spacing: .1em; color: var(--mute); }
 
 /* ---------------------------------------------------------------- views */
 .views { position: relative; overflow: hidden; }
@@ -319,8 +318,10 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .rail-item[hidden] { display: none; }
 
 /* ---------------------------------------------------------------- about sheet (hold the rail clock) */
-.about-meta { font-size: var(--fs-body); color: var(--ink-2); margin: -8px 0 22px; line-height: 1.5; }
-.about-stale { font-size: var(--fs-body); font-weight: 700; color: var(--ink); background: rgb(var(--ov) / .08); border-radius: var(--r-s); padding: 12px 16px; margin: 0 0 22px; }
-.about-stale[hidden] { display: none; }
+.about .sheet-h { margin: 0 0 12px; }
+.about-status { font-size: var(--fs-body); font-weight: 700; color: var(--ink); margin: 0 0 18px; }
+.about-status.is-stale { background: rgb(var(--ov) / .08); border-radius: var(--r-s); padding: 12px 16px; }
+.about-ver { font-size: var(--fs-body); color: var(--ink-2); margin: 0 0 26px; }
 .about-log { list-style: none; margin: 12px 0 0; padding: 0; font-size: var(--fs-body); color: var(--ink); }
-.about-log li { padding: 10px 0; border-top: 1px solid var(--line); }
+.about-log li { padding: 10px 0; border-top: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.about-foot { font-family: var(--mono); font-size: var(--fs-min); color: var(--mute); margin: 22px 0 0; }
