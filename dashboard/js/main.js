@@ -13,5 +13,6 @@ import './views/meals.js';
 import './views/kitchen.js';
 import './views/photos.js';
 import './views/ambient.js';
+import './about.js';
 import './diag.js';
 import './fetch.js';
