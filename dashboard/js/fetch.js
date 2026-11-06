@@ -43,14 +43,10 @@
     App.emit('shopping'); // the Shopping view repaints itself when it's the one on screen
   }
 
-  // Fridge = a second Bring! list. Same shape as groceries, ids stable per name.
-  function updateFridge(items) {
-    var old = {};
-    D.fridge.forEach(function (f) { old[f.name.toLowerCase()] = f; });
-    D.fridge = items.map(function (item) {
-      var o = old[item.name.toLowerCase()];
-      return { id: o ? o.id : D._gid(), name: item.name, note: item.note || '', qty: item.qty || 1, cat: o ? o.cat : App.categorize(item.name) };
-    });
+  // Fridge = REWE receipt lines from the Worker (rewe-map.js), each with a stable id and a used flag.
+  function updateFridge(data) {
+    D.fridge = data.items || [];
+    D.fridgeMeta = { updatedAt: data.updatedAt, status: data.status, message: data.message || '' };
     App.emit('data');
     App.emit('fridge');
   }
@@ -126,10 +122,19 @@
     writes++;
     bringPost('shopping', op, g, function () { if (--writes === 0 && pullShopping) pullShopping(); });
   };
-  var fridgeWrites = 0, pullFridge;
-  App.fridgeSync = function (op, g) {
-    fridgeWrites++;
-    bringPost('fridge', op, g, function () { if (--fridgeWrites === 0 && pullFridge) pullFridge(); });
+  // KV takes one write per second per key, so taps go out in order and spaced, with one refresh after the last.
+  var fridgeWrites = [], pullFridge;
+  function nextFridgeWrite() {
+    post('fridge', fridgeWrites[0], 'Fridge', function () {
+      setTimeout(function () {
+        fridgeWrites.shift();
+        if (fridgeWrites.length) nextFridgeWrite();
+        else if (pullFridge) pullFridge();
+      }, 1100);
+    });
+  }
+  App.fridgeUse = function (ids, used) {
+    if (fridgeWrites.push({ op: used ? 'use' : 'unuse', ids: ids }) === 1) nextFridgeWrite();
   };
 
   function updateTransit(data) {
@@ -158,7 +163,7 @@
         .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
         .then(function (data) { fails = 0; f.ok = Date.now(); f.mono = performance.now(); handler(data); })
         .catch(function (err) {
-          if (err === 503) { f.off = true; return; }
+          if (err === 503) { f.off = endpoint !== 'fridge'; return; } // fridge: 503 only means no job run yet, keep asking
           console.warn('[fetch] ' + endpoint + ' failed:', err);
           if (fails < RETRY.length) wait = RETRY[fails++];
         })
@@ -209,8 +214,7 @@
     poll('weather',  updateWeather,  30);
     poll('calendar', updateCalendar,  5);
     pullShopping = poll('shopping', updateShopping, 2, function () { return writes > 0; });
-    // Each Bring! call logs in again, so the fridge list is only polled while its view is on
-    pullFridge = poll('fridge', updateFridge, 5, function () { return fridgeWrites > 0 || !App.enabled('fridge'); });
+    pullFridge = poll('fridge', updateFridge, 5, function () { return fridgeWrites.length > 0 || !App.enabled('fridge'); });
     pullChores = poll('chores', updateChores, 5, function () { return choreWrites > 0 || !App.enabled('tasks'); });
     poll('transit',  updateTransit,   1);
     poll('meals',    updateMeals,    30, function () { return !App.enabled('meals'); });

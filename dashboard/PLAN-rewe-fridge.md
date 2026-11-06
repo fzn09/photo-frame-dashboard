@@ -3,9 +3,9 @@
 One start-to-finish guide. It replaces the old separate guide and plan. Follow it top to bottom, nothing jumps elsewhere.
 Background and reasons are in [SPEC-home-bridge.md](SPEC-home-bridge.md), section 3a.
 
-**Status:** Phase 1 is partly done (see [You are here](#you-are-here)). Phases 2 and 3 have not started. Commands are
-written from the AWS docs and checked for PowerShell syntax, but most have not yet run against real AWS. If one fails,
-stop and read the error before trying a variation.
+**Status:** Live as of 2026-11-06: Worker deployed, timers enabled, first runs pushed 70 items. Still open: the frame check in
+step 3.8 part 6 and the step 3.9 checks. Phase 3 code (steps 3.1 to 3.7) is done and merged into
+`claude/home-bridge-spec`, tested locally. All of step 3.8 ran against real AWS and Cloudflare except part 6.
 
 ---
 
@@ -160,7 +160,7 @@ The last line should print `IID=i-...  SG=sg-...`. `None` or a blank is normal f
 | Runs per day | 12:30, 18:30, 21:30 Europe/Berlin |
 | Region | `eu-central-1` |
 | Gmail account for IMAP | A separate account that receives forwarded eBon mails |
-| Base branch for the dashboard work | **Not chosen yet.** Decide at step 3.1 |
+| Base branch for the dashboard work | `fridge-view-redesign`, the only branch with the redesigned view. Cookidoo and idle-state fixes in `claude/home-bridge-spec` still have to be merged in |
 
 ## You are here
 
@@ -892,13 +892,13 @@ Code as they are: "implement steps 3.1 to 3.6 of `dashboard/PLAN-rewe-fridge.md`
 
 ## 3.1 Branch and pure mapper
 
-Pick the base branch first. The Cookidoo and Home Assistant work have diverged (SPEC section 4), so this choice matters.
+Base branch: `fridge-view-redesign`. The Cookidoo and Home Assistant work have diverged (SPEC section 4).
 
 **LAPTOP:**
 
 ```powershell
 cd D:\Projects\photo_frame_dashboard
-git switch -c feat/fridge-rewe <base branch>
+git switch -c feat/fridge-rewe fridge-view-redesign
 ```
 
 New `rewe-map.js`, the same pattern as `calc.js` and `views.js`:
@@ -932,9 +932,10 @@ Edit `worker.js`:
    store the message and time. Prune `rewe:used` to ids present in the new items.
 4. `GET /api/fridge`: read `rewe:latest` and `rewe:used`, return `{items, updatedAt, status, message}`. Answer 503 with an
    empty body when there is no entry, so the page keeps sample data.
-5. `POST /api/fridge`: body `{op: 'use' | 'unuse', id}`, guarded by `guard()` like other writes. It reads, edits and
-   writes `rewe:used`. KV is eventually consistent and limits writes to one per second per key. That is fine for one
-   household. The page updates first and refreshes after.
+5. `POST /api/fridge`: body `{op: 'use' | 'unuse', ids: [...]}`, guarded by `guard()` like other writes. It reads, edits
+   and writes `rewe:used`. A list of ids because a view row can hold several purchases. KV is eventually consistent and
+   limits writes to one per second per key, so one row is one write and `fetch.js` sends taps in sequence. The page
+   updates first and refreshes after.
 6. Remove the Bring! fridge path: `which === 'fridge'` in `bringSession`, `BRING_FRIDGE_LIST`, and the `/api/fridge`
    branch in the shopping/fridge route. Shopping stays on Bring!.
 
@@ -947,9 +948,7 @@ cd D:\Projects\photo_frame_dashboard\dashboard
 npx wrangler kv namespace create FRIDGE_KV
 ```
 
-It prints an `id`. `wrangler.jsonc` already has a `kv_namespaces` list with `COOKIDOO_KV`: add a second entry with binding
-`FRIDGE_KV` and that id. Also list the `INGEST_KEY` secret in the comment block, drop the `BRING_FRIDGE_LIST` mention, and
-update the route comment at the top of `worker.js`.
+It prints an `id`. `wrangler.jsonc` already has the `FRIDGE_KV` entry in `kv_namespaces`, without an id: paste it there.
 
 Tests: extend `test/gate.test.mjs` (ingest reachable without cookie, everything else still 401), add
 `test/ingest.test.mjs` with a fake KV in the style of `cookidoo.test.mjs` (auth cases, ok replaces, error keeps, prune,
@@ -957,34 +956,34 @@ size limit).
 
 ## 3.3 Page data
 
-- `js/data.js`: replace `fridge` and `fridgeUsuals` with `fridge: []` of REWE-shaped sample items and `fridgeMeta`
-  `{updatedAt, status}`. Remove the Bring! comment.
-- `js/fetch.js`: new `updateFridge(data)` sets `D.fridge`, `D.fridgeMeta`, `D.fridgeAt` and emits `'data'` and
-  `'fridge'`. Replace `App.fridgeSync` with `App.fridgeUse(id, used)` that posts `{op, id}`. The 5 s, 15 s, 1 min retry
+- `js/data.js`: replace `fridge` and `fridgeUsuals` with `fridge: []` of invented REWE-shaped sample items and `fridgeMeta`
+  `{updatedAt, status, message}`. Remove the Bring! comment.
+- `js/fetch.js`: new `updateFridge(data)` sets `D.fridge`, `D.fridgeMeta` and emits `'data'` and
+  `'fridge'`. Replace `App.fridgeSync` with `App.fridgeUse(ids, used)` that posts `{op, ids}`. The 5 s, 15 s, 1 min retry
   stays. Poll `/api/fridge` every 5 minutes while `fridge` is enabled, because the Today tile reads it too. Remove the
   comment about Bring! logging in on every call.
 
 ## 3.4 Fridge view
 
-Rewrite `js/views/fridge.js` and `css/views/fridge.css`. Remove the quick-add form, usuals, suggestions and expiry
-presets.
+The view was redesigned on `fridge-view-redesign` after this plan was written, so it was kept, not rewritten. It groups
+rows by food section with a "Use soon" rail of estimated dates from `calc.js`, where this plan had a plain list by
+purchase date. On top of that design:
 
-- Header: "REWE", item count, total in EUR, "updated N min ago". One cached
+- Header: "Fridge", item count, total in EUR, "Receipts checked" with a fixed time (no timer needed). One cached
   `Intl.NumberFormat('de-DE', {style:'currency', currency:'EUR'})`.
-- Body: rows grouped by purchase date, newest first (Today, Yesterday, then weekday and date). A row shows name, quantity
-  when above 1, and price. Reuse the `.shop`, `.s-cat`, `.s-row` and `.s-name` classes from the Shopping stylesheet.
-- Tap a row to mark it used up. A toast offers Undo and calls `App.fridgeUse`. A toggle shows used items.
-- States: empty ("No eBon yet"), stale (age above 18 hours shows an "Overdue" chip, since the longest gap between runs is
-  about 15 hours), error status (shows the stored message in small text, data stays).
+- A row shows name, quantity when above 1, age and price.
+- Tap a row to mark it used up. A toast offers Undo and calls `App.fridgeUse`. A "Used" toggle lists used items, and
+  tapping one puts it back.
+- States: empty ("No receipts yet"), stale (age above 18 hours shows an "Overdue" chip, since the longest gap between runs
+  is about 15 hours), error status (shows the stored message in small text, data stays).
 - Frame rules: `rgba()` only, nothing under 16 px, no infinite animation, no `innerHTML` rebuild on timers, no
   `toSorted` or `Object.groupBy`. Repaint only when `App.current === 'fridge'`.
 
 ## 3.5 Today tile
 
-`js/views/home.js` `fridge()` currently sorts by days left with `daysLeft`. Replace it with: count of unused items, the
-date of the latest purchase, and the three newest unused items. Remove the `calc.js` import if nothing else uses it.
-`calc.js` `withExpiry` and `daysLeft` then have no caller: delete them and their cases in `calc.test.mjs`, or keep them
-for the estimated use-by idea in the spec. Decide before merging.
+`js/views/home.js` `fridge()` shows the count of unused items, how long ago the latest purchase was, and three items: the
+ones to use soon, or the newest when nothing is urgent. `calc.js` `withExpiry`, `parseExpiry` and `daysLeft` had no caller
+left and were deleted, since `fridgeRows` covers the estimated use-by idea.
 
 ## 3.6 Docs
 

@@ -1,5 +1,5 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping + /api/fridge (Bring! lists: GET list, POST write), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/recipe + /api/meals/img (Cookidoo week plan, cookidoo.js)
+// Routes: /api/weather, /api/calendar, /api/shopping (Bring!: GET list, POST write), /api/fridge (REWE receipts in KV: GET list, POST used up), /api/ingest (the REWE job pushes here: bearer key, no cookie), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/recipe + /api/meals/img (Cookidoo week plan, cookidoo.js)
 // All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
 //
 // Access gate: the whole site (page, assets and /api/*) needs the `hq` cookie, which holds DASH_TOKEN.
@@ -8,6 +8,7 @@
 
 import { parseViews } from './views.js';
 import { handleMeals, handleMealRecipe, handleMealImage } from './cookidoo.js';
+import { mapIngest, applyUsed } from './rewe-map.js';
 
 // Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
 const JSON_CORS = { 'Content-Type': 'application/json' };
@@ -36,16 +37,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const { pathname } = url;
-    const denied = gate(request, env, url);
-    if (denied) return denied;
     try {
+      // Before the gate: the REWE job has no cookie. Its bearer check is the only control on this route.
+      if (pathname === '/api/ingest' && request.method === 'POST') return await handleIngest(request, env);
+      const denied = gate(request, env, url);
+      if (denied) return denied;
       // await: the handlers are async, and only an awaited rejection reaches the catch below
       if (pathname === '/api/weather')  return await handleWeather(env);
       if (pathname === '/api/calendar') return await handleCalendar(env);
-      if (pathname === '/api/shopping' || pathname === '/api/fridge') {
-        const which = pathname.slice(5);
-        return await (request.method === 'POST' ? bringWrite(request, env, which) : bringRead(env, which));
-      }
+      if (pathname === '/api/shopping') return await (request.method === 'POST' ? bringWrite(request, env) : bringRead(env));
+      if (pathname === '/api/fridge')   return await (request.method === 'POST' ? fridgeWrite(request, env) : fridgeRead(env));
       if (pathname === '/api/chores')   return await (request.method === 'POST' ? choresWrite(request, env) : choresRead(env));
       if (pathname === '/api/config')   return handleConfig(env);
       if (pathname === '/api/transit')  return await handleTransit(env);
@@ -211,8 +212,8 @@ async function handleCalendar(env) {
 // Flow mirrors the python bring_api package used by D:\Projects\shoplister
 const BRING = 'https://api.getbring.com/rest/';
 
-// Login + headers + target list (which: 'shopping' | 'fridge'). Throws on auth failure; list is null if not found.
-async function bringSession(env, which) {
+// Login + headers + target list. Throws on auth failure; list is null if the account has none.
+async function bringSession(env) {
   const authRes = await fetch(BRING + 'v2/bringauth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -229,21 +230,19 @@ async function bringSession(env, which) {
     'X-BRING-USER-UUID': auth.uuid,
     'X-BRING-PUBLIC-USER-UUID': auth.publicUuid
   };
-  // Shopping: list named BRING_LIST (default "home", like shoplister), else the first list.
-  // Fridge: list named BRING_FRIDGE_LIST (default "fridge"), no fallback, so it never writes to the shopping list.
+  // List named BRING_LIST (default "home", like shoplister), else the first list.
   const { lists } = await (await fetch(`${BRING}bringusers/${auth.uuid}/lists`, { headers: H })).json();
-  const fridge = which === 'fridge';
-  const want = (fridge ? env.BRING_FRIDGE_LIST || 'fridge' : env.BRING_LIST || 'home').toLowerCase();
-  const list = (lists || []).find(l => (l.name || '').trim().toLowerCase() === want) || (fridge ? null : (lists || [])[0]) || null;
+  const want = (env.BRING_LIST || 'home').toLowerCase();
+  const list = (lists || []).find(l => (l.name || '').trim().toLowerCase() === want) || (lists || [])[0] || null;
   return { H, list };
   // ponytail: re-authenticates on every request; use Workers KV to cache the token if Bring! rate-limits
 }
 
-async function bringRead(env, which) {
+async function bringRead(env) {
   if (!env.BRING_EMAIL || !env.BRING_PASSWORD) {
     return new Response('[]', { status: 503, headers: JSON_CORS });
   }
-  const { H, list } = await bringSession(env, which);
+  const { H, list } = await bringSession(env);
   if (!list) return new Response('{"error":"no Bring! list"}', { status: 404, headers: JSON_CORS });
 
   const data = await (await fetch(`${BRING}v2/bringlists/${list.listUuid}`, { headers: H })).json();
@@ -266,12 +265,12 @@ function guard(request, env) {
 const BRING_OPS = { add: 'TO_PURCHASE', done: 'TO_RECENTLY', remove: 'REMOVE' };
 
 // POST {op:'add'|'done'|'remove', name, qty?, note?}. 'add' also covers qty/note change and "add back".
-async function bringWrite(request, env, which) {
+async function bringWrite(request, env) {
   const denied = guard(request, env);
   if (denied) return denied;
   const { op, name, qty = 1, note = '' } = await request.json();
   if (!BRING_OPS[op] || !name) return new Response('{"error":"bad request"}', { status: 400, headers: JSON_CORS });
-  const { H, list } = await bringSession(env, which);
+  const { H, list } = await bringSession(env);
   if (!list) return new Response('{"error":"no Bring! list"}', { status: 404, headers: JSON_CORS });
   const res = await fetch(`${BRING}v2/bringlists/${list.listUuid}/items`, {
     method: 'PUT',
@@ -287,6 +286,66 @@ async function bringWrite(request, env, which) {
     })
   });
   if (!res.ok) throw new Error('Bring! write failed: ' + res.status);
+  return new Response('{"ok":true}', { headers: JSON_CORS });
+}
+
+// ---- REWE fridge feed: the job pushes receipts here, the page reads them (KV: rewe:latest, rewe:used) -----
+
+const MAX_INGEST = 256 * 1024;
+const jsonError = (msg, status) => new Response(JSON.stringify({ error: msg }), { status, headers: JSON_CORS });
+
+async function sameSecret(a, b) {
+  const enc = new TextEncoder();
+  const [x, y] = await Promise.all([crypto.subtle.digest('SHA-256', enc.encode(a)), crypto.subtle.digest('SHA-256', enc.encode(b))]);
+  return crypto.subtle.timingSafeEqual(x, y);
+}
+
+// status "ok" replaces the items. "error" keeps the last good items and records what went wrong.
+async function handleIngest(request, env) {
+  if (!env.INGEST_KEY || !env.FRIDGE_KV) return jsonError('ingest not configured', 503);
+  if (!await sameSecret(request.headers.get('Authorization') || '', 'Bearer ' + env.INGEST_KEY)) return jsonError('bad key', 401);
+  const raw = await request.arrayBuffer();
+  if (raw.byteLength > MAX_INGEST) return jsonError('too large', 413);
+  let feed;
+  try { feed = mapIngest(JSON.parse(new TextDecoder().decode(raw))); } catch { feed = null; }
+  if (!feed) return jsonError('bad payload', 400);
+
+  const kv = env.FRIDGE_KV;
+  if (feed.status === 'error') {
+    const last = await kv.get('rewe:latest', 'json');
+    await kv.put('rewe:latest', JSON.stringify({ items: [], updatedAt: null, ...last, status: 'error', message: feed.message, failedAt: new Date().toISOString() }));
+    return new Response('{"ok":true}', { headers: JSON_CORS });
+  }
+  await kv.put('rewe:latest', JSON.stringify(feed));
+  const ids = new Set(feed.items.map(i => i.id));
+  const used = (await kv.get('rewe:used', 'json')) || [];
+  const kept = used.filter(id => ids.has(id));
+  if (kept.length !== used.length) await kv.put('rewe:used', JSON.stringify(kept));
+  return new Response('{"ok":true}', { headers: JSON_CORS });
+}
+
+// 503 until the first ingest, so the page keeps its sample data.
+async function fridgeRead(env) {
+  const latest = env.FRIDGE_KV && await env.FRIDGE_KV.get('rewe:latest', 'json');
+  if (!latest) return new Response('', { status: 503 });
+  const used = (await env.FRIDGE_KV.get('rewe:used', 'json')) || [];
+  return new Response(JSON.stringify({ ...latest, items: applyUsed(latest.items, used) }), {
+    headers: { ...JSON_CORS, 'Cache-Control': 'no-store' }
+  });
+}
+
+// POST {op:'use'|'unuse', ids:[...]}. Several ids in one write: a view row can hold several purchases, and KV
+// takes one write per second per key. Read-modify-write is fine for one household (fetch.js sends in sequence).
+async function fridgeWrite(request, env) {
+  const denied = guard(request, env);
+  if (denied) return denied;
+  if (!env.FRIDGE_KV) return new Response('{}', { status: 503, headers: JSON_CORS });
+  const { op, ids } = (await request.json().catch(() => null)) || {};
+  const good = Array.isArray(ids) && ids.length && ids.length <= 200 && ids.every(id => typeof id === 'string' && /^\w{1,16}$/.test(id));
+  if ((op !== 'use' && op !== 'unuse') || !good) return jsonError('bad request', 400);
+  const used = new Set((await env.FRIDGE_KV.get('rewe:used', 'json')) || []);
+  ids.forEach(id => { if (op === 'use') used.add(id); else used.delete(id); });
+  await env.FRIDGE_KV.put('rewe:used', JSON.stringify([...used]));
   return new Response('{"ok":true}', { headers: JSON_CORS });
 }
 

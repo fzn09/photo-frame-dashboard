@@ -1,172 +1,104 @@
-// Fridge: what's in it (left, soonest expiry first) + quick add (right). Backed by a second Bring!
-// list through /api/fridge; reuses the Shopping view's layout classes (css/views/shopping.css).
-import { withExpiry, daysLeft } from '../../calc.js';
+// Fridge: what the REWE receipts say we bought, by section. Tap marks a purchase used up (Undo, or put it
+// back from the Used list). Use-by dates are estimates from the purchase date (calc.js): receipts have none,
+// so the tags say "~" and "Past est."
+import { fridgeRows, SECTIONS } from '../../calc.js';
 
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null, query: '', qtyTimer: {} };
-  var EXPIRY = [['Today', 0], ['+2 days', 2], ['+3 days', 3], ['+1 week', 7], ['+2 weeks', 14], ['No date', null]];
+  var V = { el: null, showUsed: false };
+  var EUR = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+  var OVERDUE = 18 * 36e5; // the longest gap between job runs is about 15 h
 
-  // Bring! write-through (no-op in a bare build where fetch.js hasn't defined it)
-  function sync(op, f) { if (App.fridgeSync) App.fridgeSync(op, f); }
-  function byId(id) { return D.fridge.filter(function (f) { return f.id === id; })[0]; }
-  function find(name) { return D.fridge.filter(function (f) { return f.name.toLowerCase() === name.toLowerCase(); })[0]; }
-  function left(f) { return daysLeft(f.note, App.now()); }
-  function soon(f) { var d = left(f); return d !== null && d <= 2; }
-  function expLabel(d) { return d < 0 ? 'Expired' : d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : 'In ' + d + ' days'; }
+  function tag(r) {
+    if (r.state === 'past') return '<span class="f-tag">Past est.</span>';
+    if (r.state !== 'soon') return '';
+    return '<span class="f-tag is-soon">' + (r.left === 0 ? 'Today' : r.left === 1 ? 'Tomorrow' : '~' + r.left + ' days') + '</span>';
+  }
+  function bought(r) {
+    if (r.newest !== r.age) return r.newest + '–' + r.age + ' days ago';
+    return r.age <= 0 ? 'Today' : r.age === 1 ? 'Yesterday' : r.age + ' days ago';
+  }
+  function row(r) {
+    return '<button class="f-row" data-rm="' + r.ids.join(' ') + '" aria-label="' + (V.showUsed ? 'Put back ' : 'Used up ') + App.esc(r.label) + '">' +
+      '<span class="f-name"><b>' + App.esc(r.label) + '</b><small>' + (r.qty > 1 ? '×' + r.qty + ' · ' : '') + bought(r) + (r.total ? ' · ' + EUR.format(r.total) : '') + '</small></span>' +
+      (V.showUsed ? '' : tag(r)) + '<span class="f-x">' + App.icon(V.showUsed ? 'plus' : 'x', 22) + '</span></button>';
+  }
+  function group(name, list) {
+    return list.length ? '<section class="f-sec"><div class="s-cat-h"><span class="label">' + name + '</span><span class="label">' + list.length + '</span></div>' + list.map(row).join('') + '</section>' : '';
+  }
+  function sections(list) {
+    return '<div class="f-cols">' + SECTIONS.map(function (s) { return group(s, list.filter(function (r) { return r.section === s; })); }).join('') + '</div>';
+  }
+  function byState(rows, state) { return rows.filter(function (r) { return r.state === state; }); }
 
-  function row(f) {
-    var d = left(f), rest = withExpiry(f.note, null);
-    return '<div class="s-row" data-id="' + f.id + '">' +
-      '<button class="s-hit" data-open="' + f.id + '">' +
-      '<span class="s-name"><b>' + App.esc(f.name) + '</b>' +
-      (d !== null || rest ? '<small>' + (d !== null ? '<span class="f-exp' + (d <= 1 ? ' is-due' : '') + '">' + expLabel(d) + '</span>' : '') + App.esc(rest) + '</small>' : '') +
-      '</span></button>' +
-      '<div class="s-qty"><button data-qty="-1" data-id="' + f.id + '" aria-label="Less">' + App.icon('minus', 22) + '</button><span class="num">' + f.qty + '</span><button data-qty="1" data-id="' + f.id + '" aria-label="More">' + App.icon('plus', 22) + '</button></div>' +
-      '</div>';
+  function checked() {
+    var m = D.fridgeMeta, d = m && m.updatedAt && new Date(m.updatedAt);
+    if (m && m.status === 'error') return m.message || 'Last receipt check failed';
+    if (!d) return '';
+    var t = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return 'Receipts checked ' + (App.dayStart(d).getTime() === App.dayStart(App.now()).getTime() ? t : d.getDate() + '.' + (d.getMonth() + 1) + '. ' + t);
   }
 
-  function listHTML() {
-    if (!D.fridge.length) return '<div class="s-empty serif">Fridge is empty.<br><i>Tap what’s in it on the right.</i></div>';
-    var order = ['Use soon'].concat(D.catOrder.all, ['Other']);
-    var key = function (f) { var d = left(f); return d === null ? 999 : d; };
-    return order.map(function (cat) {
-      var items = D.fridge.filter(function (f) { return (soon(f) ? 'Use soon' : f.cat) === cat; })
-        .sort(function (a, b) { return key(a) - key(b); });
-      return items.length ? '<div class="s-cat"><div class="s-cat-h"><span class="label">' + cat + '</span><span class="label">' + items.length + '</span></div>' + items.map(row).join('') + '</div>' : '';
-    }).join('');
+  function overdue() {
+    var d = D.fridgeMeta && D.fridgeMeta.updatedAt;
+    return !!d && App.now() - new Date(d) > OVERDUE;
   }
 
-  function tile(name) {
-    var on = find(name);
-    return '<button class="s-tile' + (on ? ' is-on' : '') + '" data-add="' + App.esc(name) + '">' +
-      '<b>' + App.esc(name) + '</b><span>' + (on ? App.icon('check', 16) + 'In fridge' + (on.qty > 1 ? ' ×' + on.qty : '') : App.categorize(name)) + '</span></button>';
-  }
-  function suggestHTML() {
-    var q = V.query.trim().toLowerCase();
-    if (!q) return '<div class="label">Usuals · tap to add</div><div class="s-usuals">' + D.fridgeUsuals.map(tile).join('') + '</div>';
-    var matches = D.catalog.filter(function (c) { return c[0].toLowerCase().indexOf(q) > -1; }).slice(0, 5);
-    var exact = matches.some(function (m) { return m[0].toLowerCase() === q; });
-    return '<div class="label">Suggestions</div><div class="s-ac">' + matches.map(function (m) {
-      var on = find(m[0]);
-      return '<button class="s-ac-row" data-add="' + App.esc(m[0]) + '"><b>' + App.esc(m[0]) + '</b><span class="label">' + (on ? 'In fridge · ×' + on.qty : m[1]) + '</span>' + App.icon('plus', 26) + '</button>';
-    }).join('') + (exact ? '' : '<button class="s-ac-row s-ac-row--new" data-add="' + App.esc(V.query.trim()) + '"><b>Add “' + App.esc(V.query.trim()) + '”</b>' + App.icon('plus', 26) + '</button>') + '</div>';
+  function paint() {
+    var now = App.now(), all = fridgeRows(D.fridge, now), used = fridgeRows(D.fridge, now, true), soon = byState(all, 'soon');
+    var total = all.reduce(function (sum, r) { return sum + r.total; }, 0);
+    var list = V.el.querySelector('.f-list'), rail = V.el.querySelector('.f-rail'), btn = V.el.querySelector('.f-used'), st = list.scrollTop;
+    if (!used.length) V.showUsed = false;
+    V.el.querySelector('.s-count').innerHTML = '<span class="num">' + all.length + '</span> ' + (all.length === 1 ? 'item' : 'items') +
+      (soon.length ? ' · <span class="num">' + soon.length + '</span> to use soon' : '') + (total ? ' · ' + EUR.format(total) : '');
+    V.el.querySelector('.f-checked').textContent = checked();
+    V.el.querySelector('.f-over').hidden = !overdue();
+    btn.hidden = !used.length;
+    btn.textContent = 'Used ' + used.length;
+    btn.classList.toggle('is-on', V.showUsed);
+    btn.setAttribute('aria-pressed', V.showUsed);
+    rail.innerHTML = V.showUsed ? '' : group('Use soon · estimate', soon) + group('Check these', byState(all, 'past'));
+    list.innerHTML = V.showUsed ? sections(used) : all.length ? sections(byState(all, ''))
+      : '<div class="s-empty serif">' + (used.length ? 'All used up.' : 'No receipts yet.') + '<br><i>The next REWE shop lands here.</i></div>';
+    list.scrollTop = st;
   }
 
-  function paintList() { var l = V.el.querySelector('.s-list'); var st = l.scrollTop; l.innerHTML = listHTML(); l.scrollTop = st; paintHead(); }
-  function paintSuggest() { V.el.querySelector('.s-suggest').innerHTML = suggestHTML(); }
-  function paintHead() {
-    var n = D.fridge.filter(soon).length;
-    V.el.querySelector('.s-count').innerHTML = '<span class="num">' + D.fridge.length + '</span> ' + (D.fridge.length === 1 ? 'item' : 'items') + (n ? ' · <span class="num">' + n + '</span> to use soon' : '');
-  }
   function render() {
-    V.el.innerHTML = '<div class="shop">' +
-      '<header class="s-head"><div><div class="label">Shared list</div><h1 class="serif">Fridge</h1></div><div class="s-count"></div></header>' +
-      '<div class="s-list"></div>' +
-      '<aside class="s-side">' +
-      '  <div class="s-add">' +
-      '    <label class="s-input-wrap">' + App.icon('plus', 30) + '<input class="s-input" placeholder="Put something in…" autocomplete="off" enterkeyhint="done"></label>' +
-      '  </div>' +
-      '  <div class="s-suggest"></div>' +
-      '</aside></div>';
-    var input = V.el.querySelector('.s-input');
-    input.value = V.query;
-    input.addEventListener('input', function () { V.query = input.value; paintSuggest(); });
-    input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && input.value.trim()) add(input.value); });
-    paintList(); paintSuggest();
-  }
-  function repaint() { paintList(); paintSuggest(); App.emit('data'); }
-
-  function add(name) {
-    name = name.trim();
-    var f = find(name), msg;
-    if (f) {
-      f.qty++;
-      msg = 'Already in the fridge · now <b>×' + f.qty + '</b> ' + App.esc(f.name);
-    } else {
-      var cat = D.catalog.filter(function (c) { return c[0].toLowerCase() === name.toLowerCase(); })[0];
-      f = { id: D._gid(), name: cat ? cat[0] : name.charAt(0).toUpperCase() + name.slice(1), note: '', qty: 1, cat: App.categorize(name) };
-      D.fridge.push(f);
-      msg = 'Put <b>' + App.esc(f.name) + '</b> in the fridge';
-    }
-    sync('add', f);
-    V.query = '';
-    V.el.querySelector('.s-input').value = '';
-    repaint();
-    App.toast(msg, { icon: 'fridge', ms: 3000 });
+    V.el.innerHTML = '<div class="fridge">' +
+      '<header class="s-head"><h1 class="serif">Fridge</h1><div class="s-count"></div><div class="f-checked"></div><span class="f-tag f-over" hidden>Overdue</span><button class="f-used" data-used hidden></button></header>' +
+      '<aside class="f-rail"></aside><div class="f-list"></div></div>';
+    paint();
   }
 
-  function addToShopping(name) {
-    var g = D.groceries.filter(function (x) { return !x.done && x.name.toLowerCase() === name.toLowerCase(); })[0];
-    if (g) return App.toast('<b>' + App.esc(name) + '</b> is already on the shopping list', { icon: 'cart', ms: 2500 });
-    g = { id: D._gid(), name: name, cat: App.categorize(name), qty: 1, store: 'grocer', done: false, note: '' };
-    D.groceries.push(g);
-    if (App.shopSync) App.shopSync('add', g);
+  // A row can hold several purchases: tapping it means "we're out of this", so they all go.
+  function mark(ids, used) {
+    D.fridge.forEach(function (f) { if (ids.indexOf(f.id) > -1) f.used = used; });
+    App.fridgeUse(ids, used);
+    paint();
     App.emit('data');
-    App.emit('shopping');
-    App.toast('Added <b>' + App.esc(name) + '</b> to the shopping list', { icon: 'cart', ms: 2500 });
   }
-
-  function usedUp(f) {
-    D.fridge = D.fridge.filter(function (x) { return x !== f; });
-    clearTimeout(V.qtyTimer[f.id]);
-    sync('remove', f);
-    repaint();
-    App.toast('<b>' + App.esc(f.name) + '</b> used up', {
+  function tap(ids, label) {
+    var used = !V.showUsed;
+    mark(ids, used);
+    App.toast('<b>' + App.esc(label) + '</b> ' + (used ? 'used up' : 'put back'), {
       icon: 'check', ms: 6000,
-      action: { label: App.icon('cart', 22) + 'Add to list', fn: function () { addToShopping(f.name); } }
+      undo: function () { mark(ids, !used); }
     });
   }
 
-  function openItem(f) {
-    App.sheet('<div class="sheet-pad"><div class="label">In the fridge · ×' + f.qty + '</div><h2 class="serif sheet-h">' + App.esc(f.name) + '</h2>' +
-      '<p class="sheet-p">Good until…</p>' +
-      '<div class="f-chips">' + EXPIRY.map(function (x, i) { return '<button class="btn" data-exp="' + i + '">' + x[0] + '</button>'; }).join('') + '</div>' +
-      '<div class="sheet-actions"><button class="btn btn--solid" data-used>' + App.icon('check', 22) + ' Used up</button></div></div>', {
-      onMount: function (s, close) {
-        s.addEventListener('click', function (e) {
-          var fresh = byId(f.id) || f, b;
-          if ((b = e.target.closest('[data-exp]'))) {
-            var days = EXPIRY[+b.dataset.exp][1];
-            fresh.note = withExpiry(fresh.note, days === null ? null : App.addDays(App.dayStart(App.now()), days));
-            sync('add', fresh);
-            close();
-            repaint();
-          } else if (e.target.closest('[data-used]')) {
-            close();
-            usedUp(fresh);
-          }
-        });
-      }
-    });
-  }
-
-  function onClick(e) {
-    var t;
-    if ((t = e.target.closest('[data-qty]'))) {
-      var f = byId(t.dataset.id);
-      if (!f) return;
-      if (f.qty + +t.dataset.qty < 1) return usedUp(f);
-      f.qty += +t.dataset.qty;
-      t.parentNode.querySelector('.num').textContent = f.qty;
-      clearTimeout(V.qtyTimer[f.id]); // debounce: one write after the last tap
-      V.qtyTimer[f.id] = setTimeout(function () { sync('add', f); }, 700);
-      return;
-    }
-    if ((t = e.target.closest('[data-open]'))) { var o = byId(t.dataset.open); if (o) openItem(o); return; }
-    if ((t = e.target.closest('[data-add]'))) add(t.dataset.add);
-  }
-
-  // Fresh list from Bring!: repaint if we're on screen (other views are rebuilt lazily)
-  App.on('fridge', function () {
-    if (App.current !== 'fridge' || !V.el || !V.el.firstChild) return;
-    paintList(); paintSuggest();
-  });
+  App.on('fridge', function () { if (App.current === 'fridge' && V.el && V.el.firstChild) paint(); });
 
   App.register('fridge', {
     show: function (el) {
-      if (!V.el) { V.el = el; el.addEventListener('click', onClick); }
+      if (!V.el) {
+        V.el = el;
+        el.addEventListener('click', function (e) {
+          var t = e.target.closest('[data-rm]');
+          if (t) tap(t.dataset.rm.split(' '), t.querySelector('b').textContent);
+          else if (e.target.closest('[data-used]')) { V.showUsed = !V.showUsed; paint(); }
+        });
+      }
       render();
     }
   });

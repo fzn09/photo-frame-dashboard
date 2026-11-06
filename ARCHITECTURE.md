@@ -131,7 +131,7 @@ meals, kitchen tools and photos. See [PRODUCT.md](PRODUCT.md) for who it serves.
 | Runtime | Vanilla JS, no runtime packages. Each module is an IIFE attaching to `window.App`, `window.DATA` or `window.ICONS` |
 | Bundler | Vite, targeting Chrome 106 for JS and Chrome 61 for CSS |
 | Server | One Cloudflare Worker with no dependencies: gate, `/api/*` proxy and static assets |
-| Storage | Workers KV for the Cookidoo token pair only; everything else lives in its upstream service |
+| Storage | Workers KV for the Cookidoo token pair and the REWE fridge feed; everything else lives in its upstream service |
 | CSS | Design tokens (`tokens.css`), `base.css` and one stylesheet per view |
 | Icons | Inline SVG registry in `icons.js`, drawn with `App.icon()` |
 | Secrets | `wrangler secret put` in production, `.dev.vars` locally |
@@ -144,7 +144,9 @@ dashboard/
 ├── worker.js           ← Worker: access gate, /api/* routes, static assets
 ├── cookidoo.js         ← Worker module: Cookidoo token refresh, week, recipes, image proxy
 ├── views.js            ← which views exist; shared by the Worker and the page
-├── calc.js             ← pure helpers: calculator, conversions, fridge expiry
+├── calc.js             ← pure helpers: calculator, conversions, fridge shelf-life estimates
+├── rewe-map.js         ← pure helpers: REWE job payload to stored items, used-up flags
+├── glance.js           ← pure helpers: ranked chips for the ambient screen
 ├── SETUP.md            ← live-data setup, configuration and API reference
 ├── vite.config.js, wrangler.jsonc, package.json
 ├── js/
@@ -175,6 +177,8 @@ dashboard/
  fetch.js polls  ──── cookie ──▶ gate ──▶ /api/* handlers ──────────▶  Open-Meteo, Google Calendar,
  writes (POST)   ── + token ───▶ gate ──▶ write guard ──▶ handlers ──▶ Bring!, BVG, TickTick,
  images          ──── cookie ──▶ gate ──▶ /api/meals/img ───────────▶  Unsplash, Cookidoo
+
+ REWE job (EC2)  ──── bearer ──────────▶ POST /api/ingest ──────────▶  KV (read by GET /api/fridge)
 ```
 
 API keys stay in the Worker. The frame only talks to the Worker, because Android 6 lacks the Let's Encrypt root and
@@ -187,6 +191,8 @@ The Worker runs before every asset (`run_worker_first`), so the gate covers the 
 - Without the `DASH_TOKEN` secret, everything answers 503.
 - `/?key=<DASH_TOKEN>` sets the `hq` cookie for a year. Without the cookie, requests answer 401.
 - The manifest and icons are public, because browsers fetch them without cookies.
+- `POST /api/ingest` skips the gate, because the REWE job has no cookie. Its bearer check on `INGEST_KEY` is the only
+  control on that route.
 - `POST` calls also need `X-Dash-Token` to match. The page carries that value (`VITE_DASH_TOKEN`), so gating only
   `/api` would protect nothing.
 - Responses send no CORS headers, so other sites can't read the family's data.
@@ -203,6 +209,7 @@ The full table, with poll intervals, is in [SETUP.md](dashboard/SETUP.md#api-rou
 | Config | `/api/config` | `worker.js`, using `views.js` |
 | Read-only feeds | `/api/weather`, `/api/calendar`, `/api/transit`, `/api/photos` | `worker.js` |
 | Read and write | `/api/shopping`, `/api/fridge`, `/api/chores` | `worker.js` |
+| Job push | `/api/ingest` | `worker.js`, using `rewe-map.js` |
 | Meals | `/api/meals`, `/api/meals/recipe`, `/api/meals/img` | `cookidoo.js` |
 
 A handler answers 503 when its credentials are missing, and a thrown error becomes a generic 502 with details in the
@@ -220,7 +227,8 @@ Failure handling is the same everywhere:
 - A failed poll keeps the last good data, so the page never goes blank.
 - Retries run at 5 s, 15 s and 1 min, because Wi-Fi comes up after the page loads. After that, polling returns to its
   normal interval.
-- A 503 means the feed is not configured: sample data is intended, and polling stops.
+- A 503 means the feed is not configured: sample data is intended, and polling stops. The fridge feed keeps polling,
+  because its 503 means the first job run has not happened yet.
 - Cards show their age when a feed is overdue, and the rail shows **Sample data** or **Updated N min ago**.
 
 Writes go through `post()` in `fetch.js`: the page updates first, a failed write shows a toast, and a refresh follows.
@@ -241,11 +249,11 @@ CSS hook), and `App.go` falls back to Today.
 | Calendar | `calendar.js` | Events, plus meals with the all-day items |
 | Chores | `tasks.js` | TickTick |
 | Shopping | `shopping.js` | Bring! |
-| Fridge | `fridge.js` | Bring!, second list |
+| Fridge | `fridge.js` | REWE eBon items from KV, pushed by the job ([guide](dashboard/PLAN-rewe-fridge.md)) |
 | Meals | `meals.js` | Cookidoo; also owns the shared recipe sheet |
 | Kitchen | `kitchen.js` | None, works offline; its timers keep running on other views |
 | Photos | `photos.js` | Unsplash and live cams |
-| Ambient, Night | `ambient.js` | Idle overlays: slideshow by day, dim clock at night |
+| Ambient, Night | `ambient.js` | Idle overlays: slideshow by day with up to 3 glance chips (timer, leave-by, departure, tonight's meal), dim clock at night |
 
 Demo tools (clock long-press panel, keyboard shortcuts) need `?demo`. The diagnostics overlay needs `?diag`.
 
@@ -303,9 +311,12 @@ Run from `dashboard/` with `node test/<name>.test.mjs`. They use plain `node:ass
 | Test | Covers |
 |---|---|
 | `views.test.mjs` | Parsing the `VIEWS` list |
-| `gate.test.mjs` | The access gate |
+| `gate.test.mjs` | The access gate, including the ingest exception |
 | `cookidoo.test.mjs` | Token refresh, week and recipe mapping, routes, image proxy |
-| `calc.test.mjs` | Calculator, conversions, fridge expiry |
+| `calc.test.mjs` | Calculator, conversions, fridge estimates |
+| `glance.test.mjs` | Ambient chip ranking and limits |
+| `rewe-map.test.mjs` | Job payload mapping, stable ids, caps, bad types |
+| `ingest.test.mjs` | Ingest auth and limits, ok and error runs, used-up flags, pruning |
 | `type-floor.test.mjs` | No text under the 16 px floor |
 
 ---

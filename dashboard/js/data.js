@@ -146,9 +146,14 @@ window.DATA = (function () {
     ['Popcorn', 'Snacks'], ['Dish soap', 'Household'], ['Dishwasher pods', 'Household'], ['Garbage bags', 'Household'],
     ['Laundry detergent', 'Household'], ['Paper towels', 'Household'], ['Toilet paper', 'Household'], ['Toothpaste', 'Household']
   ];
-  // Fridge: a second Bring! list, empty until the first /api/fridge answer (like groceries)
-  var fridge = [];
-  var fridgeUsuals = ['Milk 2%', 'Eggs', 'Butter', 'Cheddar', 'Greek yogurt', 'Cream cheese', 'Parmesan', 'Oat milk', 'Chicken thighs', 'Bacon', 'Baby spinach', 'Tomatoes'];
+  // Fridge: invented REWE-shaped lines, one per purchase, dated from today. /api/fridge replaces them; here for npm run dev.
+  var fridge = [
+    ['BROCCOLI BIO', 1, 1.79, -2], ['BANANE', 1, 1.49, -1], ['KAROTTE BIO', 2, 3.18, -1], ['EIER M', 1, 3.29, -1],
+    ['BUTTER', 1, 2.39, -3], ['GOUDA GERIEBEN', 1, 2.49, -3], ['KOERNER BALANCE', 1, 2.89, -1], ['ORZO', 1, 1.99, -3],
+    ['BABY SPINAT', 1, 1.99, -2], ['RICOTTA', 1, 1.69, -5], ['HA-UNTERSCHENKEL', 1, 4.99, -1], ['NUTELLA 450G', 1, 3.99, -6],
+    ['BASILIKUM', 1, 1.79, -9], ['CURLY POMMES', 1, 2.79, -6], ['APFELSAFT', 1, 1.59, -1]
+  ].map(function (r, i) { return { id: 'r' + i, name: r[0], qty: r[1], total: r[2], date: mealDate(r[3]) }; });
+  var fridgeMeta = { updatedAt: new Date(Date.now() - 2 * 36e5).toISOString(), status: 'ok', message: '' };
   var usuals = ['Milk 2%', 'Eggs', 'Bananas', 'Bread', 'Apples', 'Coffee beans', 'Greek yogurt', 'Cheddar', 'Butter', 'Baby spinach', 'Chicken thighs', 'Paper towels'];
 
   // ---------------------------------------------------------------- live city cams (Photos view -> Live)
@@ -239,7 +244,7 @@ window.DATA = (function () {
     people: people, family: family, ALL: ALL,
     events: events, busyExtras: busyExtras,
     chores: chores, choreUsuals: choreUsuals,
-    catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals, fridge: fridge, fridgeUsuals: fridgeUsuals,
+    catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals, fridge: fridge, fridgeMeta: fridgeMeta,
     weather: weather, webcams: webcams, photos: photos, transit: transit, meals: meals, recipes: recipes,
     _gid: function () { return 'g' + (++gid); },
     _eid: function () { return 'e' + (++n); }

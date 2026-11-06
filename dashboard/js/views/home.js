@@ -1,5 +1,5 @@
 // Home / Today: the glanceable overview. Never scrolls.
-import { daysLeft } from '../../calc.js';
+import { fridgeRows } from '../../calc.js';
 
 (function () {
   'use strict';
@@ -148,15 +148,16 @@ import { daysLeft } from '../../calc.js';
   }
 
   function fridge() {
-    var key = function (f) { var d = daysLeft(f.note, App.now()); return d === null ? 999 : d; };
-    var next = D.fridge.slice().sort(function (a, b) { return key(a) - key(b); }).slice(0, 3);
-    if (!D.fridge.length) return ageTag('fridge') + '<div class="label">Fridge</div><div class="h-calm serif"><i>Fridge is empty.</i> Tap to add what’s inside.</div>';
+    var inside = fridgeRows(D.fridge, App.now());
+    if (!inside.length) return ageTag('fridge') + '<div class="label">Fridge</div><div class="h-calm serif"><i>' + (D.fridge.length ? 'All used up.' : 'No receipts yet.') + '</i></div>';
+    var soon = inside.filter(function (r) { return r.state === 'soon'; });
+    var newest = inside.slice().sort(function (a, b) { return a.newest - b.newest; }); // nothing urgent: the latest shop
+    var last = newest[0].newest;
     return ageTag('fridge') + '<div class="label">Fridge</div>' +
-      '<div class="h-stat"><span class="num">' + D.fridge.length + '</span><small>items inside</small></div>' +
-      '<ul class="h-recent">' + next.map(function (f) {
-        var d = key(f);
-        return '<li><i></i>' + App.esc(f.name) + (d === 999 ? '' : '<span class="h-exp' + (d <= 1 ? ' is-due' : '') + '">' +
-          (d < 0 ? 'Expired' : d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d + ' days') + '</span>') + '</li>';
+      '<div class="h-stat"><span class="num">' + inside.length + '</span><small>items · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago') + '</small></div>' +
+      '<ul class="h-recent">' + (soon.length ? soon : newest).slice(0, 3).map(function (r) {
+        return '<li><i></i>' + App.esc(r.label) + (r.state !== 'soon' ? '' : '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
+          (r.left === 0 ? 'Today' : r.left === 1 ? 'Tomorrow' : '~' + r.left + ' days') + '</span>') + '</li>';
       }).join('') + '</ul>';
   }
 
@@ -204,7 +205,7 @@ import { daysLeft } from '../../calc.js';
 
   // Both lists empty: shop + fridge shrink and the photo takes twice their width (CSS: .home[data-lean]).
   function lean() {
-    V.el.firstChild.toggleAttribute('data-lean', !D.groceries.some(function (g) { return !g.done; }) && !D.fridge.length);
+    V.el.firstChild.toggleAttribute('data-lean', !D.groceries.some(function (g) { return !g.done; }) && !D.fridge.some(function (f) { return !f.used; }));
   }
 
   function paint() {

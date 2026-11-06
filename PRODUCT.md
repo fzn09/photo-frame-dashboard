@@ -24,7 +24,7 @@ Unattended, always on, 1280x800 at 160 ppi, touch only, no keyboard. Wi-Fi arriv
 
 ## Capabilities and Constraints
 
-- Feeds come through a dependency-free Cloudflare Worker: weather, Google Calendar, Bring!, BVG, TickTick, Unsplash, and the Cookidoo week plan.
+- Feeds come through a dependency-free Cloudflare Worker: weather, Google Calendar, Bring!, BVG, TickTick, Unsplash, the Cookidoo week plan, and REWE receipts pushed by a scheduled job.
 - Android 6 with WebView 106: see docs/building-for-the-frame.md. No third-party hosts from the page, no infinite animation.
 - The Cookidoo API is unofficial and reverse-engineered. Its plan has recipes per day only: no meal slot, time or servings.
 - The household owns a Thermomix TM6 and runs no always-on listener, so there is no live cook state. The household plans a mix of lunches and dinners, so the dashboard must not imply a meal time.

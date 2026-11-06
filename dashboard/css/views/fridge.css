@@ -1,4 +1,27 @@
-/* Fridge: layout reuses css/views/shopping.css (.shop, .s-row, .s-tile, ...) */
-.f-exp { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); font-variant-numeric: tabular-nums; font-size: var(--fs-min); font-weight: 400; }
-.f-exp.is-due { background: var(--accent); color: var(--on-accent); box-shadow: none; }
-.f-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+/* Fridge: header and section heads reuse css/views/shopping.css (.s-head, .s-count, .s-cat-h, .s-empty) */
+.fridge { height: 100%; display: grid; grid-template-columns: 372px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px 24px; }
+.fridge .s-head { grid-column: 1 / -1; }
+.fridge .s-count { flex: none; }
+.f-checked { min-width: 0; font-size: var(--fs-min); color: var(--mute); padding-top: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.f-over { margin-top: 10px; }
+.f-used { flex: none; min-height: var(--tap); padding: 0 18px; border-radius: var(--r); font-size: var(--fs-min); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); font-variant-numeric: tabular-nums; }
+.f-used.is-on { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+
+.f-list { min-height: 0; overflow-y: auto; padding-bottom: 110px; }
+.f-cols { column-count: 2; column-gap: 24px; }
+.f-rail { min-height: 0; overflow-y: auto; padding: 8px 18px 90px; border-radius: var(--r); background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line), var(--card-shadow); }
+.f-rail:empty { display: none; }
+.f-rail:empty + .f-list { grid-column: 1 / -1; }
+.f-sec { margin-bottom: 18px; }
+.f-sec .s-cat-h { break-after: avoid; }
+
+.f-row { width: 100%; min-height: var(--tap); display: flex; align-items: center; gap: 8px; padding: 0 0 0 4px; border-bottom: 1px solid var(--line); text-align: left; break-inside: avoid; }
+.f-row:active { background: rgb(var(--ov) / .08); }
+.f-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.f-name b { font-size: var(--fs-body); font-weight: 500; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.f-name small { font-size: var(--fs-min); color: var(--mute); font-variant-numeric: tabular-nums; }
+.f-x { flex: none; width: 34px; height: 34px; display: grid; place-items: center; color: var(--mute); }
+
+/* orange = eat it now; past an estimate only means "is it still there?", so it stays quiet */
+.f-tag { flex: none; padding: 2px 8px; border-radius: 6px; font-size: var(--fs-min); font-weight: 400; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+.f-tag.is-soon { background: var(--accent); color: var(--on-accent); box-shadow: none; font-weight: 700; }

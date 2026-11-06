@@ -15,6 +15,12 @@ assert.equal((await get('/?key=wrong')).status, 401, 'wrong key');
 assert.equal(await (await get('/manifest.webmanifest')).text(), 'page', 'manifest is public: fetched without cookies');
 assert.equal((await get('/icon-192.png')).status, 200, 'manifest icons are public');
 assert.equal((await get('/index.html')).status, 401, 'other assets stay gated');
+assert.equal((await get('/api/fridge')).status, 401, 'the fridge feed stays gated');
+assert.equal((await get('/api/ingest')).status, 401, 'only POST skips the gate');
+const post = path => worker.fetch(new Request('https://hq.example' + path, { method: 'POST' }), env);
+assert.equal((await post('/api/ingest')).status, 503, 'ingest answers itself, without a cookie');
+assert.equal((await post('/api/fridge')).status, 401, 'other POSTs stay gated');
+assert.equal((await post('/api/ingest/x')).status, 401, 'exact path only');
 
 const set = await get('/?key=' + TOKEN);
 assert.equal(set.status, 302);

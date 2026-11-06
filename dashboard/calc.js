@@ -1,5 +1,5 @@
 // Pure helpers for the Kitchen and Fridge views (no DOM): pocket calculator, kitchen conversions,
-// fridge expiry notes. Imported by js/views/kitchen.js + fridge.js, checked by test/calc.test.mjs.
+// fridge shelf-life estimates. Imported by js/views/kitchen.js, fridge.js + home.js, checked by test/calc.test.mjs.
 
 // ---- calculator: immediate-execution state machine, like a pocket calculator (no eval)
 export const CALC0 = { display: '0', acc: null, op: null, fresh: true };
@@ -65,27 +65,60 @@ export const CONV = {
 };
 export function convert(id, x) { return r2(CONV[id][1](x)); }
 
-// ---- fridge expiry, kept in the Bring! item note as "bis 3.11." (readable in the Bring! app)
-const EXP = /\s*bis (\d{1,2})\.(\d{1,2})\.?/;
+// ---- fridge sections + estimated shelf life. Receipts carry no expiry date, so `days` is a guess from the
+// item type, counted from the purchase date: the view labels it as an estimate. null = keeps, no tag.
+// First match wins. [receipt pattern, section, days, readable name (default: title-cased receipt name)]
+export const SECTIONS = ['Fruit & veg', 'Meat & fish', 'Dairy & eggs', 'Bread', 'Frozen', 'Pantry', 'Snacks', 'Other'];
+const VEG = 'Fruit & veg', MEAT = 'Meat & fish', DAIRY = 'Dairy & eggs', PANTRY = 'Pantry', SNACK = 'Snacks';
+const FOODS = [
+  [/^MANGO/, VEG, 6, 'Mango'], [/^KAKI/, VEG, 7, 'Kaki'], [/^BANANE/, VEG, 5, 'Bananen'],
+  [/^BROCCOLI/, VEG, 5, 'Broccoli'], [/^KAROTTE/, VEG, 14, 'Karotten'], [/^CHAMP/, VEG, 5, 'Champignons'],
+  [/^BABY SPINAT/, VEG, 3, 'Babyspinat'], [/^KARTOFFELN/, VEG, 30, 'Kartoffeln'], [/^LAUCHZWIEBELN/, VEG, 7, 'Lauchzwiebeln'],
+  [/^GURKE/, VEG, 7, 'Gurke'], [/^BUSCHBOHNE/, VEG, 5, 'Buschbohnen'], [/^PRINZESSBOHNEN/, VEG, 5, 'Prinzessbohnen'],
+  [/^KUERBIS/, VEG, 30, 'Hokkaido-Kürbis'], [/^BASILIKUM/, VEG, 5, 'Basilikum'], [/^ZWIEB\.GEMUESE/, VEG, 14, 'Zwiebelgemüse'],
+  [/^GEFL\.WUERSTCHEN/, MEAT, 14, 'Geflügelwürstchen'], [/^SCHINKEN NUGGETZ/, MEAT, 14, 'Schinken Nuggetz'],
+  [/^JB-GULASCH/, MEAT, 2, 'Gulasch'], [/^HA-UNTERSCHENKEL/, MEAT, 2, 'Hähnchenschenkel'], [/^LACHSFORELLEN/, MEAT, 2, 'Lachsforellenfilet'],
+  [/^EIER /, DAIRY, 28, 'Eier'], [/BUTTER$/, DAIRY, 60, 'Butter'], [/^EMMENTALER/, DAIRY, 30, 'Emmentaler gerieben'],
+  [/^GOUDA GERIEBEN/, DAIRY, 30, 'Gouda gerieben'], [/^PARMIGIANO/, DAIRY, 60, 'Parmigiano Reggiano'], [/^RICOTTA/, DAIRY, 7, 'Ricotta'],
+  [/SCHLAGSAHNE/, DAIRY, 7, 'Schlagsahne'],
+  [/^KOERNER BALANCE/, 'Bread', 5, 'Körner Balance'],
+  [/^CURLY POMMES/, 'Frozen', null, 'Curly Pommes'],
+  [/^EIERSPAETZLE/, PANTRY, null, 'Eierspätzle'], [/^GOLDMAIS/, PANTRY, null, 'Goldmais'], [/^ERBSEN MOEHRCHEN/, PANTRY, null, 'Erbsen & Möhrchen'],
+  [/^BEANZ/, PANTRY, null, 'Beanz Classic'], [/^ORZO/, PANTRY, null, 'Orzo'], [/^WEIZEN TYPE/, PANTRY, null, 'Weizenmehl Type 55'],
+  [/^INSTANTMEHL/, PANTRY, null, 'Instantmehl'], [/MAYONNAISE/, PANTRY, null, 'Mayonnaise'], [/^MIRACEL WHIP/, PANTRY, null, 'Miracel Whip'],
+  [/^KONDENSMILCH/, PANTRY, null, 'Kondensmilch'], [/^GEMUESE FOND/, PANTRY, null, 'Gemüsefond'], [/^GEFLUEGEL FOND/, PANTRY, null, 'Geflügelfond'], [/^FRITTIEROEL/, PANTRY, null, 'Frittieröl'],
+  [/^NUTELLA/, PANTRY, null, 'Nutella'], [/^BROTAUFSTRICH/, PANTRY, null, 'Brotaufstrich'],
+  [/BUENO|JELLY|MALTESERS|MELODY POP|PRETZEL|SNACK/, SNACK, null]
+];
+const title = s => s.toLowerCase().replace(/(^|[\s.-])(\S)/g, (m, a, b) => a + b.toUpperCase());
 
-// Date (local midnight) or null. A day/month more than ~6 months back means next year (Dec -> Jan).
-export function parseExpiry(note, today) {
-  const m = EXP.exec(note || '');
-  if (!m) return null;
+// Receipt line + today -> { label, section, age (days since bought), left (estimated days to use, null = keeps) }
+export function fridgeItem(item, today) {
+  const f = FOODS.find(x => x[0].test(item.name));
+  const [y, m, d] = item.date.split('-').map(Number);
   const t = new Date(today); t.setHours(0, 0, 0, 0);
-  const d = new Date(t.getFullYear(), +m[2] - 1, +m[1]);
-  if (d < t - 180 * 864e5) d.setFullYear(d.getFullYear() + 1);
-  return d;
+  const age = Math.round((t - new Date(y, m - 1, d)) / 864e5);
+  return {
+    label: f && f[3] || title(item.name), section: f ? f[1] : 'Other', age,
+    left: f && f[2] !== null ? f[2] - age : null
+  };
 }
-// Note with its expiry replaced (date = null removes it)
-export function withExpiry(note, date) {
-  const rest = (note || '').replace(EXP, '').trim();
-  return date ? (rest ? rest + ' ' : '') + 'bis ' + date.getDate() + '.' + (date.getMonth() + 1) + '.' : rest;
-}
-// Whole days from today to the expiry (negative = past), or null
-export function daysLeft(note, today) {
-  const d = parseExpiry(note, today);
-  if (!d) return null;
-  const t = new Date(today); t.setHours(0, 0, 0, 0);
-  return Math.round((d - t) / 864e5);
+
+// Receipt lines -> one row per food and freshness, so a fresh pack never inherits an old pack's tag.
+// state: 'soon' (use within SOON days), 'past' (past the estimate), '' (fine). Sorted soon, past, rest.
+// Holds what's still in the fridge; used = true gives the used-up lines instead.
+const SOON = 3;
+export function fridgeRows(items, today, used = false) {
+  const rows = {};
+  for (const item of items) {
+    if (!!item.used !== used) continue;
+    const f = fridgeItem(item, today);
+    const state = f.left === null ? '' : f.left < 0 ? 'past' : f.left <= SOON ? 'soon' : '';
+    const r = rows[f.label + state] ||= { ...f, state, qty: 0, total: 0, ids: [], newest: f.age };
+    r.qty += item.qty; r.total += item.total || 0; r.ids.push(item.id);
+    r.newest = Math.min(r.newest, f.age); r.age = Math.max(r.age, f.age);
+    if (f.left !== null) r.left = Math.min(r.left, f.left);
+  }
+  const rank = r => r.state === 'soon' ? r.left : r.state === 'past' ? 100 - r.left : r.left === null ? 9999 : 1000 + r.left;
+  return Object.values(rows).sort((a, b) => rank(a) - rank(b));
 }
