@@ -98,14 +98,21 @@
     return '<button class="mc-card card' + (r.photo ? '' : ' mc-card--plain') + '" data-meal="' + App.esc(r.id) + '">' + (r.photo ? pic(r.photo) : '') + '<div class="mc-in"><h2 class="mc-t">' + App.esc(r.name) + '</h2>' +
       '<div class="mc-meta">' + (r.min ? '<b class="num">' + mins(r.min) + '</b>' : '') + '<span data-serves></span></div><ul class="r-ing" data-ing><li class="mc-note">Loading ingredients…</li></ul><span class="mc-more" data-more>Open recipe</span></div></button>';
   }
-  // Ingredients arrive after the card. As many as fit: more cards in a row means fewer lines per card.
+  function cardRow(i) { return '<li><b>' + App.esc(i.q) + '</b><span>' + App.esc(i.name) + '</span></li>'; } // notes stay in the sheet
+
+  // Ingredients arrive after the card. Rows wrap, so only the rendered card knows how many fit: drop rows from the
+  // end until nothing overflows, and name what was left out.
   function fillCard(r, max) {
     function slot(sel) { var c = V.el.querySelector('[data-meal="' + App.esc(r.id) + '"]'); return c && c.querySelector(sel); }
     load(r).then(function (full) {
-      var ing = slot('[data-ing]'), rest = full.ingredients.length - max;
+      var ing = slot('[data-ing]'), rows, card, rest;
       if (!ing) return;
-      ing.innerHTML = full.ingredients.slice(0, max).map(ingredient).join('');
+      ing.innerHTML = full.ingredients.slice(0, max).map(cardRow).join('');
       slot('[data-serves]').textContent = full.serves || '';
+      rows = ing.children;
+      card = ing.parentNode.parentNode;
+      while (rows.length > 1 && card.scrollHeight > card.clientHeight) ing.removeChild(rows[rows.length - 1]);
+      rest = full.ingredients.length - rows.length;
       if (rest > 0) slot('[data-more]').textContent = 'Open recipe · ' + rest + ' more ingredient' + (rest > 1 ? 's' : '');
     }).catch(function () {
       var ing = slot('[data-ing]');
