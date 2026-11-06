@@ -92,7 +92,7 @@ built without Gradle, that shows it. It runs on sample data until you connect yo
 | **Calendar** | Today, 3 Day, Week and Month, with meals beside the all-day items | Google Calendar, Cookidoo |
 | **Chores** | Shared list, overdue first, with quick-add tiles | TickTick |
 | **Shopping** | List with write-back | Bring! |
-| **Fridge** | What's inside and what expires soon | Bring! |
+| **Fridge** | What the receipts say we bought and what to use soon | REWE eBon |
 | **Meals** | Week strip, the day's recipes, ingredients and step-by-step details | Cookidoo |
 | **Kitchen** | Calculator, conversions and up to three timers | None, works offline |
 | **Photos** | Slideshow and live cams | Unsplash, public cams |

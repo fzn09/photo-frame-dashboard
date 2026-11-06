@@ -35,6 +35,11 @@
 		{
 			"binding": "COOKIDOO_KV",
 			"id": "583f4c6324bc464e8ea6e9519d2fa930"
+		},
+		{
+			// REWE fridge feed (rewe:latest, rewe:used), PLAN-rewe-fridge.md step 3.2. No id yet: paste it here
+			// after `npx wrangler kv namespace create FRIDGE_KV`, or wrangler provisions one on deploy.
+			"binding": "FRIDGE_KV"
 		}
 	]
 	// Secrets — set via: wrangler secret put SECRET_NAME
@@ -43,6 +48,7 @@
 	// Required: BRING_EMAIL, BRING_PASSWORD
 	// Required: DASH_TOKEN (same value as VITE_DASH_TOKEN in dashboard/.env at build time). Gates the whole
 	//   site and the writes; open /?key=<DASH_TOKEN> once on each device to set the access cookie.
-	// Optional: BRING_LIST var (default "home"), BRING_FRIDGE_LIST var (default "fridge")
+	// Required for the Fridge feed: INGEST_KEY (bearer the REWE job sends to POST /api/ingest, PLAN-rewe-fridge.md)
+	// Optional: BRING_LIST var (default "home")
 	// Optional: TICKTICK_TOKEN (Chores view, see SETUP.md), TICKTICK_PROJECT var (default "Chores")
 }

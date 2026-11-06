@@ -14,7 +14,8 @@ order and skip the ones you don't need. A feed with no credentials keeps its sam
   - [Weather](#weather)
   - [BVG departures](#bvg-departures)
   - [Google Calendar](#google-calendar)
-  - [Bring! shopping and fridge](#bring-shopping-and-fridge)
+  - [Bring! shopping](#bring-shopping)
+  - [REWE fridge](#rewe-fridge)
   - [TickTick chores](#ticktick-chores)
   - [Cookidoo meals](#cookidoo-meals)
   - [Unsplash photos](#unsplash-photos)
@@ -144,17 +145,23 @@ The dashboard also uses the sunset from this feed to switch between the day and 
 
 The ids `alex` and `jordan` are internal and match `js/data.js`.
 
-### Bring! shopping and fridge
+### Bring! shopping
 
 **Needs:** your Bring! email and password in `BRING_EMAIL` and `BRING_PASSWORD`.
 
-| View | List it uses | If that list is missing |
-|---|---|---|
-| Shopping | Named `home`, or set `BRING_LIST` | The first list in the account |
-| Fridge | Named `Fridge`, or set `BRING_FRIDGE_LIST` | Stays empty and writes nothing |
+The Shopping view uses the list named `home`, or the one set in `BRING_LIST`. If that list is missing, it uses the
+first list in the account. Names match without regard to case. Checking off, adding and deleting items writes back to
+Bring!. Quantity is kept in the item note as `2× …`, so it reads naturally in the Bring! app.
 
-Names match without regard to case. Checking off, adding and deleting items writes back to Bring!. Quantity is kept
-in the item note as `2× …`, and fridge expiry dates as `bis 3.11.`, so both read naturally in the Bring! app.
+### REWE fridge
+
+**Needs:** the `INGEST_KEY` secret, the `FRIDGE_KV` binding, and the scheduled job that reads your REWE eBon mails. The
+whole setup is in [PLAN-rewe-fridge.md](PLAN-rewe-fridge.md). Without them, the Fridge view shows sample items.
+
+The job pushes the receipt lines to `POST /api/ingest`, and the Worker keeps them in KV. A failed run keeps the last
+good items and shows the reason in the view. Receipts carry no use-by date, so the view's tags are estimates from the
+purchase date (`calc.js`). Tapping a row marks it used up. That flag stays in KV, not on the receipt, and survives
+later runs.
 
 ### TickTick chores
 
@@ -361,7 +368,7 @@ doesn't matter. Unknown names are ignored, and an empty or invalid value falls b
 | `calendar` | Calendar | Today, 3 Day, Week and Month | Google Calendar, Cookidoo |
 | `tasks` | Chores | Shared list with quick-add tiles | TickTick |
 | `shopping` | Shopping | List with write-back | Bring! |
-| `fridge` | Fridge | Contents and expiry dates | Bring! |
+| `fridge` | Fridge | What the receipts say we bought, with estimated use-by | REWE eBon |
 | `meals` | Meals | Week plan and recipes | Cookidoo |
 | `kitchen` | Kitchen | Calculator, conversions and timers | None |
 | `photos` | Photos | Slideshow and live cams | Unsplash, cams |
@@ -389,7 +396,6 @@ weather.
 | `VIEWS` | No | Views on the frame ([Step 9](#step-9-choose-which-views-to-show)) |
 | `PHOTO_QUERY` | No | Unsplash search term |
 | `BRING_LIST` | No | Shopping list name, default `home` |
-| `BRING_FRIDGE_LIST` | No | Fridge list name, default `fridge` |
 | `TICKTICK_PROJECT` | No | Chores list name, default `Chores` |
 | `COOKIDOO_HOST` | No | Cookidoo domain, default `cookidoo.de` |
 | `COOKIDOO_LANG` | No | Cookidoo language, default `de-DE` |
@@ -403,7 +409,8 @@ weather.
 | `GOOGLE_SERVICE_KEY` | For calendar | Service account PEM private key |
 | `CAL_ALEX` | For calendar | Fauzan's Calendar ID |
 | `CAL_JORDAN` | For calendar | Amanda's Calendar ID |
-| `BRING_EMAIL`, `BRING_PASSWORD` | For shopping and fridge | Bring! login |
+| `BRING_EMAIL`, `BRING_PASSWORD` | For shopping | Bring! login |
+| `INGEST_KEY` | For the fridge | Bearer key the REWE job sends to `/api/ingest` |
 | `TICKTICK_TOKEN` | For chores | TickTick Open API token |
 | `UNSPLASH_KEY` | For stock photos | Unsplash access key |
 
@@ -413,6 +420,7 @@ weather.
 |---|---|---|
 | `VITE_DASH_TOKEN` | `dashboard/.env` | Same value as `DASH_TOKEN`, baked in at build time |
 | `COOKIDOO_KV` | KV binding in `wrangler.jsonc` | Holds the Cookidoo token pair under the key `tokens` |
+| `FRIDGE_KV` | KV binding in `wrangler.jsonc` | Holds the receipt items (`rewe:latest`) and used-up ids (`rewe:used`) |
 
 ### What each feed needs
 
@@ -422,13 +430,15 @@ weather.
 | BVG | None | `BVG_STOP_ID` | Sample data |
 | Google Calendar | Google | Service account | Sample data |
 | Bring! | Bring! | Login | Sample data |
+| REWE fridge | AWS, Gmail | `INGEST_KEY`, `FRIDGE_KV`, the job | Sample items until the first run |
 | TickTick | TickTick | `TICKTICK_TOKEN` | Sample chores |
 | Cookidoo | Cookidoo | Refresh token in KV | Sample meals until the token is stored |
 | Unsplash | Unsplash | `UNSPLASH_KEY` | Sample photos |
 
 ### API routes
 
-Every route needs the access cookie, except that the manifest and icons are public. Reads are polled by the page, and
+Every route needs the access cookie, except that the manifest and icons are public and `POST /api/ingest` has its own
+bearer key. Reads are polled by the page, and
 a failed poll keeps the last good data.
 
 | Route | Source | Page polls | Notes |
@@ -438,7 +448,8 @@ a failed poll keeps the last good data.
 | `GET /api/calendar` | Google Calendar | 5 min | Both people's events |
 | `GET /api/transit` | BVG transport.rest | 1 min | Departures from your stop |
 | `GET`, `POST /api/shopping` | Bring! | 2 min | `POST` ops: `add`, `done`, `remove` |
-| `GET`, `POST /api/fridge` | Bring! | 5 min | Same ops, on the fridge list |
+| `GET`, `POST /api/fridge` | KV | 5 min | `POST` body `{ op, ids }`, ops `use`, `unuse`. `GET` answers 503 until the first ingest |
+| `POST /api/ingest` | REWE job | Never, the job pushes | Bearer `INGEST_KEY`. `status: "ok"` replaces the items, `"error"` keeps them |
 | `GET`, `POST /api/chores` | TickTick | 5 min | `POST` completes a task, or adds one with `op: 'add'` |
 | `GET /api/photos` | Unsplash | When the slideshow needs more | Stock photo set |
 | `GET /api/meals` | Cookidoo | 30 min | `{ days, device }`: the week and paired model |

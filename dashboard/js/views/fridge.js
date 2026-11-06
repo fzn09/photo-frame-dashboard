@@ -1,11 +1,14 @@
-// Fridge: what the REWE receipts say we bought, by section. View and remove only. Use-by dates are
-// estimates from the purchase date (calc.js): receipts have none, so the tags say "~" and "Past est."
+// Fridge: what the REWE receipts say we bought, by section. Tap marks a purchase used up (Undo, or put it
+// back from the Used list). Use-by dates are estimates from the purchase date (calc.js): receipts have none,
+// so the tags say "~" and "Past est."
 import { fridgeRows, SECTIONS } from '../../calc.js';
 
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null };
+  var V = { el: null, showUsed: false };
+  var EUR = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+  var OVERDUE = 18 * 36e5; // the longest gap between job runs is about 15 h
 
   function tag(r) {
     if (r.state === 'past') return '<span class="f-tag">Past est.</span>';
@@ -17,9 +20,9 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     return r.age <= 0 ? 'Today' : r.age === 1 ? 'Yesterday' : r.age + ' days ago';
   }
   function row(r) {
-    return '<button class="f-row" data-rm="' + r.ids.join(' ') + '" aria-label="Remove ' + App.esc(r.label) + '">' +
-      '<span class="f-name"><b>' + App.esc(r.label) + '</b><small>' + (r.qty > 1 ? '×' + r.qty + ' · ' : '') + bought(r) + '</small></span>' +
-      tag(r) + '<span class="f-x">' + App.icon('x', 22) + '</span></button>';
+    return '<button class="f-row" data-rm="' + r.ids.join(' ') + '" aria-label="' + (V.showUsed ? 'Put back ' : 'Used up ') + App.esc(r.label) + '">' +
+      '<span class="f-name"><b>' + App.esc(r.label) + '</b><small>' + (r.qty > 1 ? '×' + r.qty + ' · ' : '') + bought(r) + (r.total ? ' · ' + EUR.format(r.total) : '') + '</small></span>' +
+      (V.showUsed ? '' : tag(r)) + '<span class="f-x">' + App.icon(V.showUsed ? 'plus' : 'x', 22) + '</span></button>';
   }
   function group(name, list) {
     return list.length ? '<section class="f-sec"><div class="s-cat-h"><span class="label">' + name + '</span><span class="label">' + list.length + '</span></div>' + list.map(row).join('') + '</section>' : '';
@@ -37,39 +40,50 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     return 'Receipts checked ' + (App.dayStart(d).getTime() === App.dayStart(App.now()).getTime() ? t : d.getDate() + '.' + (d.getMonth() + 1) + '. ' + t);
   }
 
+  function overdue() {
+    var d = D.fridgeMeta && D.fridgeMeta.updatedAt;
+    return !!d && App.now() - new Date(d) > OVERDUE;
+  }
+
   function paint() {
-    var all = fridgeRows(D.fridge, App.now()), soon = byState(all, 'soon');
-    var list = V.el.querySelector('.f-list'), rail = V.el.querySelector('.f-rail'), st = list.scrollTop;
+    var now = App.now(), all = fridgeRows(D.fridge, now), used = fridgeRows(D.fridge, now, true), soon = byState(all, 'soon');
+    var total = all.reduce(function (sum, r) { return sum + r.total; }, 0);
+    var list = V.el.querySelector('.f-list'), rail = V.el.querySelector('.f-rail'), btn = V.el.querySelector('.f-used'), st = list.scrollTop;
+    if (!used.length) V.showUsed = false;
     V.el.querySelector('.s-count').innerHTML = '<span class="num">' + all.length + '</span> ' + (all.length === 1 ? 'item' : 'items') +
-      (soon.length ? ' · <span class="num">' + soon.length + '</span> to use soon' : '');
+      (soon.length ? ' · <span class="num">' + soon.length + '</span> to use soon' : '') + (total ? ' · ' + EUR.format(total) : '');
     V.el.querySelector('.f-checked').textContent = checked();
-    rail.innerHTML = group('Use soon · estimate', soon) + group('Check these', byState(all, 'past'));
-    list.innerHTML = all.length ? sections(byState(all, '')) : '<div class="s-empty serif">No receipts yet.<br><i>The next REWE shop lands here.</i></div>';
+    V.el.querySelector('.f-over').hidden = !overdue();
+    btn.hidden = !used.length;
+    btn.textContent = 'Used ' + used.length;
+    btn.classList.toggle('is-on', V.showUsed);
+    btn.setAttribute('aria-pressed', V.showUsed);
+    rail.innerHTML = V.showUsed ? '' : group('Use soon · estimate', soon) + group('Check these', byState(all, 'past'));
+    list.innerHTML = V.showUsed ? sections(used) : all.length ? sections(byState(all, ''))
+      : '<div class="s-empty serif">' + (used.length ? 'All used up.' : 'No receipts yet.') + '<br><i>The next REWE shop lands here.</i></div>';
     list.scrollTop = st;
   }
 
   function render() {
     V.el.innerHTML = '<div class="fridge">' +
-      '<header class="s-head"><h1 class="serif">Fridge</h1><div class="s-count"></div><div class="f-checked"></div></header>' +
+      '<header class="s-head"><h1 class="serif">Fridge</h1><div class="s-count"></div><div class="f-checked"></div><span class="f-tag f-over" hidden>Overdue</span><button class="f-used" data-used hidden></button></header>' +
       '<aside class="f-rail"></aside><div class="f-list"></div></div>';
     paint();
   }
 
-  // A row can hold several purchases: removing it means "we're out of this", so they all go.
-  function remove(ids, label) {
-    var gone = D.fridge.filter(function (f) { return ids.indexOf(f.id) > -1; });
-    D.fridge = D.fridge.filter(function (f) { return ids.indexOf(f.id) < 0; });
-    if (App.fridgeUse) ids.forEach(function (id) { App.fridgeUse(id, true); });
+  // A row can hold several purchases: tapping it means "we're out of this", so they all go.
+  function mark(ids, used) {
+    D.fridge.forEach(function (f) { if (ids.indexOf(f.id) > -1) f.used = used; });
+    App.fridgeUse(ids, used);
     paint();
     App.emit('data');
-    App.toast('<b>' + App.esc(label) + '</b> removed', {
+  }
+  function tap(ids, label) {
+    var used = !V.showUsed;
+    mark(ids, used);
+    App.toast('<b>' + App.esc(label) + '</b> ' + (used ? 'used up' : 'put back'), {
       icon: 'check', ms: 6000,
-      undo: function () {
-        D.fridge = D.fridge.concat(gone);
-        if (App.fridgeUse) ids.forEach(function (id) { App.fridgeUse(id, false); });
-        paint();
-        App.emit('data');
-      }
+      undo: function () { mark(ids, !used); }
     });
   }
 
@@ -81,7 +95,8 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
         V.el = el;
         el.addEventListener('click', function (e) {
           var t = e.target.closest('[data-rm]');
-          if (t) remove(t.dataset.rm.split(' '), t.querySelector('b').textContent);
+          if (t) tap(t.dataset.rm.split(' '), t.querySelector('b').textContent);
+          else if (e.target.closest('[data-used]')) { V.showUsed = !V.showUsed; paint(); }
         });
       }
       render();
