@@ -3,10 +3,9 @@
 One start-to-finish guide. It replaces the old separate guide and plan. Follow it top to bottom, nothing jumps elsewhere.
 Background and reasons are in [SPEC-home-bridge.md](SPEC-home-bridge.md), section 3a.
 
-**Status:** Phase 1 is partly done (see [You are here](#you-are-here)). Phase 3 code (steps 3.1 to 3.7) is done on branch
-`feat/fridge-rewe`, tested locally, as of 2026-11-06. The KV namespace in step 3.2 and everything from step 3.8 on still
-need you. Commands are written from the AWS docs and checked for PowerShell syntax, but most have not yet run against
-real AWS. If one fails, stop and read the error before trying a variation.
+**Status:** Live as of 2026-11-06: Worker deployed, timers enabled, first runs pushed 70 items. Still open: the frame check in
+step 3.8 part 6 and the step 3.9 checks. Phase 3 code (steps 3.1 to 3.7) is done on branch
+`feat/fridge-rewe`, tested locally. All of step 3.8 ran against real AWS and Cloudflare except part 6.
 
 ---
 

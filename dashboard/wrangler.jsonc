@@ -39,7 +39,8 @@
 		{
 			// REWE fridge feed (rewe:latest, rewe:used), PLAN-rewe-fridge.md step 3.2. No id yet: paste it here
 			// after `npx wrangler kv namespace create FRIDGE_KV`, or wrangler provisions one on deploy.
-			"binding": "FRIDGE_KV"
+			"binding": "FRIDGE_KV",
+			"id": "3fa67ec9a51d4afebc5fa5a2ac9ca9a7"
 		}
 	]
 	// Secrets — set via: wrangler secret put SECRET_NAME
