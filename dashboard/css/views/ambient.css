@@ -16,6 +16,12 @@
   font-size: var(--fs-body); font-weight: 700;
 }
 .amb-next i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px #fff; }
+.amb-meal {
+  display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px; border-radius: 999px; max-width: 520px;
+  background: rgba(255, 255, 255, .16);
+  font-size: var(--fs-body); font-weight: 700;
+}
+.amb-meal span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .amb-who { display: flex; gap: 8px; }
 .amb-who .avatar--away { background: rgba(0, 0, 0, .3); }
 

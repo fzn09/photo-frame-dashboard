@@ -6,11 +6,13 @@
 
   function ambientInfo() {
     var n = App.now(), w = App.weatherNow(), next = App.nextEvent();
+    var meals = App.mealsOn(n).slice(0, 2).map(function (r) { return App.esc(r.name); }).join(' · ');
     return '<div class="amb-clock"><div class="amb-time num">' + App.fmt.time(n, false) + '</div>' +
       '<div class="amb-date">' + App.fmt.day(n) + ', ' + App.fmt.month(n) + ' ' + n.getDate() + '</div></div>' +
       '<div class="amb-right">' +
       '<div class="amb-wx">' + App.icon(w.cond, 44) + '<span class="num">' + w.temp + '°</span><small>' + w.summary + '</small></div>' +
       (next ? '<div class="amb-next" style="' + App.pstyle(App.evColor(next)) + '"><i></i>' + App.esc(next.title) + ' · ' + App.fmt.time(next.start) + '</div>' : '') +
+      (meals ? '<div class="amb-meal">' + App.icon('utensils', 22) + '<span>' + meals + '</span></div>' : '') +
       '<div class="amb-who">' + D.people.map(function (p) { return App.avatar(p, 34, p.home ? '' : 'avatar--away'); }).join('') + '</div>' +
       '</div>';
   }
