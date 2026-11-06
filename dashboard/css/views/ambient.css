@@ -15,21 +15,17 @@
   background: rgba(255, 255, 255, .16);
   font-size: var(--fs-body); font-weight: 700;
 }
+.amb-next.is-urgent { background: rgba(214, 62, 42, .85); }
 .amb-next i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px #fff; }
-.amb-meal {
-  display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px; border-radius: 999px; max-width: 520px;
-  background: rgba(255, 255, 255, .16);
-  font-size: var(--fs-body); font-weight: 700;
-}
-.amb-meal span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.amb-who { display: flex; gap: 8px; }
-.amb-who .avatar--away { background: rgba(0, 0, 0, .3); }
 
 /* Night (dim red clock) — kept above a minimum readable brightness */
 .night { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 66; background: #000; display: none; place-items: center; cursor: pointer; }
 .stage[data-mode="night"] .night { display: grid; }
 .nt-inner { text-align: center; color: #B8281A; }
 .nt-time { font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-variant-numeric: tabular-nums; font-size: 260px; line-height: .8; letter-spacing: -.04em; color: #C22C1C; }
-.nt-line { margin-top: 34px; font-size: var(--fs-m); display: flex; align-items: center; justify-content: center; gap: 10px; color: #C22C1C; }
-.nt-line b { color: #C22C1C; }
+/* Rows are plain blocks: a flex row would split the title and its neighbouring words into separate, separately centred items. */
+.nt-wx { margin-top: 34px; font-size: var(--fs-l); display: flex; align-items: center; justify-content: center; gap: 10px; color: #C22C1C; }
+.nt-line { margin: 14px auto 0; max-width: 960px; font-family: var(--serif); font-size: var(--fs-l); line-height: 1.15; color: #C22C1C; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.nt-line b { font-weight: 400; font-style: italic; color: #C22C1C; }
+.nt-sub { margin-top: 8px; font-size: var(--fs-m); color: #B02A1A; font-variant-numeric: tabular-nums; }
 .nt-lock { margin-top: 18px; font-size: var(--fs-body); display: flex; align-items: center; justify-content: center; gap: 8px; color: #B02A1A; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
