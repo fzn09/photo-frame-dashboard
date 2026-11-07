@@ -1,9 +1,11 @@
 /* Calendar */
 .cal { height: 100%; display: flex; flex-direction: column; }
 #view-calendar { padding-top: 14px; }
+/* The day swipe needs horizontal moves left to the page: with the default (manipulation) the browser takes a
+   sideways drag as a pan and sends pointercancel, so pointerup never came. Also on the scroller, which starts its own touch-action scope. */
+#view-calendar, #view-calendar .grid-scroll { touch-action: pan-y; }
 .cal-head { display: flex; align-items: center; gap: 8px; height: 52px; margin-bottom: 8px; flex: none; }
 .cal-head .icon-btn { width: 52px; height: 52px; }
-.cal-head .fab { width: 52px; height: 52px; }
 .cal-head .btn { min-height: 52px; padding: 0 20px; font-size: var(--fs-min); }
 .cal-head .seg { padding: 3px; }
 .cal-head .seg button { min-height: 46px; padding: 0 18px; font-size: var(--fs-min); }
@@ -36,7 +38,7 @@
   background: var(--c); color: var(--c-ink); box-shadow: inset 0 0 0 1px var(--mod-line);
   font-size: var(--fs-body); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ad small { font-size: var(--fs-min); opacity: .75; font-weight: 600; margin-left: 4px; }
+.ad small { font-size: var(--fs-min); font-weight: 500; margin-left: 4px; } /* smaller and lighter than the title, not faded: .75 opacity fell to 3.7:1 */
 .ad--cont { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 
 .grid-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; position: relative; }
@@ -140,7 +142,9 @@
   display: flex; flex-direction: column; gap: 1px;
   background: rgb(var(--c-rgb) / .14); text-align: left;
 }
-.wk-ev.is-past { opacity: .62; }
+/* past: drop the person tint and step the text down to --mute, instead of fading it below 4.5:1 with opacity */
+.wk-ev.is-past { background: rgb(var(--ov) / .05); }
+.wk-ev.is-past .wk-t, .wk-ev.is-past .wk-n { color: var(--mute); }
 .wk-t::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-right: 6px; vertical-align: 1px; }
 .wk-t { font-size: var(--fs-min); font-weight: 400; font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .wk-n { font-size: var(--fs-min); font-weight: 600; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -154,7 +158,10 @@
 .mo-grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(6, 1fr); gap: 6px; }
 .mo-cell { background: var(--card); box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; padding: 8px 12px; display: flex; flex-direction: column; justify-content: space-between; }
 .mo-cell .num { font-size: var(--fs-l); line-height: 1; }
-.mo-cell.is-out { opacity: .35; }
+/* days of the next/previous month: an outline cell and muted number (readable), dots faded */
+.mo-cell.is-out { background: transparent; }
+.mo-cell.is-out .num { color: var(--mute); }
+.mo-cell.is-out .mo-dots { opacity: .45; }
 .mo-cell.is-today { background: var(--accent); color: var(--on-accent); }
 .mo-dots { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
 .mo-dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
@@ -170,30 +177,12 @@
 .evs-row { display: flex; align-items: center; gap: 18px; min-height: 76px; border-bottom: 1px solid var(--line); }
 .evs-row > div { display: flex; flex-direction: column; }
 .evs-row b { font-size: var(--fs-body); font-weight: 700; }
-.evs-row span { font-variant-numeric: tabular-nums; font-size: var(--fs-min); color: var(--mute); }
+/* the sub-line under a row's title only: a bare ".evs-row span" also hit the people chips and their avatars (grey on blue) */
+.evs-row > div:not(.evs-people) > span { font-variant-numeric: tabular-nums; font-size: var(--fs-min); color: var(--mute); }
 .evs-leave { color: var(--ink); }
 .evs-leave b { font-weight: 800; }
 .evs-people { flex-direction: row !important; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
 .evs-notes { font-size: var(--fs-m); line-height: 1.2; padding-top: 22px; font-style: italic; }
-
-/* ---- add sheet + shared "who" pickers */
-.big-input {
-  width: 100%; height: 84px; border: 0; border-bottom: 2px solid var(--accent); background: transparent; color: var(--ink);
-  font-family: var(--serif); font-size: 48px; outline: none; margin: 4px 0 16px; padding: 0;
-}
-.big-input::placeholder { color: var(--mute); }
-.add .label { margin: 22px 0 10px; }
-.add-who { display: flex; gap: 12px; }
-.who-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 10px 12px; border-radius: 20px; min-width: 104px;
-  font-size: var(--fs-body); font-weight: 700;
-}
-.who-btn:active { transform: scale(.95); }
-.who-btn.is-on { background: rgb(var(--c-rgb) / .16); box-shadow: inset 0 0 0 3px var(--c); }
-.add-who--big { justify-content: space-between; }
-.add-who--big .who-btn { font-size: var(--fs-body); padding: 14px 18px; }
-.add-row { display: flex; gap: 36px; }
 
 .more-list { display: flex; flex-direction: column; gap: 8px; }
 .more-row { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 0 20px; border-radius: 14px; background: rgb(var(--c-rgb) / .12); }

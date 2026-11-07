@@ -36,9 +36,10 @@
 .h-wx-meta { display: flex; flex-direction: column; gap: 4px; }
 .h-wx-meta b { font-size: var(--fs-body); font-weight: 500; }
 .h-wx-meta span { font-size: var(--fs-body); color: var(--ink-2); white-space: pre; }
-.h-wx-side { flex: 1; min-width: 0; max-width: 210px; margin-left: auto; padding-left: 16px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.h-wx-side { flex: 1; min-width: 0; max-width: 210px; margin-left: auto; display: flex; flex-direction: column; gap: 6px; overflow: hidden; text-align: right; }
 .h-wx-say { font-size: var(--fs-body); line-height: 1.2; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.h-wx-say b { font-weight: 500; color: var(--accent); }
+.h-wx-say b { font-weight: 500; color: var(--ink); }
+.h-wx-say.is-wet b { color: var(--accent); } /* orange only when rain is coming: "No rain today" is not a warning */
 .h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
 .h-hr { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: var(--fs-m); }
 .h-hr-l { font-size: var(--fs-body); font-variant-numeric: tabular-nums; color: var(--mute); }
@@ -47,11 +48,10 @@
 .h-hr b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .h-hr.is-wet .h-hr-i { color: var(--accent); }
 
-/* ---- sunset + air (weather side column): label left, value right, one row each */
-.h-air { display: flex; flex-direction: column; gap: 6px; }
-.h-air div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; white-space: nowrap; }
-.h-air span { font-size: var(--fs-label); color: var(--mute); }
-.h-air b { font-size: var(--fs-body); font-weight: 500; color: var(--ink); }
+/* ---- sunset + air (weather side column): one quiet phrase per row, right-aligned, no rule */
+.h-air { display: flex; flex-direction: column; gap: 4px; }
+.h-air div { font-size: var(--fs-body); line-height: 1.2; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-air b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* ---- transit: departure board */
 .h-transit .label { flex: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -112,7 +112,8 @@
 .h-ev-n { flex: 1; min-width: 0; font-size: var(--fs-m); font-weight: 500; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h-ev.is-now .h-ev-t { color: var(--accent); }
 .h-free { font-family: var(--serif); font-size: var(--fs-m); color: var(--ink-2); padding-top: 12px; line-height: 1.1; }
-.h-more { min-height: 36px; font-size: var(--fs-body); font-weight: 500; color: var(--accent); text-align: left; }
+/* 44px tap target inside the 34px name row: the negative margin keeps the row height */
+.h-more { flex: none; margin: -5px 0 -5px auto; min-height: 44px; padding: 0 2px 0 12px; font-size: var(--fs-body); font-weight: 500; color: var(--accent); white-space: nowrap; }
 
 /* ---- shopping + fridge: count, then the list */
 .h-stat { display: flex; align-items: baseline; gap: 10px; }
@@ -132,7 +133,9 @@
 
 /* nothing to buy and nothing in the fridge: two short cards, wider photo */
 .stage:not([data-off~="photos"]) .home[data-lean] .h-photo { flex-grow: 2; }
-.h-exp { margin-left: auto; padding-left: 8px; font-size: var(--fs-label); font-weight: 500; color: var(--mute); }
+/* the name gives way, never the tag: "Tomorrow" and "Overdue" are the point of the row */
+.h-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.h-exp { flex: none; padding-left: 8px; font-size: var(--fs-label); font-weight: 500; color: var(--mute); }
 .h-exp.is-due { color: var(--accent); }
 .h-recent .h-who { width: 10px; height: 10px; background: var(--c); }
 

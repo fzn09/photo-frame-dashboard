@@ -89,7 +89,7 @@
     var now = App.dayStart(App.now());
     return DAYS.map(function (i) {
       var d = App.addDays(monday(), i), k = key(d);
-      return '<button class="mc-day' + (+d === +now ? ' is-today' : '') + (d < now ? ' is-past' : '') + (k === V.day ? ' is-on' : '') + '" data-day="' + k + '">' +
+      return '<button class="mc-day' + (+d === +now ? ' is-today' : '') + (d < now ? ' is-past' : '') + (k === V.day ? ' is-on' : '') + '" aria-pressed="' + (k === V.day) + '" data-day="' + k + '">' +
         '<span><b>' + App.fmt.dayShort(d) + '</b><span class="num">' + d.getDate() + '</span></span>' +
         '<span class="mc-th">' + App.mealsOn(d).slice(0, 3).map(App.mealThumb).join('') + '</span></button>';
     }).join('');
@@ -154,7 +154,7 @@
           var t = e.target.closest('[data-day]');
           if (t) {
             V.day = t.dataset.day;
-            App.$$('.mc-day', el).forEach(function (b) { b.classList.toggle('is-on', b === t); });
+            App.$$('.mc-day', el).forEach(function (b) { b.classList.toggle('is-on', b === t); b.setAttribute('aria-pressed', b === t); });
             return paintMain();
           }
           if ((t = e.target.closest('[data-meal]'))) App.recipeSheet(t.dataset.meal);

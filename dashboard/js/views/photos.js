@@ -1,14 +1,15 @@
-// Photos: full-bleed editorial slideshow with layout modes.
+// Photos: full-bleed slideshow (tap the left or right edge to step) and Live city cams.
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null, show: null, loud: false, mode: 'photos', region: null, cam: null, timer: null };
+  var V = { el: null, show: null, mode: 'photos', region: null, cam: null, timer: null };
 
+  // The label stays "Favourite"; the filled heart and aria-pressed carry the state
   function heart() {
-    var s = V.show && V.show.current, on = s && s.photos[0].fav;
+    var s = V.show && V.show.current, on = !!(s && s.photos[0].fav);
     var b = V.el.querySelector('[data-fav]');
-    b.classList.toggle('is-on', !!on);
-    b.querySelector('span').textContent = on ? 'Favourite' : 'Favourite';
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-pressed', on);
   }
 
   // ---- Live city cams: one feed at a time (the frame is a 1 GB Allwinner A33), torn down on leave/switch
@@ -59,7 +60,7 @@
   function setMode(m) {
     V.mode = m;
     V.el.querySelector('.photos').classList.toggle('is-live', m === 'live');
-    App.$$('[data-mode]', V.el).forEach(function (b) { b.classList.toggle('is-on', b.dataset.mode === m); });
+    App.$$('[data-mode]', V.el).forEach(function (b) { b.classList.toggle('is-on', b.dataset.mode === m); b.setAttribute('aria-pressed', b.dataset.mode === m); });
     if (m === 'live') { V.show.stop(); loadCam(V.cam || D.webcams[0]); }
     else { stopCam(); V.show.start(); }
   }
@@ -71,17 +72,16 @@
         el.innerHTML = '<div class="photos">' +
           '<div class="ph-stage"></div>' +
           '<button class="ph-zone ph-zone--l" data-prev aria-label="Previous"></button>' +
-          '<button class="ph-zone ph-zone--c" data-loud aria-label="Show details"></button>' +
           '<button class="ph-zone ph-zone--r" data-next aria-label="Next"></button>' +
-          '<div class="ph-top"><div class="seg seg--glass"><button data-mode="photos" class="is-on">Photos</button><button data-mode="live">Live</button></div>' +
+          '<div class="ph-top"><div class="seg seg--glass"><button data-mode="photos" class="is-on" aria-pressed="true">Photos</button><button data-mode="live" aria-pressed="false">Live</button></div>' +
           '</div>' +
           '<div class="ph-live"><div class="ph-live-view"></div><div class="ph-live-bar"><div class="ph-live-cap"></div><div class="ph-live-nav"></div></div></div>' +
           '<div class="ph-bottom">' +
-          '  <button class="ph-btn" data-prev>' + App.icon('left', 30) + '</button>' +
+          '  <button class="ph-btn" data-prev aria-label="Previous photo">' + App.icon('left', 30) + '</button>' +
           '  <button class="ph-btn ph-btn--fav" data-fav>' + App.icon('heart', 30) + '<span>Favourite</span></button>' +
-          '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
+          '  <button class="ph-btn" data-next aria-label="Next photo">' + App.icon('right', 30) + '</button>' +
           '</div></div>';
-        V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: 'cover', interval: 15000, onChange: function () { setTimeout(heart); } });
+        V.show = new App.Slideshow(el.querySelector('.ph-stage'), { interval: 15000, onChange: function () { setTimeout(heart); } });
         el.addEventListener('click', function (e) {
           var t = e.target.closest('button');
           if (!t) return;
@@ -90,11 +90,11 @@
           if (t.dataset.cam) return loadCam(D.webcams.filter(function (c) { return c.id === t.dataset.cam; })[0]);
           if (t.hasAttribute('data-next')) V.show.next();
           if (t.hasAttribute('data-prev')) V.show.prev();
-          if (t.hasAttribute('data-loud')) { V.loud = !V.loud; el.querySelector('.photos').classList.toggle('is-loud', V.loud); }
           if (t.hasAttribute('data-fav')) {
             var p = V.show.current && V.show.current.photos[0];
             if (!p) return;
             p.fav = !p.fav;
+            App.saveFav(p);
             heart();
             App.toast(p.fav ? 'Added to favourites · it’ll show up more often' : 'Removed from favourites', { icon: 'heart', ms: 2500 });
           }
@@ -104,5 +104,11 @@
     },
     resume: function () { if (V.mode === 'live') loadCam(V.cam); else V.show.start(); },
     hide: function () { if (V.show) V.show.stop(); stopCam(); }
+  });
+  // Like Home's tile: nothing cycles or streams behind Ambient or Night
+  App.on('mode', function (m) {
+    if (App.current !== 'photos' || !V.show) return;
+    if (m !== 'day') { V.show.stop(); stopCam(); }
+    else if (V.mode === 'live') loadCam(V.cam); else V.show.start();
   });
 })();

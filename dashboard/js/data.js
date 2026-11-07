@@ -174,6 +174,8 @@ window.DATA = (function () {
     c: ['moon', 'moon', 'moon', 'moon', 'moon', 'moon', 'partly', 'partly', 'sun', 'sun', 'sun', 'partly', 'partly', 'cloud', 'cloud', 'cloud', 'rain', 'rain', 'rain', 'rain', 'cloud', 'cloud', 'moon', 'moon'],
     p: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 10, 20, 25, 40, 80, 90, 70, 55, 20, 10, 0, 0]
   };
+  // 48 hours like the Worker (today, then tomorrow); the sample's tomorrow repeats today
+  ['t', 'c', 'p'].forEach(function (k) { weather[k] = weather[k].concat(weather[k]); });
 
   // ---------------------------------------------------------------- photos
   var t = new Date(base);
@@ -246,7 +248,6 @@ window.DATA = (function () {
     chores: chores, choreUsuals: choreUsuals,
     catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals, fridge: fridge, fridgeMeta: fridgeMeta,
     weather: weather, webcams: webcams, photos: photos, transit: transit, meals: meals, recipes: recipes,
-    _gid: function () { return 'g' + (++gid); },
-    _eid: function () { return 'e' + (++n); }
+    _gid: function () { return 'g' + (++gid); }
   };
 })();

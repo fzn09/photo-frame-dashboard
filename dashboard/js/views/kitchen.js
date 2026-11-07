@@ -111,7 +111,7 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
       '  <div class="k-screen"><div class="k-line"></div><div class="k-display num"></div></div>' +
       '  <div class="k-keys">' + KEYS.map(function (k) {
         return '<button class="k-key' + (OPS[k[0]] || k[0] === 'C' || k[0] === 'back' || k[0] === '%' ? ' k-key--fn' : '') + (k[0] === '=' ? ' k-key--eq' : '') + (k[0] === '0' ? ' k-key--wide' : '') +
-          '" data-key="' + k[0] + '">' + (k[1] || k[0]) + '</button>';
+          '" data-key="' + k[0] + '"' + (k[0] === 'back' ? ' aria-label="Delete last digit"' : '') + '>' + (k[1] || k[0]) + '</button>';
       }).join('') + '</div>' +
       '</section>' +
       '<section class="k-side">' +

@@ -35,7 +35,7 @@ import { fridgeRows } from '../../calc.js';
       '<span class="h-wx-temp num">' + w.temp + '°</span>' +
       '<span class="h-wx-meta"><b>' + w.label + '</b><span>H ' + w.hi + '°  L ' + w.lo + '°</span></span>' +
       (side ? '<div class="h-wx-side">' + side + '</div>' : '') +
-      '</div><div class="h-wx-say"><b>' + w.summary + '.</b> ' + w.advice + '.</div>' +
+      '</div><div class="h-wx-say' + (w.wet ? ' is-wet' : '') + '"><b>' + w.summary + '.</b> ' + w.advice + '.</div>' +
       '<div class="h-wx-hours">' + hours.map(function (h) {
         return '<div class="h-hr' + (h.p >= 50 ? ' is-wet' : '') + '"><span class="h-hr-l">' + h.label + '</span>' +
           '<span class="h-hr-i">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
@@ -47,8 +47,9 @@ import { fridgeRows } from '../../calc.js';
 
   function airSun() {
     var W = D.weather, bits = [];
-    if (W && W.sun) bits.push('<div><span>Sunset</span><b>' + App.fmt.time(new Date('1970-01-01T' + W.sun), false) + '</b></div>');
-    if (W && W.aqi != null) bits.push('<div><span>Air</span><b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1] + '</b></div>');
+    // Two short phrases, not a label/value table: "Sunset 16:22", "Air fair"
+    if (W && W.sun) bits.push('<div>Sunset <b>' + App.fmt.time(new Date('1970-01-01T' + W.sun)) + '</b></div>');
+    if (W && W.aqi != null) bits.push('<div>Air <b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1].toLowerCase() + '</b></div>');
     return bits.length ? '<div class="h-air">' + bits.join('') + '</div>' : '';
   }
 
@@ -107,10 +108,11 @@ import { fridgeRows } from '../../calc.js';
         var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
         var shown = list.slice(0, cap), more = list.length - shown.length + all.length - together.length;
         return '<div class="h-lane" style="' + App.pstyle(p) + '">' +
-          '<div class="h-lane-head">' + App.avatar(p, 30) + '<b>' + p.name + '</b></div>' +
+          // "+N more" rides in the name row: a row of its own pushed it out of the card under a meal band
+          '<div class="h-lane-head">' + App.avatar(p, 30) + '<b>' + p.name + '</b>' +
+          (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more</button>' : '') + '</div>' +
           (shown.length ? shown.map(function (e) { return row(e); }).join('') :
             '<div class="h-free serif">' + (together.length ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
-          (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more</button>' : '') +
           '</div>';
       }).join('');
   }
@@ -130,7 +132,7 @@ import { fridgeRows } from '../../calc.js';
     return ageTag('shopping') + '<div class="label">Shopping</div>' +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>items to get</small></div>' +
       '<ul class="h-recent">' + recent.map(function (g) {
-        return '<li><i></i>' + App.esc(g.name) + '</li>';
+        return '<li><i></i><span class="h-name">' + App.esc(g.name) + '</span></li>';
       }).join('') + '</ul>';
   }
 
@@ -139,10 +141,10 @@ import { fridgeRows } from '../../calc.js';
     var open = D.chores.filter(function (c) { return !c.done; }).sort(function (a, b) {
       return ((b.overdue ? 1 : 0) - (a.overdue ? 1 : 0)) || ((a.time ? 0 : 1) - (b.time ? 0 : 1));
     });
-    return '<div class="label">Chores</div>' +
+    return ageTag('chores') + '<div class="label">Chores</div>' +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>' + (open.length ? 'to do today' : 'all done today') + '</small></div>' +
       '<ul class="h-recent">' + open.slice(0, 3).map(function (c) {
-        return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i>' + App.esc(c.title) +
+        return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i><span class="h-name">' + App.esc(c.title) + '</span>' +
           (c.overdue ? '<span class="h-exp is-due">Overdue</span>' : c.time ? '<span class="h-exp">' + App.esc(c.time) + '</span>' : '') + '</li>';
       }).join('') + '</ul>';
   }
@@ -156,7 +158,7 @@ import { fridgeRows } from '../../calc.js';
     return ageTag('fridge') + '<div class="label">Fridge</div>' +
       '<div class="h-stat"><span class="num">' + inside.length + '</span><small>items · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago') + '</small></div>' +
       '<ul class="h-recent">' + (soon.length ? soon : newest).slice(0, 3).map(function (r) {
-        return '<li><i></i>' + App.esc(r.label) + (r.state !== 'soon' ? '' : '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
+        return '<li><i></i><span class="h-name">' + App.esc(r.label) + '</span>' + (r.state !== 'soon' ? '' : '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
           (r.left === 0 ? 'Today' : r.left === 1 ? 'Tomorrow' : '~' + r.left + ' days') + '</span>') + '</li>';
       }).join('') + '</ul>';
   }
@@ -231,17 +233,21 @@ import { fridgeRows } from '../../calc.js';
       V.el = el;
       if (!el.firstChild) {
         el.innerHTML = '<div class="home">' +
-          '<div class="h-clock" data-go="calendar"></div>' +
+          '<div class="h-clock" data-go="calendar" role="button" tabindex="0" aria-label="Open calendar"></div>' +
           '<div class="h-weather card"></div>' +
           '<div class="h-transit card"></div>' +
           '<div class="h-hero-slot"></div>' +
           '<div class="h-lanes card" style="grid-template-columns:repeat(' + D.people.length + ',1fr)"></div>' +
           '<div class="h-row">' +
-          '<div class="h-shop card" data-go="shopping"></div>' +
-          '<div class="h-fridge card" data-go="fridge"></div>' +
-          '<div class="h-chores card" data-go="tasks"></div>' +
+          // whole cards open their view; role + tabindex so a screen reader or keyboard can reach them too
+          '<div class="h-shop card" data-go="shopping" role="button" tabindex="0"></div>' +
+          '<div class="h-fridge card" data-go="fridge" role="button" tabindex="0"></div>' +
+          '<div class="h-chores card" data-go="tasks" role="button" tabindex="0"></div>' +
           '<button class="h-photo" data-go="photos"><div class="h-photo-stage"></div><div class="h-photo-cap"></div></button>' +
           '</div></div>';
+        el.addEventListener('keydown', function (e) {
+          if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute('role') === 'button') { e.preventDefault(); e.target.click(); }
+        });
         el.addEventListener('click', function (e) {
           var m = e.target.closest('[data-meal]');
           if (m) { App.recipeSheet(m.dataset.meal); return; }
@@ -250,14 +256,22 @@ import { fridgeRows } from '../../calc.js';
           var g = e.target.closest('[data-go]');
           if (g) App.go(g.dataset.go);
         });
-        V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, interval: 12000, onChange: photoCaption });
+        // w 640: the tile is ~257 px wide, ~540 px when the lists are empty (data-lean)
+        V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { captions: false, interval: 12000, w: 640, onChange: photoCaption });
       }
       paint();
-      if (App.enabled('photos')) V.slides.start();
+      slides();
     },
-    resume: function () { if (App.enabled('photos')) V.slides.start(); },
+    resume: slides,
     hide: function () { if (V.slides) V.slides.stop(); }
   });
+  // The tile only cycles while it can be seen: Home on screen, photos on, day mode. Ambient and Night cover it
+  // (and Ambient runs its own slideshow), so it used to keep loading a photo every 12 s all night for no one.
+  function slides() {
+    if (!V.slides) return;
+    if (App.current === 'home' && App.enabled('photos') && App.mode === 'day') V.slides.start(); else V.slides.stop();
+  }
+  App.on('mode', slides);
   // Every minute: just the clock and next-up countdown (cheap, even while hidden). Weather on the hour.
   App.on('minute', function (n) {
     if (!V.el || !V.el.firstChild) return;
@@ -273,7 +287,6 @@ import { fridgeRows } from '../../calc.js';
   App.on('views', function () {
     if (!V.el || !V.el.firstChild) return;
     paint();
-    if (!V.slides) return;
-    if (App.enabled('photos') && App.current === 'home') V.slides.start(); else V.slides.stop();
+    slides();
   });
 })();

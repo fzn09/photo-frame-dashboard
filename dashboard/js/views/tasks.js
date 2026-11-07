@@ -42,7 +42,7 @@
   }
   function whoBtn(id) {
     var p = App.person(id);
-    return '<button class="' + (V.who === id ? 'is-on' : '') + '" data-who="' + id + '">' + App.avatar(p, 28) + (id === 'any' ? 'Anyone' : p.name) + '</button>';
+    return '<button class="' + (V.who === id ? 'is-on' : '') + '" aria-pressed="' + (V.who === id) + '" data-who="' + id + '">' + App.avatar(p, 28) + (id === 'any' ? 'Anyone' : p.name) + '</button>';
   }
 
   function paintList() { var l = V.el.querySelector('.c-list'); var st = l.scrollTop; l.innerHTML = listHTML(); l.scrollTop = st; paintHead(); }

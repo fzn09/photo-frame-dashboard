@@ -213,6 +213,7 @@
   --accent: #C2410C;
   --accent-rgb: 194 65 12;
   --on-accent: #FFFFFF;
+  --accent-on-photo: #FF8A57;    /* orange text on photos and the black Photos view, in every theme: --accent is too dark there by day */
   --glow: #D68C54;
   --alert: #C2410C;
   --alert-rgb: 194 65 12;

@@ -94,7 +94,8 @@
   App.avatar = function (p, size, cls) {
     if (typeof p === 'string') p = App.person(p);
     size = size || 48;
-    return '<span class="avatar ' + (cls || '') + '" style="' + App.pstyle(p) + ';width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.46) + 'px">' + (p.id === 'family' ? '★' : p.name[0]) + '</span>';
+    // the 16 px type floor holds for initials too
+    return '<span class="avatar ' + (cls || '') + '" style="' + App.pstyle(p) + ';width:' + size + 'px;height:' + size + 'px;font-size:' + Math.max(16, Math.round(size * 0.46)) + 'px">' + (p.id === 'family' ? '★' : p.name[0]) + '</span>';
   };
   App.dots = function (ids, size) {
     return '<span class="dots">' + ids.map(function (id) { return '<i style="' + App.pstyle(id) + (size ? ';width:' + size + 'px;height:' + size + 'px' : '') + '"></i>'; }).join('') + '</span>';
@@ -139,27 +140,31 @@
     var W = D.weather, h = App.now().getHours();
     var rainAt = -1;
     for (var i = h; i < 24; i++) if (W.p[i] >= 50) { rainAt = i; break; }
+    // The line is about rain only: the sky is the condition label beside it, so "Clear" here once sat next to "Overcast".
+    // The hourly feed covers today to 23:00, hence "today" and "midnight" rather than "all day".
     var summary, advice;
     if (rainAt === h) {
       var stop = h; while (stop < 24 && W.p[stop] >= 50) stop++;
-      summary = 'Rain until ' + App.fmt.hour(new Date(2000, 0, 1, stop));
+      summary = 'Rain until ' + (stop === 24 ? 'midnight' : App.fmt.hour(new Date(2000, 0, 1, stop)));
       advice = 'Umbrella weather';
     } else if (rainAt > -1) {
       summary = 'Rain from ' + App.fmt.hour(new Date(2000, 0, 1, rainAt));
-      var soccer = App.timedOn(App.now()).filter(function (e) { return /soccer/i.test(e.title) && e.start > App.now(); })[0];
-      advice = soccer ? 'Pack a rain jacket for soccer' : 'Grab a rain jacket';
+      advice = 'Grab a rain jacket';
     } else {
-      summary = W.t[h] < 12 ? 'Clear and cool' : 'Dry all day';
+      summary = 'No rain today';
       advice = W.t[h] < 12 ? 'Jacket weather' : 'Light layers';
     }
     var labels = { sun: 'Sunny', moon: 'Clear', partly: 'Partly cloudy', cloud: 'Overcast', rain: 'Rain' };
-    return { temp: W.t[h], cond: W.c[h], label: labels[W.c[h]], hi: W.hi, lo: W.lo, summary: summary, advice: advice, hour: h };
+    return { temp: W.t[h], cond: W.c[h], label: labels[W.c[h]], hi: W.hi, lo: W.lo, summary: summary, advice: advice, wet: rainAt > -1, hour: h };
   };
   App.hourly = function (count) {
     var W = D.weather, h = App.now().getHours(), out = [];
-    for (var i = 0; i < count; i++) {
-      var x = (h + i) % 24;
-      out.push({ h: x, t: W.t[x], c: W.c[x], p: W.p[x], label: i === 0 ? 'Now' : (x < 10 ? '0' : '') + x + ':00' });
+    // Hours past midnight come from tomorrow (indexes 24-47). Never wrap to index 0: that is this morning, not tomorrow's.
+    // A feed with only today's 24 hours shows fewer columns late in the evening instead of wrong ones.
+    for (var i = 0; i < count && h + i < W.t.length; i++) {
+      var x = h + i, hh = x % 24;
+      // The hour alone, 24 h ("09", "13", "00"): ":00" on every column was a wall of digits in a 64 px column
+      out.push({ h: hh, t: W.t[x], c: W.c[x], p: W.p[x], label: i === 0 ? 'Now' : (hh < 10 ? '0' : '') + hh });
     }
     return out;
   };
@@ -196,7 +201,10 @@
     if (!App.views[name] || !App.enabled(name)) name = 'home';
     if (App.current && App.current !== name && App.views[App.current].hide) App.views[App.current].hide();
     App.$$('.view').forEach(function (v) { v.classList.toggle('is-active', v.dataset.view === name); });
-    App.$$('.rail-item').forEach(function (b) { b.classList.toggle('is-active', b.dataset.go === name); });
+    App.$$('.rail-item').forEach(function (b) {
+      b.classList.toggle('is-active', b.dataset.go === name);
+      if (b.dataset.go === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
     App.current = name;
     var view = App.views[name];
     if (!view._built || view._dirty || opts.rerender || (view.minutely && view._min !== minuteKey())) build(name, opts);
@@ -241,6 +249,11 @@
     layer.innerHTML = '<div class="sheet-scrim"></div><div class="sheet ' + (opts.cls || '') + '">' +
       '<button class="sheet-x" data-close aria-label="Close">' + App.icon('x', 28) + '</button>' + html + '</div>';
     layer.classList.add('is-open');
+    var box = layer.querySelector('.sheet'), h = box.querySelector('h1, h2');
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    if (h) box.setAttribute('aria-label', h.textContent); // About sets aria-labelledby itself, which wins
+    layer.querySelector('.sheet-x').focus({ preventScroll: true }); // screen readers start inside the sheet
     function close() {
       if (!layer.classList.contains('is-open')) return;
       layer.classList.remove('is-open');
@@ -268,8 +281,25 @@
     el.addEventListener('pointerdown', function () {
       if (cb.enabled && !cb.enabled()) return;
       el.classList.add('is-holding');
-      t = setTimeout(function () { t = null; el.classList.remove('is-holding'); cb.done(); }, ms);
+      t = setTimeout(function () { t = null; el.classList.remove('is-holding'); eatRelease(); cb.done(); }, ms);
     });
+    // done() runs with the finger still down. Its release would land as a click on whatever done() opened (the
+    // About sheet's scrim) and close it at once, so the click that follows this press is swallowed.
+    function eatRelease() {
+      function eat(e) { e.stopPropagation(); e.preventDefault(); }
+      // If neither pointerup nor pointercancel ever arrives, every tap would be eaten until the 3 a.m. reload:
+      // give up after 5 s whatever happens (a finger still down by then loses the protection, nothing worse).
+      var guard = setTimeout(end, 5000);
+      function end() {
+        clearTimeout(guard);
+        document.removeEventListener('pointerup', end, true);
+        document.removeEventListener('pointercancel', end, true);
+        setTimeout(function () { document.removeEventListener('click', eat, true); }, 400); // a long press may send no click
+      }
+      document.addEventListener('click', eat, true);
+      document.addEventListener('pointerup', end, true);
+      document.addEventListener('pointercancel', end, true);
+    }
     function cancel(e) {
       if (!t) return;
       clearTimeout(t); t = null;

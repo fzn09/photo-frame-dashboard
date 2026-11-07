@@ -101,11 +101,11 @@ async function handleWeather(env) {
   const [res, aq] = await Promise.all([fetch(url), fetch(aqUrl).then(r => r.json()).catch(() => ({}))]);
   const data = await res.json();
 
-  // Open-Meteo returns 48 hourly entries (2 days). Slice the first 24 = today.
-  // All times are in the requested timezone, so index 0 = midnight today local time.
-  const t = data.hourly.temperature_2m.slice(0, 24).map(Math.round);
-  const p = (data.hourly.precipitation_probability || new Array(24).fill(0)).slice(0, 24);
-  const c = data.hourly.weathercode.slice(0, 24).map((code, h) => mapWMO(code, h));
+  // Open-Meteo returns 48 hourly entries (2 days); keep both. Index 0 = midnight today local time, 24 = midnight
+  // tomorrow. The page reads 0-23 as "today" and uses 24+ only so the evening hour strip doesn't wrap to this morning.
+  const t = data.hourly.temperature_2m.slice(0, 48).map(Math.round);
+  const p = (data.hourly.precipitation_probability || new Array(48).fill(0)).slice(0, 48);
+  const c = data.hourly.weathercode.slice(0, 48).map((code, h) => mapWMO(code, h % 24));
 
   const hi = Math.round(data.daily.temperature_2m_max[0]);
   const lo = Math.round(data.daily.temperature_2m_min[0]);
@@ -442,7 +442,7 @@ async function handleTransit(env) {
 async function handlePhotos(env) {
   // /photos/random returns a new set on every call. Search and the editorial feed return the same
   // top 30 each time, so the slideshow never saw new photos. Orientation is not filtered here:
-  // the frame keeps portraits for pair/polaroid layouts and picks landscape for cover slides.
+  // the frame prefers landscape (it fills the screen) and shows a portrait whole only when nothing else is left.
   const q = env.PHOTO_QUERY;
   const api = 'https://api.unsplash.com/photos/random?count=30' + (q ? '&query=' + encodeURIComponent(q) : '');
   const r = await fetch(api, { headers: { Authorization: 'Client-ID ' + (env.UNSPLASH_KEY || '') } });

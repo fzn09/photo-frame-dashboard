@@ -20,6 +20,9 @@ ul { margin: 0; padding: 0; list-style: none; }
 .i { flex: none; display: block; }
 .i--fill { fill: currentColor; stroke: none; }
 ::-webkit-scrollbar { width: 0; height: 0; }
+/* keyboard focus (a USB keyboard or switch on the frame, or the desktop preview); touch never shows it */
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.s-input-wrap:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
 
 /* ---------------------------------------------------------------- type utilities */
 .num { font-stretch: 62%; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
@@ -38,7 +41,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mute); flex: none; }
 .label--light { color: rgba(255, 255, 255, .72); }
 .demo-panel .label--light { color: var(--ink-2); }
-.label--on { color: var(--c-ink); opacity: .8; }
+.label--on { color: var(--c-ink); }
 
 /* ---------------------------------------------------------------- stage (800 tall; width set by fit() in app.js, min 1280) */
 .stage {
@@ -126,12 +129,6 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   border-radius: 50%; border: 1px solid var(--line);
 }
 .icon-btn:active { background: var(--paper-2); }
-.fab {
-  width: 72px; height: 72px; flex: none;
-  display: grid; place-items: center;
-  border-radius: 50%; background: var(--ink); color: var(--paper);
-}
-.fab:active { transform: scale(.9); }
 
 .seg { display: inline-flex; background: rgb(var(--ov) / .06); box-shadow: inset 0 0 0 1px var(--line); border-radius: 999px; padding: 4px; gap: 2px; }
 .seg button {
@@ -156,7 +153,6 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   font-size: var(--fs-body); font-weight: 700;
 }
 .chip.is-on { background: var(--ink); color: var(--paper); }
-.chip--ghost { background: transparent; border: 2px solid var(--line); }
 .evs .chip, .chip[style] { background: rgb(var(--c-rgb) / .14); padding-left: 6px; }
 
 .pill {
@@ -208,7 +204,6 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
 }
 .sheet-layer.is-open .sheet { transform: translate(-50%, -50%); opacity: 1; }
-.sheet--wide { width: 900px; }
 .sheet-x {
   position: absolute; right: 14px; top: 14px; z-index: 2;
   width: var(--tap); height: var(--tap); border-radius: 50%;
