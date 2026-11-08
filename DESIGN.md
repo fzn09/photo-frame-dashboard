@@ -13,6 +13,8 @@ colors:
   copper: "#C2410C"
   on-copper: "#FFFFFF"
   copper-on-photo: "#FF8A57"
+  alert: "#B42318"
+  evening-alert: "#FF5E4D"
   amber-ink: "#8A5200"
   evening-paper: "#2A1C14"
   evening-pressed: "#3B2A1F"
@@ -181,7 +183,8 @@ The page is a fixed 1280×800 stage at 1 CSS px per device pixel (160 ppi), so e
 A cool silver-and-walnut neutral field with a single copper voice and two person colours.
 
 ### Primary
-- **Copper** (`copper` by day, `evening-copper` at night): the one accent. It marks today (the Calendar day header, today's month cell, the Meals strip), the selected item when it is also today, counts that need doing (Shopping and Chores totals), and anything time-critical: "Leave in 12 min", rain coming, "Tomorrow" and "Overdue" tags, a finished timer, the now-line. It sits on silver as text and as solid fill with white text.
+- **Copper** (`copper` by day, `evening-copper` at night): the house accent. It marks today (the Calendar day header, today's month cell, the Meals strip), the selected item when it is also today, counts that need doing (Shopping and Chores totals), and what is due soon: "Leave in 12 min", rain coming, "Tomorrow" and "Overdue" tags, a chore due within 15 minutes, a finished timer. It sits on silver as text and as solid fill with white text.
+- **Alert** (`alert` by day, `evening-alert` at night): a red-orange one step above copper, kept for the moment itself: "Leave now" (Next up filled solid), overdue chores in the Chores view, error toasts and the Calendar now-line. White text on the day alert (6.6:1), dark text on the evening one (5.1:1).
 - **Copper on Photo** (`copper-on-photo`): the same orange lifted for text laid over photographs and the black Photos view, in every theme, because day copper is too dark there.
 
 ### Secondary
@@ -229,7 +232,7 @@ A cool silver-and-walnut neutral field with a single copper voice and two person
 
 A fixed 1280×800 stage, scaled with a CSS transform on other screens (wider than 16:10 widens the stage, narrower letterboxes). A 76 px rail on the left holds eight sections, the stale-data note and the clock. The content box is 1176×772 inside 14 px padding. Views are absolute layers switched with `content-visibility`; only Calendar's time grid and long lists scroll.
 
-Home never scrolls: a 12-column grid in three rows (236 px, 252 px, then the rest) with a 14 px gap. Row 1 is the clock, weather and transit. Row 2 is "next up" and the people. Row 3 holds equal cards for shopping, fridge, chores and the photo tile, and a disabled view's card drops out so the others widen. List views pair a list with a side panel (Shopping 1fr + 420 px, Fridge 372 px + 1fr). Long lists run in two columns because the stage is too wide for one.
+Home never scrolls: a 24-column grid in three rows (236 px, 252 px, then the rest) with a 14 px gap. Row 1 is the clock (7 columns, wide enough for the widest time, "00:00", because the serif has no tabular figures), weather (11) and transit (6); the clock's digits start level with the weather temperature and its stacked date ends on the hour row's line. Row 2 is "next up" (10) and the people (14), which leaves out the event already in "next up". Row 3 holds equal cards for shopping, fridge, chores and the photo tile, and a disabled view's card drops out so the others widen. List views pair a list with a side panel (Shopping 1fr + 420 px, Fridge 372 px + 1fr). Long lists run in two columns because the stage is too wide for one.
 
 Rhythm is tight inside a group and wider between groups: 14 px gaps, 16×18 px card padding, 48 px minimum row height for anything tappable and 64 px for primary controls.
 
@@ -271,8 +274,13 @@ Quiet, pill-shaped, sized for a thumb.
 - **Style:** 56 px pills in the pressed fill; event chips use a 14% tint of the person colour with the avatar at the leading edge.
 - **Selected:** ink fill, paper text.
 
+### Next up (the decision card)
+- **Big figure:** the decision, at Hero size (76 px serif). With a travel time it is when to leave ("Leave in 13 min" under an hour, "Leave 11:45" further out, "Leave now · 2 min late"); without one, the start ("in 45 min", or "at 17:00" with the meta line shortened to "Until 17:30"). The start time is never shown twice.
+- **Escalation:** at rest a plain card with a 4 px top edge in the person's colour (warm grey for everyone). Within 15 minutes, a 12% copper tint with a copper figure. At leave time, solid alert. With nothing left today, a plain card with no edge.
+- **The people card beside it** shows the rest of the day and leaves out the event already here.
+
 ### Status pills and tags
-- **Pill:** 40 px, mono label type, 12% ink tint ("Leave in 1 hr 45 min"). Copper fill when it is soon, and copper with "Leave now" when it is due.
+- **Pill:** 40 px, mono label type, 12% ink tint.
 - **Tag:** 6 px corners, 16 px. Copper fill with white for "eat it soon"; outline only for "past estimate, check it".
 - **Stale badge:** amber ink on a 10% ink tint pill in a card's top-right corner, "Updated 75 min ago".
 

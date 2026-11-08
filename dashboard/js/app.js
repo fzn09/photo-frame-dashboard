@@ -395,6 +395,9 @@
       if (b && e.detail === 0) App.go(b.dataset.go);
     });
     document.addEventListener('pointerdown', App.resetIdle, true);
+    // Keyboard modality for the focus ring (base.css .kbd): on with a navigation key, off with any touch or click
+    document.addEventListener('keydown', function (e) { if (/^(Tab|Enter| |Arrow)/.test(e.key)) document.documentElement.classList.add('kbd'); }, true);
+    document.addEventListener('pointerdown', function () { document.documentElement.classList.remove('kbd'); }, true);
     window.addEventListener('hashchange', function () { App.go(location.hash.slice(1)); });
     App.go(location.hash.slice(1) || 'home');
     tick();

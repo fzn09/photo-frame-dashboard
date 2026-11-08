@@ -207,16 +207,16 @@
   --rail-on: #FFFFFF;
   --g1: rgba(255, 255, 255, .9); /* stage light, top left */
   --g2: rgba(255, 150, 90, .22); /* stage warmth, bottom */
-  --hero-a: #FFE4D2; --hero-b: #FFA676; --hero-ink: #2A2018; --hero-ink-2: #43362B;
 
-  /* signal colours: orange is the only accent, and it means "time-critical" (now, leave, rain, due, timer) */
+  /* signal colours: copper (--accent) is the house accent: today, selection, what's due soon. The red-orange alert
+     tone is kept for the moment itself (leave now, overdue, errors, the now-line), so it reads above copper. */
   --accent: #C2410C;
   --accent-rgb: 194 65 12;
   --on-accent: #FFFFFF;
   --accent-on-photo: #FF8A57;    /* orange text on photos and the black Photos view, in every theme: --accent is too dark there by day */
   --glow: #D68C54;
-  --alert: #C2410C;
-  --alert-rgb: 194 65 12;
+  --alert: #B42318;              /* white on it 6.6:1; as text on paper 5.8:1 */
+  --alert-rgb: 180 35 24;
   --amber: #FF9500;
   --amber-rgb: 255 149 0;
   --amber-ink: #8A5200;          /* amber as text */
@@ -276,12 +276,11 @@
   --rail-on: rgba(255, 205, 165, .10);
   --g1: rgba(255, 190, 140, .10);
   --g2: rgba(255, 138, 87, .22);
-  --hero-a: #4A3020; --hero-b: #B94A22; --hero-ink: #FFFFFF; --hero-ink-2: #FFF3E8;
   --accent: #FF8A57;
   --accent-rgb: 255 138 87;
   --on-accent: #2B2420;
-  --alert: #FF8A57;
-  --alert-rgb: 255 138 87;
+  --alert: #FF5E4D;              /* redder than the evening copper; --on-accent on it 5.1:1, as text 5.5:1 */
+  --alert-rgb: 255 94 77;
   --amber-ink: #FFB347;
   --warm: #FF8A57;
   --warm-rgb: 255 138 87;
@@ -306,7 +305,6 @@
   --rail-on: rgba(252, 115, 77, .10);
   --g1: rgba(2, 151, 222, .30);
   --g2: rgba(252, 115, 77, .22);
-  --hero-a: rgba(8, 22, 32, .92); --hero-b: rgba(252, 115, 77, .62); --hero-ink: #EEF3F6; --hero-ink-2: #C3CDD3;
   --accent: #FC734D;
   --accent-rgb: 252 115 77;
   --on-accent: #02070A;

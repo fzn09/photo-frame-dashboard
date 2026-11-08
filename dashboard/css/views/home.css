@@ -1,16 +1,18 @@
-/* Home / Today. 12-column grid in the 1156 x 752 content box, never scrolls.
-   Row 1: clock | weather | transit. Row 2: next up | people. Row 3: shopping | fridge | chores | photo.
+/* Home / Today. 24-column grid in the 1176 x 772 content box, never scrolls.
+   Row 1: clock 7 | weather 11 | transit 6. Row 2: next up 10 | people 14. Row 3: shopping | fridge | chores | photo.
+   24, not 12: the clock face has no tabular figures, so "11:11" is 182 px and "00:00" 324 px at 168 px. 7/24
+   (333 px) holds the widest time without the dead strip a 4/12 cell (383 px) left beside the usual ones.
    Every module except the clock and photo is a .card (same padding, radius and label). */
 .home {
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(24, minmax(0, 1fr));
   grid-template-rows: 236px 252px minmax(0, 1fr);
   gap: var(--gap);
   grid-template-areas:
-    "clock clock clock clock weather weather weather weather weather transit transit transit"
-    "hero  hero  hero  hero  hero    lanes   lanes   lanes   lanes   lanes   lanes   lanes"
-    "row   row   row   row   row     row     row     row     row     row     row     row";
+    "clock clock clock clock clock clock clock weather weather weather weather weather weather weather weather weather weather weather transit transit transit transit transit transit"
+    "hero hero hero hero hero hero hero hero hero hero lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes"
+    "row row row row row row row row row row row row row row row row row row row row row row row row";
 }
 .h-clock { grid-area: clock; } .h-weather { grid-area: weather; } .h-transit { grid-area: transit; }
 .h-hero-slot { grid-area: hero; } .h-lanes { grid-area: lanes; }
@@ -22,11 +24,13 @@
 .stage[data-off~="photos"] .h-photo, .stage[data-off~="fridge"] .h-fridge, .stage[data-off~="tasks"] .h-chores,
 .stage[data-off~="shopping"] .h-shop { display: none; }
 
-/* ---- clock: no card, it is the anchor (168px serif, digits ~19 mm) */
-.h-clock { display: flex; flex-direction: column; justify-content: center; padding-left: 4px; }
+/* ---- clock: no card, it is the anchor (168px serif, digits ~19 mm)
+   7 of 24 columns (see the grid note above). The date stacks (weekday / month day) to fill the height as one unit with the
+   time: digits' ink top level with the weather temperature, the date's last baseline level with the hour row. */
+.h-clock { display: flex; flex-direction: column; justify-content: space-between; padding: 18px 0 13px 4px; }
 .h-time { font-variant-numeric: tabular-nums; font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: var(--fs-clock); line-height: .78; letter-spacing: -.025em; display: flex; align-items: flex-start; }
-.h-date { font-family: var(--serif); font-size: var(--fs-l); margin-top: 16px; color: var(--ink-2); }
-.h-date b { font-weight: 400; font-style: italic; color: var(--ink); margin-right: 6px; }
+.h-date { font-family: var(--serif); font-size: var(--fs-l); line-height: 1.08; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-date b { display: block; font-weight: 400; font-style: italic; color: var(--ink); }
 
 /* ---- weather: now + advice on top, 7 hours below */
 .h-wx-top { display: flex; align-items: center; gap: 16px; }
@@ -39,7 +43,9 @@
 .h-wx-side { flex: 1; min-width: 0; max-width: 210px; margin-left: auto; display: flex; flex-direction: column; gap: 6px; overflow: hidden; text-align: right; }
 .h-wx-say { font-size: var(--fs-body); line-height: 1.2; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h-wx-say b { font-weight: 500; color: var(--ink); }
-.h-wx-say.is-wet b { color: var(--accent); } /* orange only when rain is coming: "No rain today" is not a warning */
+/* rain coming: the statement reads from the stove (34 px serif, copper); "No rain today" stays a quiet line */
+.h-wx-say.is-wet { line-height: 1.1; }
+.h-wx-say.is-wet b { color: var(--accent); font-family: var(--serif); font-size: var(--fs-l); font-weight: 400; margin-right: 6px; }
 .h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
 .h-hr { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: var(--fs-m); }
 .h-hr-l { font-size: var(--fs-body); font-variant-numeric: tabular-nums; color: var(--mute); }
@@ -71,27 +77,34 @@
 .h-dep-line--bus      { background: #9B2D8E; }
 .h-dep-dir { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-body); font-weight: 500; }
 .h-dep-min { flex: none; font-weight: 700; font-stretch: 100%; font-size: var(--fs-m); letter-spacing: 0; }
+.h-dep-min small { font-size: var(--fs-label); font-weight: 500; color: var(--ink-2); }
 .h-dep-age { flex: none; padding-top: 4px; font-size: var(--fs-label); color: var(--ink-2); }
 .h-dep-empty { font-size: var(--fs-l); line-height: 1.1; color: var(--ink-2); padding-top: 4px; }
-/* ---- next up: the decision card. Countdown is the biggest number after the clock */
+/* ---- next up: the decision card. Its big figure is when to leave (or when it starts, without travel).
+   It escalates instead of shouting all day: a calm card with the person's colour on its top edge at rest,
+   copper inside 15 minutes (is-soon), solid alert red-orange once it is time to go (is-now). */
 .h-hero-slot { display: grid; }
 .h-hero {
   display: flex; flex-direction: column; justify-content: space-between; gap: 4px; width: 100%;
-  padding: 14px 20px; border-radius: var(--r); overflow: hidden; position: relative; color: var(--hero-ink);
-  background: linear-gradient(160deg, var(--hero-a) 30%, var(--hero-b));
-  box-shadow: inset 0 0 0 1px var(--mod-line);
+  padding: 18px 20px 14px; border-radius: var(--r); overflow: hidden; position: relative; color: var(--ink);
+  background: var(--mod);
+  box-shadow: inset 0 4px 0 var(--c), inset 0 0 0 1px var(--mod-line), var(--card-shadow);
 }
 .h-hero-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.h-hero .label--on { color: var(--hero-ink-2); opacity: 1; }
-.h-hero .serif i { color: var(--hero-ink); }
-.h-hero .label--light { color: var(--hero-ink-2); }
+.h-hero .label::before { background: var(--c); }
 .h-hero-title { font-size: var(--fs-l); line-height: 1; margin: 2px 0 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.h-hero-meta { font-size: var(--fs-body); color: var(--hero-ink-2); }
+.h-hero-meta { font-size: var(--fs-body); color: var(--ink-2); }
+.h-hero.is-soon { background: rgb(var(--accent-rgb) / .12); box-shadow: inset 0 4px 0 var(--c), inset 0 0 0 1px rgb(var(--accent-rgb) / .45); }
+.h-hero.is-soon .h-hero-count { color: var(--accent); }
+.h-hero.is-now { background: var(--alert); color: var(--on-accent); box-shadow: none; }
+.h-hero.is-now .label, .h-hero.is-now .h-hero-meta { color: var(--on-accent); }
+.h-hero.is-now .label::before { background: var(--on-accent); }
 .h-hero-foot { display: flex; align-items: center; gap: 14px; margin-top: 2px; }
 .h-hero-foot .dots i { box-shadow: 0 0 0 2px var(--paper); }
 .h-hero-count { font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 8px; margin-top: auto; font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: var(--fs-hero); line-height: .85; letter-spacing: 0; }
 .h-hero-count em, .h-hero-count small { font-family: var(--sans); font-style: normal; font-size: var(--fs-m); font-weight: 500; letter-spacing: 0; }
-.h-hero--empty { justify-content: center; }
+.h-hero--empty { justify-content: center; box-shadow: inset 0 0 0 1px var(--mod-line), var(--card-shadow); } /* plain: nothing is next */
+.h-hero--empty .label::before { background: var(--mute); }
 .h-hero--empty .h-hero-title { font-size: var(--fs-l); line-height: 1.05; -webkit-line-clamp: 3; }
 .h-hero--empty .h-hero-meta { font-family: var(--sans); }
 .h-hero:active { transform: scale(.985); }
@@ -106,6 +119,9 @@
 .h-ev { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; min-height: 48px; padding: 4px 0; border-bottom: 1px solid var(--line); text-align: left; } /* 48px tap row */
 .h-together { grid-column: 1 / -1; margin-bottom: 10px; }
 .h-together .h-ev:first-child { padding-top: 0; }
+.h-tg-last { display: flex; align-items: center; border-bottom: 1px solid var(--line); } /* last shared row + the count of shared events that didn't fit; one rule under both */
+.h-tg-last .h-ev { flex: 1; min-width: 0; border-bottom: 0; }
+.h-tg-last .h-more { margin: 0 0 0 4px; }
 .h-ev .dots { flex: none; align-self: center; }
 .h-ev .dots i { box-shadow: 0 0 0 2px var(--paper); }
 .h-ev-t { min-width: 58px; flex: none; font-size: var(--fs-body); font-weight: 400; color: var(--ink-2); font-variant-numeric: tabular-nums; }
@@ -113,15 +129,18 @@
 .h-ev.is-now .h-ev-t { color: var(--accent); }
 .h-free { font-family: var(--serif); font-size: var(--fs-m); color: var(--ink-2); padding-top: 12px; line-height: 1.1; }
 /* 44px tap target inside the 34px name row: the negative margin keeps the row height */
-.h-more { flex: none; margin: -5px 0 -5px auto; min-height: 44px; padding: 0 2px 0 12px; font-size: var(--fs-body); font-weight: 500; color: var(--accent); white-space: nowrap; }
+/* a link, so ink, not copper (copper means now). 48 px tap target inside the 34 px name row: margins keep the row height */
+.h-more { flex: none; margin: -7px 0 -7px auto; min-height: 48px; padding: 0 2px 0 12px; font-size: var(--fs-body); font-weight: 500; color: var(--ink-2); white-space: nowrap; }
 
-/* ---- shopping + fridge: count, then the list */
-.h-stat { display: flex; align-items: baseline; gap: 10px; }
+/* ---- shopping, fridge, chores: label, one stat line, list. The stat line is a fixed 48 px whatever it holds
+   (a count or an empty-state phrase), so the lists start at the same height in every card of the row. */
+.h-stat { display: flex; align-items: baseline; gap: 10px; height: 48px; min-width: 0; }
 .h-stat .num { font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: var(--fs-xl); line-height: .85; letter-spacing: 0; }
-.h-stat small { font-size: var(--fs-body); color: var(--ink-2); }
+.h-stat small { min-width: 0; font-size: var(--fs-body); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-word { position: relative; top: 8px; min-width: 0; font-size: var(--fs-l); font-style: italic; line-height: 1.35; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* top: onto the counts' baseline */
+.h-note { font-size: var(--fs-body); line-height: 1.3; color: var(--ink-2); }
 .h-recent li { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); line-height: 1.55; white-space: nowrap; overflow: hidden; border-top: 1px solid var(--line); }
 .h-recent i { width: 6px; height: 6px; border-radius: 50%; background: var(--mute); flex: none; }
-.h-calm { font-size: var(--fs-l); line-height: 1.1; color: var(--ink-2); padding-top: 4px; }
 
 /* feed overdue: amber badge in the card's top-right corner (App.feedAge) */
 .h-age {
@@ -141,6 +160,10 @@
 
 /* ---- today's meals: shared, so a band above the two people, no time */
 .h-mband { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.h-mband-l { flex: none; } /* "Cooking": the dishes said nothing about what they were */
+/* card labels can carry a phrase ("Fridge · shopped yesterday"): one line, cut with an ellipsis, never wrapped */
+.home .card > .label { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home .card > .label::before { display: inline-block; vertical-align: middle; margin: -2px 6px 0 0; }
 .h-meal { flex: 1 1 0; min-width: 0; min-height: 48px; display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; }
 .h-meal img, .h-meal .m-noimg { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: rgb(var(--ov) / .07); }
 .h-meal b { font-size: var(--fs-body); font-weight: 500; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -150,9 +173,12 @@
 .h-photo-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 .h-photo-cap {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 16px 12px;
-  background: linear-gradient(0deg, rgba(0, 0, 0, .7), rgba(0, 0, 0, 0));
-  color: #FFFFFF; display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  /* solid .85 under the text, then fading: the orange "… years ago today" needs ~4.5:1 even over snow or sky */
+  background: linear-gradient(0deg, rgba(0, 0, 0, .85) 0%, rgba(0, 0, 0, .85) 45%, rgba(0, 0, 0, 0) 100%);
+  color: #FFFFFF; display: flex; flex-direction: column; gap: 2px;
 }
-.h-photo-cap b { font-size: var(--fs-label); font-weight: 500; }
-.h-photo-cap span { font-family: var(--serif); font-size: var(--fs-m); font-style: italic; }
+/* place over when, one line each: side by side, both wrapped to two lines in the narrow tile */
+.h-photo-cap span { font-family: var(--serif); font-size: var(--fs-m); font-style: italic; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-photo-cap b { font-size: var(--fs-label); font-weight: 500; color: rgba(255, 255, 255, .85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-photo-cap b.is-day { color: var(--accent-on-photo); }
 .h-photo:active { transform: scale(.985); }

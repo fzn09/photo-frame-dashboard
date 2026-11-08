@@ -21,7 +21,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 .i--fill { fill: currentColor; stroke: none; }
 ::-webkit-scrollbar { width: 0; height: 0; }
 /* keyboard focus (a USB keyboard or switch on the frame, or the desktop preview); touch never shows it */
-:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* Only after a key press (html.kbd, set in app.js): Firefox on the frame matched :focus-visible on tapped buttons
+   and drew the ring round the rail. Touch never shows a ring, not even the browser's own. */
+:focus-visible { outline: none; }
+.kbd :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .s-input-wrap:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
 
 /* ---------------------------------------------------------------- type utilities */
@@ -161,9 +164,6 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   background: rgb(var(--ov) / .12); color: inherit;
   font-family: var(--mono); font-size: var(--fs-min); font-weight: 400;
 }
-.pill--soon { background: var(--accent); color: var(--on-accent); }
-.pill--alert { background: var(--alert); color: var(--on-accent); }
-.pulse { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
 
 .ring-bg { fill: none; stroke: rgb(var(--c-rgb) / .16); stroke-width: 7; }
 .ring-fg { fill: none; stroke: var(--c); stroke-width: 7; stroke-linecap: round; }

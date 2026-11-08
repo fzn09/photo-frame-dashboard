@@ -58,38 +58,40 @@ import { fridgeRows } from '../../calc.js';
     if (!e) {
       var tomorrow = App.timedOn(App.addDays(now, 1))[0];
       return '<div class="h-hero h-hero--empty" data-go="calendar">' + ageTag('calendar') +
-        '<div class="label label--light">Rest of today</div>' +
+        '<div class="label">Rest of today</div>' +
         '<div class="h-hero-title serif">Nothing else scheduled.<br><i>Enjoy the quiet.</i></div>' +
         (tomorrow ? '<div class="h-hero-meta">Tomorrow starts with <b>' + App.esc(tomorrow.title) + '</b> at ' + App.fmt.time(tomorrow.start) + '</div>' : '') +
         '</div>';
     }
     var p = App.evColor(e);
-    var mins = (e.start - now) / 60000;
-    var leave = (App.leaveBy(e) - now) / 60000;
+    var mins = Math.round((e.start - now) / 60000);
+    var leave = Math.round((App.leaveBy(e) - now) / 60000);
     var who = e.people.map(function (id) { return App.person(id).name; });
     var whoText = App.isFamily(e) ? 'Everyone' : who.join(' + ');
-    var big = mins < 100
-      ? '<div class="h-hero-count num"><em>in</em>' + Math.round(mins) + '<small>min</small></div>'
-      : '<div class="h-hero-count num"><em>at</em>' + App.fmt.time(e.start) + '</div>';
-    var leavePill = '';
-    if (e.travel) {
-      leavePill = leave <= 0
-        ? '<span class="pill pill--alert"><i class="pulse"></i>Leave now</span>'
-        : '<span class="pill' + (leave <= 15 ? ' pill--soon' : '') + '">' + App.icon('car', 20) + 'Leave in ' + App.fmt.mins(leave) + '</span>';
-    }
-    return '<button class="h-hero" style="' + App.pstyle(p) + '" data-ev="' + e.id + '">' + ageTag('calendar') +
+    // The biggest figure is the decision, not the start time (which the meta line already says): with a travel time
+    // it is when to leave. Under an hour it counts down; further out it is a clock time, like the transit board.
+    var big, untilOnly = false, ref = e.travel ? leave : mins;
+    if (e.travel && leave <= 0) big = '<em>Leave</em>now' + (leave < 0 ? '<small>' + (-leave) + ' min late</small>' : '');
+    else if (e.travel) big = leave < 60 ? '<em>Leave in</em>' + leave + '<small>min</small>' : '<em>Leave</em>' + App.fmt.time(App.leaveBy(e));
+    else if (mins < 60) big = '<em>in</em>' + mins + '<small>min</small>';
+    else { big = '<em>at</em>' + App.fmt.time(e.start); untilOnly = true; }
+    // Calm at rest (person-coloured edge), copper inside 15 minutes, alert red-orange once it is time to go
+    var state = e.travel && leave <= 0 ? ' is-now' : ref <= 15 ? ' is-soon' : '';
+    var meta = (untilOnly ? 'Until ' + App.fmt.time(e.end) : App.fmt.range(e.start, e.end)) + (e.loc ? ' · ' + App.esc(e.loc) : '');
+    return '<button class="h-hero' + state + '" style="' + App.pstyle(p) + '" data-ev="' + e.id + '">' + ageTag('calendar') +
       '<div class="h-hero-main">' +
-      '  <div class="label label--on">Next up · ' + App.esc(whoText) + '</div>' +
+      '  <div class="label">Next up · ' + App.esc(whoText) + '</div>' +
       '  <div class="h-hero-title serif">' + App.esc(e.title) + '</div>' +
-      '  <div class="h-hero-meta">' + App.fmt.range(e.start, e.end) + (e.loc ? ' · ' + App.esc(e.loc) : '') + '</div>' +
-      '  <div class="h-hero-foot">' + (e.people.length > 1 ? App.dots(e.people, 22) : '') + leavePill + '</div>' +
-      '</div>' + big + '</button>';
+      '  <div class="h-hero-meta">' + meta + '</div>' +
+      (e.people.length > 1 ? '  <div class="h-hero-foot">' + App.dots(e.people, 22) + '</div>' : '') +
+      '</div><div class="h-hero-count num">' + big + '</div></button>';
   }
 
   // Events everyone is in show once, above the columns (two dots); each column keeps only that person's own.
+  // The event in "Next up" is left out here: the card beside it shows the rest of the day, not the same thing twice.
   function lanes() {
-    var now = App.now();
-    var live = function (pid) { return App.timedOn(now, pid).filter(function (e) { return e.end > now; }); };
+    var now = App.now(), hero = App.nextEvent();
+    var live = function (pid) { return App.timedOn(now, pid).filter(function (e) { return e.end > now && e !== hero; }); };
     var row = function (e, shared) {
       var cur = e.start <= now;
       return '<button class="h-ev' + (cur ? ' is-now' : '') + '" data-ev="' + e.id + '">' +
@@ -99,20 +101,29 @@ import { fridgeRows } from '../../calc.js';
     // A meal is shared, so today's plan sits above the columns too. It costs one row of events.
     var meals = App.mealsOn(now), band = meals.length > 0;
     var all = live().filter(App.isFamily), together = all.slice(0, band ? 1 : 2), cap = together.length ? 1 : band ? 2 : 3;
+    // Shared events that didn't fit are counted once, beside the shared row. In the lanes they were counted in
+    // every column, so a lane read "+1 more" over "Nothing else".
+    var famMore = all.length - together.length;
+    var shared = together.map(function (e, i) {
+      return i < together.length - 1 || !famMore ? row(e, true)
+        : '<div class="h-tg-last">' + row(e, true) + '<button class="h-more" data-go="calendar">+' + famMore + ' more</button></div>';
+    }).join('');
     return ageTag('calendar') +
-      (band ? '<div class="h-mband">' + meals.slice(0, 3).map(function (r) {
+      (band ? '<div class="h-mband"><span class="label h-mband-l">Cooking</span>' + meals.slice(0, 3).map(function (r) {
         return '<button class="h-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<b>' + App.esc(r.name) + '</b></button>';
       }).join('') + '</div>' : '') +
-      (together.length ? '<div class="h-together">' + together.map(function (e) { return row(e, true); }).join('') + '</div>' : '') +
+      (together.length ? '<div class="h-together">' + shared + '</div>' : '') +
       D.people.map(function (p) {
         var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
-        var shown = list.slice(0, cap), more = list.length - shown.length + all.length - together.length;
+        var shown = list.slice(0, cap), more = list.length - shown.length;
+        // "Free" only when the day really is: not when their next thing is the one shown in Next up
+        var busy = together.length || (hero && hero.people.indexOf(p.id) > -1);
         return '<div class="h-lane" style="' + App.pstyle(p) + '">' +
           // "+N more" rides in the name row: a row of its own pushed it out of the card under a meal band
           '<div class="h-lane-head">' + App.avatar(p, 30) + '<b>' + p.name + '</b>' +
           (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more</button>' : '') + '</div>' +
           (shown.length ? shown.map(function (e) { return row(e); }).join('') :
-            '<div class="h-free serif">' + (together.length ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
+            '<div class="h-free serif">' + (busy ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
           '</div>';
       }).join('');
   }
@@ -128,12 +139,25 @@ import { fridgeRows } from '../../calc.js';
   function shopping() {
     var open = D.groceries.filter(function (g) { return !g.done; });
     var recent = open.slice(-3).reverse();
-    if (!open.length) return ageTag('shopping') + '<div class="label">Shopping</div><div class="h-calm serif"><i>All stocked up.</i> Nothing left to buy.</div>';
+    if (!open.length) return ageTag('shopping') + '<div class="label">Shopping</div>' + calm('All stocked up.', 'Nothing left to buy.');
     return ageTag('shopping') + '<div class="label">Shopping</div>' +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>items to get</small></div>' +
       '<ul class="h-recent">' + recent.map(function (g) {
         return '<li><i></i><span class="h-name">' + App.esc(g.name) + '</span></li>';
       }).join('') + '</ul>';
+  }
+
+  // Bottom-row cards share one anatomy: label, one stat line, list. An empty card puts its phrase in the stat
+  // line (same height as a count), so lists and rules line up across the row whatever each card holds.
+  function calm(word, note) {
+    return '<div class="h-stat"><span class="h-word serif">' + word + '</span></div>' + (note ? '<p class="h-note">' + note + '</p>' : '');
+  }
+
+  // A timed chore due within 15 minutes (or already past today) turns copper like "Overdue": "Lock up 22:00" at 22:00
+  function dueSoon(hhmm) {
+    var p = String(hhmm).split(':'), n = App.now(), t = new Date(n);
+    t.setHours(+p[0], +p[1], 0, 0);
+    return t - n <= 15 * 60000;
   }
 
   // Open chores, overdue first then timed (same order as the Chores view). Dot = whose chore.
@@ -145,18 +169,19 @@ import { fridgeRows } from '../../calc.js';
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>' + (open.length ? 'to do today' : 'all done today') + '</small></div>' +
       '<ul class="h-recent">' + open.slice(0, 3).map(function (c) {
         return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i><span class="h-name">' + App.esc(c.title) + '</span>' +
-          (c.overdue ? '<span class="h-exp is-due">Overdue</span>' : c.time ? '<span class="h-exp">' + App.esc(c.time) + '</span>' : '') + '</li>';
+          (c.overdue ? '<span class="h-exp is-due">Overdue</span>' : c.time ? '<span class="h-exp' + (dueSoon(c.time) ? ' is-due' : '') + '">' + App.esc(c.time) + '</span>' : '') + '</li>';
       }).join('') + '</ul>';
   }
 
   function fridge() {
     var inside = fridgeRows(D.fridge, App.now());
-    if (!inside.length) return ageTag('fridge') + '<div class="label">Fridge</div><div class="h-calm serif"><i>' + (D.fridge.length ? 'All used up.' : 'No receipts yet.') + '</i></div>';
+    if (!inside.length) return ageTag('fridge') + '<div class="label">Fridge</div>' + calm(D.fridge.length ? 'All used up.' : 'No receipts yet.', D.fridge.length ? '' : 'The next REWE shop lands here.');
     var soon = inside.filter(function (r) { return r.state === 'soon'; });
     var newest = inside.slice().sort(function (a, b) { return a.newest - b.newest; }); // nothing urgent: the latest shop
     var last = newest[0].newest;
-    return ageTag('fridge') + '<div class="label">Fridge</div>' +
-      '<div class="h-stat"><span class="num">' + inside.length + '</span><small>items · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago') + '</small></div>' +
+    // "shopped yesterday" rides in the label (like "Transit · Gleisdreieck"), so the stat stays one line
+    return ageTag('fridge') + '<div class="label">Fridge · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago') + '</div>' +
+      '<div class="h-stat"><span class="num">' + inside.length + '</span><small>' + (inside.length === 1 ? 'item' : 'items') + '</small></div>' +
       '<ul class="h-recent">' + (soon.length ? soon : newest).slice(0, 3).map(function (r) {
         return '<li><i></i><span class="h-name">' + App.esc(r.label) + '</span>' + (r.state !== 'soon' ? '' : '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
           (r.left === 0 ? 'Today' : r.left === 1 ? 'Tomorrow' : '~' + r.left + ' days') + '</span>') + '</li>';
@@ -194,15 +219,26 @@ import { fridgeRows } from '../../calc.js';
       return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
         (age ? '<div class="h-dep-empty serif"><i>Departures</i> unavailable</div>' : '<div class="h-dep-empty serif"><i>Nothing</i> coming up</div>') + ageLine;
     }
+    // One format per list: minutes ("12 min") while every train is within the hour, otherwise all clock times,
+    // so "37m" never sits above "15:22"
+    var clockTimes = deps.some(function (d) { return d.when - now >= 3600000; });
     return '<div class="label">Transit · ' + App.esc(tr.stop) + '</div>' +
       '<div class="h-dep-list">' + deps.map(function (d) {
         var mins = Math.round((d.when - now) / 60000);
         return '<div class="h-dep">' +
           '<span class="h-dep-line h-dep-line--' + d.product + '"' + lineStyle(d.line) + '>' + App.esc(d.line) + '</span>' +
           '<span class="h-dep-dir">' + App.esc(d.direction) + '</span>' +
-          '<b class="num h-dep-min">' + (mins <= 0 ? 'now' : mins < 60 ? mins + 'm' : App.fmt.time(d.when, false)) + '</b>' +
+          '<b class="num h-dep-min">' + (clockTimes ? App.fmt.time(d.when) : mins <= 0 ? 'now' : mins + '<small> min</small>') + '</b>' +
           '</div>';
       }).join('') + '</div>' + ageLine;
+  }
+
+  // Fill a whole-card button and give it a short accessible name ("Fridge · shopped yesterday, 15 items"),
+  // so a screen reader doesn't read every row as the button's name
+  function name(card, html) {
+    card.innerHTML = html;
+    var l = card.querySelector('.label'), s = card.querySelector('.h-stat');
+    card.setAttribute('aria-label', (l ? l.textContent : '') + (s ? ', ' + [].map.call(s.children, function (c) { return c.textContent; }).join(' ') : ''));
   }
 
   // Both lists empty: shop + fridge shrink and the photo takes twice their width (CSS: .home[data-lean]).
@@ -217,15 +253,17 @@ import { fridgeRows } from '../../calc.js';
     el.querySelector('.h-weather').innerHTML = weather();
     el.querySelector('.h-hero-slot').innerHTML = hero();
     el.querySelector('.h-lanes').innerHTML = lanes();
-    if (App.enabled('shopping')) el.querySelector('.h-shop').innerHTML = shopping();
+    if (App.enabled('shopping')) name(el.querySelector('.h-shop'), shopping());
     el.querySelector('.h-transit').innerHTML = transit();
-    if (App.enabled('fridge')) el.querySelector('.h-fridge').innerHTML = fridge();
-    if (App.enabled('tasks')) el.querySelector('.h-chores').innerHTML = chores();
+    if (App.enabled('fridge')) name(el.querySelector('.h-fridge'), fridge());
+    if (App.enabled('tasks')) name(el.querySelector('.h-chores'), chores());
   }
 
   function photoCaption(s) {
     var m = App.photoMeta(s.photos[0]);
-    V.el.querySelector('.h-photo-cap').innerHTML = '<b>' + (m.onThisDay ? 'On this day · ' : '') + m.kicker + '</b><span>' + App.esc(m.place) + '</span>';
+    // Place, then when: one line each. The kicker already says "… years ago today", so no "On this day ·" prefix;
+    // on the day itself it takes the photo orange instead.
+    V.el.querySelector('.h-photo-cap').innerHTML = '<span>' + App.esc(m.place) + '</span><b' + (m.onThisDay ? ' class="is-day"' : '') + '>' + m.kicker + '</b>';
   }
 
   App.register('home', {
@@ -233,7 +271,8 @@ import { fridgeRows } from '../../calc.js';
       V.el = el;
       if (!el.firstChild) {
         el.innerHTML = '<div class="home">' +
-          '<div class="h-clock" data-go="calendar" role="button" tabindex="0" aria-label="Open calendar"></div>' +
+          // no aria-label: it would replace the time and date as the name, so a screen reader never said the time
+          '<div class="h-clock" data-go="calendar" role="button" tabindex="0"></div>' +
           '<div class="h-weather card"></div>' +
           '<div class="h-transit card"></div>' +
           '<div class="h-hero-slot"></div>' +
@@ -282,8 +321,8 @@ import { fridgeRows } from '../../calc.js';
     ages();
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
-  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); V.el.querySelector('.h-fridge').innerHTML = fridge(); } });
-  App.on('chores', function () { if (App.current === 'home' && App.enabled('tasks')) V.el.querySelector('.h-chores').innerHTML = chores(); });
+  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); name(V.el.querySelector('.h-fridge'), fridge()); } });
+  App.on('chores', function () { if (App.current === 'home' && App.enabled('tasks')) name(V.el.querySelector('.h-chores'), chores()); });
   App.on('views', function () {
     if (!V.el || !V.el.firstChild) return;
     paint();
