@@ -10,6 +10,10 @@
     App.emit('data');
   }
 
+  function updateNews(items) {
+    if (Array.isArray(items) && items.length) { D.news = items; App.emit('news'); }
+  }
+
   function updateCalendar(events) {
     // ISO date strings from JSON → Date objects
     D.events = events.map(function (e) {
@@ -218,5 +222,6 @@
     pullChores = poll('chores', updateChores, 5, function () { return choreWrites > 0 || !App.enabled('tasks'); });
     poll('transit',  updateTransit,   1);
     poll('meals',    updateMeals,    30, function () { return !App.enabled('meals'); });
+    poll('news',     updateNews,     15);
   });
 })();

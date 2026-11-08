@@ -257,6 +257,16 @@ The refresh token is a credential, so don't commit it or paste it into chats. To
 `/api/photos` returns a fresh stock set for the slideshow. Set the search term in the `PHOTO_QUERY` var, or remove
 it to use any photo. Without a key, the slideshow keeps its sample photos.
 
+### News
+
+**Needs:** nothing. RSS, RSS 1.0 (RDF) and Atom feeds need no key.
+
+`/api/news` (`news.js`) reads the feeds in the `NEWS_FEEDS` var, given as `Name|https://feed-url` pairs separated by
+commas. It returns the 12 newest headlines with at most 4 per source, and Cloudflare caches each feed for 15 minutes.
+The Today card shows three headlines and moves to the next three every 2 minutes. A tap opens the summary.
+A feed that fails or times out (8 s) is skipped. If all fail, the card keeps the last headlines it had.
+Test a new feed URL with `curl` before adding it.
+
 ### Live cams
 
 **Needs:** nothing. Cams appear under Photos → Live and are listed in `js/data.js` (`webcams`). Two berlin.de JPEG
@@ -395,6 +405,7 @@ weather.
 | `BVG_WALK_MIN` | No | Walk time to the stop; sooner departures are hidden |
 | `VIEWS` | No | Views on the frame ([Step 9](#step-9-choose-which-views-to-show)) |
 | `PHOTO_QUERY` | No | Unsplash search term |
+| `NEWS_FEEDS` | No | News card feeds, `Name\|https://url` pairs ([News](#news)) |
 | `BRING_LIST` | No | Shopping list name, default `home` |
 | `TICKTICK_PROJECT` | No | Chores list name, default `Chores` |
 | `COOKIDOO_HOST` | No | Cookidoo domain, default `cookidoo.de` |

@@ -1,6 +1,6 @@
 /* Home / Today. 12-column grid in the 1156 x 752 content box, never scrolls.
-   Row 1: clock | weather | transit. Row 2: next up | people. Row 3: shopping | fridge | chores | photo.
-   Every module except the clock and photo is a .card (same padding, radius and label). */
+   Row 1: clock | weather | transit. Row 2: next up | people. Row 3: shopping | fridge | chores | news (double width).
+   Every module except the clock is a .card (same padding, radius and label). */
 .home {
   height: 100%;
   display: grid;
@@ -19,7 +19,7 @@
 .h-row > * { flex: 1 1 0; }
 .home > *, .h-row > * { min-width: 0; min-height: 0; overflow: hidden; }
 .home .card { display: flex; flex-direction: column; gap: 10px; }
-.stage[data-off~="photos"] .h-photo, .stage[data-off~="fridge"] .h-fridge, .stage[data-off~="tasks"] .h-chores,
+.stage[data-off~="fridge"] .h-fridge, .stage[data-off~="tasks"] .h-chores,
 .stage[data-off~="shopping"] .h-shop { display: none; }
 
 /* ---- clock: no card, it is the anchor (168px serif, digits ~19 mm) */
@@ -33,22 +33,25 @@
 .h-wx-icon { color: var(--ink); }
 .h-wx-icon svg { width: 56px; height: 56px; }
 .h-wx-temp { font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: var(--fs-hero); line-height: .8; letter-spacing: 0; font-variant-numeric: tabular-nums; }
-.h-wx-meta { display: flex; flex-direction: column; gap: 4px; }
+.h-wx-meta { display: flex; flex-direction: column; gap: 2px; }
 .h-wx-meta b { font-size: var(--fs-body); font-weight: 500; }
 .h-wx-meta span { font-size: var(--fs-body); color: var(--ink-2); white-space: pre; }
-.h-wx-side { flex: 1; min-width: 0; max-width: 210px; margin-left: auto; padding-left: 16px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.h-wx-meta span b { font-size: var(--fs-body); font-weight: 600; color: var(--ink); }
+.h-wx-side { flex: 1; min-width: 0; max-width: 190px; margin-left: auto; padding-left: 16px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
 .h-wx-say { font-size: var(--fs-body); line-height: 1.2; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h-wx-say b { font-weight: 500; color: var(--accent); }
-.h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
-.h-hr { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: var(--fs-m); }
-.h-hr-l { font-size: var(--fs-body); font-variant-numeric: tabular-nums; color: var(--mute); }
-.h-hr-i { height: 24px; margin-top: 2px; display: grid; place-items: center; }
+.h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: auto; padding-top: 4px; border-top: 1px solid var(--line); }
+.h-hr { display: flex; flex-direction: column; align-items: center; gap: 0; font-size: 22px; line-height: 1.15; }
+.h-hr-l { font-size: var(--fs-min); font-variant-numeric: tabular-nums; color: var(--mute); }
+.h-hr-i { height: 24px; display: grid; place-items: center; }
 .h-hr-i svg { width: 22px; height: 22px; }
 .h-hr b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .h-hr.is-wet .h-hr-i { color: var(--accent); }
+.h-hr-p { font-size: var(--fs-min); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--mute); }
+.h-hr.is-wet .h-hr-p { color: var(--accent); font-weight: 700; }
 
 /* ---- sunset + air (weather side column): label left, value right, one row each */
-.h-air { display: flex; flex-direction: column; gap: 6px; }
+.h-air { display: flex; flex-direction: column; gap: 4px; }
 .h-air div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; white-space: nowrap; }
 .h-air span { font-size: var(--fs-label); color: var(--mute); }
 .h-air b { font-size: var(--fs-body); font-weight: 500; color: var(--ink); }
@@ -130,8 +133,6 @@
 .h-lanes .h-age { top: auto; bottom: 10px; }                                      /* top-right is the shared row's dots */
 .h-weather .h-age:not([hidden]) ~ .h-wx-top .h-wx-side { margin-top: 30px; }       /* keep the rain line clear of it */
 
-/* nothing to buy and nothing in the fridge: two short cards, wider photo */
-.stage:not([data-off~="photos"]) .home[data-lean] .h-photo { flex-grow: 2; }
 .h-exp { margin-left: auto; padding-left: 8px; font-size: var(--fs-label); font-weight: 500; color: var(--mute); }
 .h-exp.is-due { color: var(--accent); }
 .h-recent .h-who { width: 10px; height: 10px; background: var(--c); }
@@ -142,14 +143,17 @@
 .h-meal img, .h-meal .m-noimg { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: rgb(var(--ov) / .07); }
 .h-meal b { font-size: var(--fs-body); font-weight: 500; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ---- photo */
-.h-photo { position: relative; display: block; width: 100%; border-radius: var(--r); overflow: hidden; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--mod-line); }
-.h-photo-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
-.h-photo-cap {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 16px 12px;
-  background: linear-gradient(0deg, rgba(0, 0, 0, .7), rgba(0, 0, 0, 0));
-  color: #FFFFFF; display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
-}
-.h-photo-cap b { font-size: var(--fs-label); font-weight: 500; }
-.h-photo-cap span { font-family: var(--serif); font-size: var(--fs-m); font-style: italic; }
-.h-photo:active { transform: scale(.985); }
+/* ---- news: lead headline (serif, two lines) + two one-line headlines. Double width in the bottom row */
+.h-row > .h-news { flex-grow: 2; }
+.h-news.card, .h-weather.card { gap: 6px; }
+.h-news .label { flex: none; }
+.h-news-n { margin-left: auto; font-family: var(--sans); color: var(--mute); }
+.h-nw { display: flex; flex-direction: column; gap: 2px; width: 100%; min-width: 0; min-height: 44px; text-align: left; }
+.h-nw + .h-nw { padding-top: 6px; border-top: 1px solid var(--line); }
+.h-nw-t { font-size: var(--fs-body); font-weight: 500; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-nw--lead .h-nw-t { font-size: 28px; font-weight: 400; line-height: 1.05; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.h-nw-m { font-size: var(--fs-min); color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-nw-m b { font-weight: 600; color: var(--ink-2); }
+.h-nw--lead .h-nw-m b { color: var(--accent); }
+.h-nw:active { opacity: .7; }
+.h-nw-desc { font-size: var(--fs-body); line-height: 1.4; color: var(--ink-2); margin: 12px 0 0; }

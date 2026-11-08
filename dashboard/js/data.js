@@ -172,8 +172,20 @@ window.DATA = (function () {
     hi: 17, lo: 8, feels: -2, humidity: 71, wind: 18,
     t: [9, 9, 8, 8, 8, 8, 9, 10, 11, 12, 13, 15, 16, 17, 16, 15, 14, 13, 12, 12, 11, 10, 10, 9],
     c: ['moon', 'moon', 'moon', 'moon', 'moon', 'moon', 'partly', 'partly', 'sun', 'sun', 'sun', 'partly', 'partly', 'cloud', 'cloud', 'cloud', 'rain', 'rain', 'rain', 'rain', 'cloud', 'cloud', 'moon', 'moon'],
-    p: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 10, 20, 25, 40, 80, 90, 70, 55, 20, 10, 0, 0]
+    p: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 10, 20, 25, 40, 80, 90, 70, 55, 20, 10, 0, 0],
+    f: [7, 7, 6, 6, 5, 5, 6, 8, 9, 10, 12, 14, 15, 16, 15, 13, 11, 10, 9, 9, 8, 8, 8, 7], // feels-like
+    rise: '07:13', sun: '16:29'
   };
+
+  // ---------------------------------------------------------------- news (Worker /api/news replaces it)
+  var news = [
+    ['Sample headline: the Worker has not delivered news yet, so this card shows placeholder text', 'rbb24', 12],
+    ['Sample headline two: set NEWS_FEEDS in wrangler.jsonc', 'tagesschau', 40],
+    ['Sample headline three: up to twelve items rotate here', 'DW', 75],
+    ['Sample headline four', 'rbb24', 130],
+    ['Sample headline five', 'tagesschau', 200],
+    ['Sample headline six', 'DW', 260]
+  ].map(function (x) { return { title: x[0], src: x[1], at: Date.now() - x[2] * 60000, desc: 'Sample text. The real card shows the first lines of the article summary from the feed.' }; });
 
   // ---------------------------------------------------------------- photos
   var t = new Date(base);
@@ -245,7 +257,7 @@ window.DATA = (function () {
     events: events, busyExtras: busyExtras,
     chores: chores, choreUsuals: choreUsuals,
     catOrder: catOrder, groceries: groceries, catalog: catalog, usuals: usuals, fridge: fridge, fridgeMeta: fridgeMeta,
-    weather: weather, webcams: webcams, photos: photos, transit: transit, meals: meals, recipes: recipes,
+    weather: weather, news: news, webcams: webcams, photos: photos, transit: transit, meals: meals, recipes: recipes,
     _gid: function () { return 'g' + (++gid); },
     _eid: function () { return 'e' + (++n); }
   };

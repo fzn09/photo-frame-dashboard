@@ -1,5 +1,5 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping (Bring!: GET list, POST write), /api/fridge (REWE receipts in KV: GET list, POST used up), /api/ingest (the REWE job pushes here: bearer key, no cookie), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/recipe + /api/meals/img (Cookidoo week plan, cookidoo.js)
+// Routes: /api/weather, /api/calendar, /api/shopping (Bring!: GET list, POST write), /api/fridge (REWE receipts in KV: GET list, POST used up), /api/ingest (the REWE job pushes here: bearer key, no cookie), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/recipe + /api/meals/img (Cookidoo week plan, cookidoo.js), /api/news (RSS headlines, news.js)
 // All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
 //
 // Access gate: the whole site (page, assets and /api/*) needs the `hq` cookie, which holds DASH_TOKEN.
@@ -9,6 +9,7 @@
 import { parseViews } from './views.js';
 import { handleMeals, handleMealRecipe, handleMealImage } from './cookidoo.js';
 import { mapIngest, applyUsed } from './rewe-map.js';
+import { handleNews } from './news.js';
 
 // Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
 const JSON_CORS = { 'Content-Type': 'application/json' };
@@ -54,6 +55,7 @@ export default {
       if (pathname === '/api/meals')    return await handleMeals(env);
       if (pathname === '/api/meals/recipe') return await handleMealRecipe(env, url);
       if (pathname === '/api/meals/img') return await handleMealImage(url);
+      if (pathname === '/api/news')     return await handleNews(env, JSON_CORS);
     } catch (err) {
       console.error(pathname, err); // details stay in the Worker logs (wrangler tail), not in the response
       return new Response('{"error":"upstream failed"}', { status: 502, headers: JSON_CORS });
@@ -90,8 +92,8 @@ async function handleWeather(env) {
 
   const url = `https://api.open-meteo.com/v1/forecast` +
     `?latitude=${lat}&longitude=${lon}` +
-    `&hourly=temperature_2m,precipitation_probability,weathercode` +
-    `&daily=temperature_2m_max,temperature_2m_min,sunset` +
+    `&hourly=temperature_2m,apparent_temperature,precipitation_probability,weathercode` +
+    `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset` +
     `&timezone=${encodeURIComponent(tz)}` +
     `&forecast_days=2`;
   const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality` +
@@ -106,14 +108,16 @@ async function handleWeather(env) {
   const t = data.hourly.temperature_2m.slice(0, 24).map(Math.round);
   const p = (data.hourly.precipitation_probability || new Array(24).fill(0)).slice(0, 24);
   const c = data.hourly.weathercode.slice(0, 24).map((code, h) => mapWMO(code, h));
+  const f = (data.hourly.apparent_temperature || []).slice(0, 24).map(Math.round); // feels-like, same hours as t
 
   const hi = Math.round(data.daily.temperature_2m_max[0]);
   const lo = Math.round(data.daily.temperature_2m_min[0]);
 
   const sun = (data.daily.sunset?.[0] || '').slice(11, 16); // "HH:MM" local, tz was requested above
+  const rise = (data.daily.sunrise?.[0] || '').slice(11, 16);
   const aqi = aq.current?.european_aqi ?? null;
 
-  return new Response(JSON.stringify({ hi, lo, t, c, p, sun, aqi }), {
+  return new Response(JSON.stringify({ hi, lo, t, c, p, f, sun, rise, aqi }), {
     headers: { ...JSON_CORS, 'Cache-Control': 'max-age=1800, s-maxage=1800' }
   });
 }

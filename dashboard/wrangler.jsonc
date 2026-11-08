@@ -28,7 +28,9 @@
 		"PHOTO_QUERY": "aesthetic wallpapers",
 		// Cookidoo country domain and language (week plan, cookidoo.js)
 		"COOKIDOO_HOST": "cookidoo.de",
-		"COOKIDOO_LANG": "de-DE"
+		"COOKIDOO_LANG": "de-DE",
+		// News card on Today (news.js): "Name|https://feed-url" pairs, comma-separated. RSS, RDF or Atom, no keys.
+		"NEWS_FEEDS": "rbb24|https://www.rbb24.de/aktuell/index.xml/feed=rss.xml,tagesschau|https://www.tagesschau.de/index~rss2.xml,DW|https://rss.dw.com/rdf/rss-en-all"
 	},
 	// Cookidoo token store. Wrangler creates the namespace on first deploy; seed the refresh token (SETUP.md).
 	"kv_namespaces": [
