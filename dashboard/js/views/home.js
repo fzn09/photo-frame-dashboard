@@ -40,7 +40,8 @@ import { fridgeRows } from '../../calc.js';
       '</div><div class="h-wx-say' + (w.wet ? ' is-wet' : '') + '"><b>' + w.summary + '.</b> ' + w.advice + '.</div>' +
       '<div class="h-wx-hours">' + hours.map(function (h) {
         return '<div class="h-hr' + (h.p >= 50 ? ' is-wet' : '') + '"><span class="h-hr-l">' + h.label + '</span>' +
-          '<span class="h-hr-i">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b></div>';
+          '<span class="h-hr-i">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b>' +
+          '<span class="h-hr-rb" aria-label="Rain ' + (h.p || 0) + '%"><i style="width:' + Math.min(100, h.p || 0) + '%"></i></span></div>';
       }).join('') + '</div>';
   }
 
@@ -139,11 +140,25 @@ import { fridgeRows } from '../../calc.js';
   }
   App.ring = ring;
 
+  // Bottom-row card head: icon disc, then the label text (cut with an ellipsis, never wrapped)
+  function head(icon, text) {
+    return '<div class="label h-tile-h"><span class="h-ico">' + App.icon(icon, 20) + '</span><span class="h-tile-t">' + text + '</span></div>';
+  }
+
+  // Something expires today or tomorrow: the Fridge card turns solid alert (PRODUCT.md: alert is for "expiring")
+  function fridgeHot() {
+    return fridgeRows(D.fridge, App.now()).some(function (r) { return r.state === 'soon' && r.left <= 1; });
+  }
+  function paintFridge(card) {
+    card.classList.toggle('is-alert', fridgeHot());
+    name(card, fridge());
+  }
+
   function shopping() {
     var open = D.groceries.filter(function (g) { return !g.done; });
     var recent = open.slice(-3).reverse();
-    if (!open.length) return ageTag('shopping') + '<div class="label">Shopping</div>' + calm('All stocked up.', 'Nothing left to buy.');
-    return ageTag('shopping') + '<div class="label">Shopping</div>' +
+    if (!open.length) return ageTag('shopping') + head('cart', 'Shopping') + calm('All stocked up.', 'Nothing left to buy.');
+    return ageTag('shopping') + head('cart', 'Shopping') +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>items to get</small></div>' +
       '<ul class="h-recent">' + recent.map(function (g) {
         return '<li><i></i><span class="h-name">' + App.esc(g.name) + '</span></li>';
@@ -168,7 +183,7 @@ import { fridgeRows } from '../../calc.js';
     var open = D.chores.filter(function (c) { return !c.done; }).sort(function (a, b) {
       return ((b.overdue ? 1 : 0) - (a.overdue ? 1 : 0)) || ((a.time ? 0 : 1) - (b.time ? 0 : 1));
     });
-    return ageTag('chores') + '<div class="label">Chores</div>' +
+    return ageTag('chores') + head('tasks', 'Chores') +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>' + (open.length ? 'to do today' : 'all done today') + '</small></div>' +
       '<ul class="h-recent">' + open.slice(0, 3).map(function (c) {
         return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i><span class="h-name">' + App.esc(c.title) + '</span>' +
@@ -178,12 +193,12 @@ import { fridgeRows } from '../../calc.js';
 
   function fridge() {
     var inside = fridgeRows(D.fridge, App.now());
-    if (!inside.length) return ageTag('fridge') + '<div class="label">Fridge</div>' + calm(D.fridge.length ? 'All used up.' : 'No receipts yet.', D.fridge.length ? '' : 'The next REWE shop lands here.');
+    if (!inside.length) return ageTag('fridge') + head('fridge', 'Fridge') + calm(D.fridge.length ? 'All used up.' : 'No receipts yet.', D.fridge.length ? '' : 'The next REWE shop lands here.');
     var soon = inside.filter(function (r) { return r.state === 'soon'; });
     var newest = inside.slice().sort(function (a, b) { return a.newest - b.newest; }); // nothing urgent: the latest shop
     var last = newest[0].newest;
     // "shopped yesterday" rides in the label (like "Transit · Gleisdreieck"), so the stat stays one line
-    return ageTag('fridge') + '<div class="label">Fridge · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago') + '</div>' +
+    return ageTag('fridge') + head('fridge', 'Fridge · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago')) +
       '<div class="h-stat"><span class="num">' + inside.length + '</span><small>' + (inside.length === 1 ? 'item' : 'items') + '</small></div>' +
       '<ul class="h-recent">' + (soon.length ? soon : newest).slice(0, 3).map(function (r) {
         return '<li><i></i><span class="h-name">' + App.esc(r.label) + '</span>' + (r.state !== 'soon' ? '' : '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
@@ -258,7 +273,7 @@ import { fridgeRows } from '../../calc.js';
     el.querySelector('.h-lanes').innerHTML = lanes();
     if (App.enabled('shopping')) name(el.querySelector('.h-shop'), shopping());
     el.querySelector('.h-transit').innerHTML = transit();
-    if (App.enabled('fridge')) name(el.querySelector('.h-fridge'), fridge());
+    if (App.enabled('fridge')) paintFridge(el.querySelector('.h-fridge'));
     if (App.enabled('tasks')) name(el.querySelector('.h-chores'), chores());
   }
 
@@ -324,7 +339,7 @@ import { fridgeRows } from '../../calc.js';
     ages();
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
-  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); name(V.el.querySelector('.h-fridge'), fridge()); } });
+  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); paintFridge(V.el.querySelector('.h-fridge')); } });
   App.on('chores', function () { if (App.current === 'home' && App.enabled('tasks')) name(V.el.querySelector('.h-chores'), chores()); });
   App.on('views', function () {
     if (!V.el || !V.el.firstChild) return;

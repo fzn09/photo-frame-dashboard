@@ -1,8 +1,11 @@
-// Shopping: categorized list (left) + quick-add with usuals (right).
+// Shopping: category rail (left) filters a three-column list (right). Quick-add with usuals lives in a sheet behind
+// "Add item"; ticked items move into a collapsed "In the cart" group at the bottom of the list.
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null, query: '', drawer: false, pending: {}, flash: null, qtyTimer: {} };
+  var V = { el: null, sheet: null, query: '', drawer: false, pending: {}, flash: null, qtyTimer: {}, cat: 'all' };
+  // Suggestions and usuals render in the Add sheet while it is open
+  function root() { return V.sheet || V.el; }
 
   function open() { return D.groceries.filter(function (g) { return !g.done; }); }
   function done() { return D.groceries.filter(function (g) { return g.done; }); }
@@ -27,21 +30,30 @@
       '<span class="s-box">' + App.icon('check', 22) + '</span>' +
       '<span class="s-name"><b>' + App.esc(g.name) + '</b>' + (g.note ? '<small>' + App.esc(g.note) + '</small>' : '') + '</span>' +
       '</button>' +
-      '<div class="s-qty"><button data-qty="-1" data-id="' + g.id + '" aria-label="Less">' + App.icon('minus', 22) + '</button><span class="num">' + g.qty + '</span><button data-qty="1" data-id="' + g.id + '" aria-label="More">' + App.icon('plus', 22) + '</button></div>' +
+      '<button class="s-q" data-qsheet="' + g.id + '" aria-label="Quantity ' + g.qty + '">' + (g.qty > 1 ? '×' + g.qty : App.icon('plus', 20)) + '</button>' +
       '</div>';
   }
 
+  function groupsOf(items) {
+    return D.catOrder.all.concat(['Other']).map(function (cat) { return { cat: cat, items: items.filter(function (g) { return g.cat === cat; }) }; }).filter(function (x) { return x.items.length; });
+  }
+  function catsHTML() {
+    var items = open(), groups = groupsOf(items);
+    if (V.cat !== 'all' && !groups.some(function (gr) { return gr.cat === V.cat; })) V.cat = 'all'; // emptied: back to All
+    var btn = function (id, label, n) { return '<button class="cat' + (V.cat === id ? ' is-on' : '') + '" data-filter="' + App.esc(id) + '" aria-pressed="' + (V.cat === id) + '"><span>' + App.esc(label) + '</span><b>' + n + '</b></button>'; };
+    return items.length ? btn('all', 'All', items.length) + '<div class="cats-sep"></div>' + groups.map(function (gr) { return btn(gr.cat, gr.cat, gr.items.length); }).join('') : '';
+  }
   function listHTML() {
-    var items = open(), order = D.catOrder.all.concat(['Other']);
-    var groups = order.map(function (cat) { return { cat: cat, items: items.filter(function (g) { return g.cat === cat; }) }; }).filter(function (x) { return x.items.length; });
+    var items = open(), groups = groupsOf(items);
+    if (V.cat !== 'all') groups = groups.filter(function (gr) { return gr.cat === V.cat; });
     var d = done();
-    return (items.length ? groups.map(function (gr) {
+    return (items.length ? '<div class="s-cols">' + groups.map(function (gr) {
       return '<div class="s-cat" data-cat="' + gr.cat + '"><div class="s-cat-h"><span class="label">' + gr.cat + '</span><span class="label" data-cat-count>' + gr.items.length + '</span></div>' + gr.items.map(row).join('') + '</div>';
-    }).join('') : '<div class="s-empty serif">All stocked up.<br><i>Nothing left to buy.</i></div>') +
+    }).join('') + '</div>' : '<div class="s-empty serif">All stocked up.<br><i>Nothing left to buy.</i></div>') +
       (d.length ? '<div class="s-drawer' + (V.drawer ? ' is-open' : '') + '">' +
-        '<button class="s-drawer-h" data-drawer><span>' + App.icon('check', 22) + ' Got it <b class="num">(' + d.length + ')</b></span><span class="label">' + (V.drawer ? 'Hide' : 'Show') + '</span></button>' +
+        '<button class="s-drawer-h" data-drawer><span>' + App.icon('cart', 22) + ' In the cart <b class="num">(' + d.length + ')</b></span><span class="label">' + (V.drawer ? 'Hide' : 'Show') + '</span></button>' +
         (V.drawer ? '<div class="s-drawer-list">' + d.map(function (g) {
-          return '<button class="s-got" data-revive="' + g.id + '">' + App.esc(g.name) + '<span class="label">Add back</span></button>';
+          return '<button class="s-got" data-revive="' + g.id + '"><s>' + App.esc(g.name) + '</s><span class="label">Add back</span></button>';
         }).join('') + '<button class="btn btn--ghost s-clear" data-clear>Clear ' + d.length + ' checked items</button></div>' : '') +
         '</div>' : '');
   }
@@ -73,7 +85,7 @@
   }
   function refreshSuggestFor(g) {
     if (V.query.trim()) return paintSuggest();
-    var t = V.el.querySelector('.s-usuals [data-add="' + App.esc(g.name) + '"]');
+    var t = root().querySelector('.s-usuals [data-add="' + App.esc(g.name) + '"]');
     if (t) swap(t, usualTile(g.name));
   }
   function catCount(cat) {
@@ -83,6 +95,7 @@
     if (!n) c.parentNode.removeChild(c);
     else c.querySelector('[data-cat-count]').textContent = n;
   }
+  function paintCats() { var c = V.el.querySelector('.s-rail'); if (c) c.innerHTML = catsHTML(); }
   function insertRow(g) {
     var cat = V.el.querySelector('.s-cat[data-cat="' + g.cat + '"]');
     if (!cat) return paintList();
@@ -105,30 +118,65 @@
     var r = V.el.querySelector('.s-list [data-id="' + g.id + '"]');
     if (!r) return;
     r.classList.add('is-flash');
-    if (r.scrollIntoView) r.scrollIntoView({ block: 'nearest' });
+    if (r.scrollIntoView && !V.sheet) r.scrollIntoView({ block: 'nearest' });
     setTimeout(function () { r.classList.remove('is-flash'); }, 1200);
   }
 
   function paintList() { var l = V.el.querySelector('.s-list'); var st = l.scrollTop; l.innerHTML = listHTML(); l.scrollTop = st; paintHead(); }
-  function paintSuggest() { V.el.querySelector('.s-suggest').innerHTML = suggestHTML(); }
+  function paintSuggest() { var s = root().querySelector('.s-suggest'); if (s) s.innerHTML = suggestHTML(); }
   function paintHead() {
     V.el.querySelector('.s-count').innerHTML = '<span class="num">' + open().length + '</span> to get';
+    paintCats();
   }
   function render() {
     V.el.innerHTML = '<div class="shop">' +
-      '<header class="s-head"><div><div class="label">Shared list</div><h1 class="serif">Groceries</h1></div><div class="s-count"></div></header>' +
-      '<div class="s-list"></div>' +
-      '<aside class="s-side">' +
-      '  <div class="s-add">' +
-      '    <label class="s-input-wrap">' + App.icon('plus', 30) + '<input class="s-input" placeholder="Add an item…" autocomplete="off" enterkeyhint="done"></label>' +
-      '  </div>' +
-      '  <div class="s-suggest"></div>' +
-      '</aside></div>';
-    var input = V.el.querySelector('.s-input');
-    input.value = V.query;
-    input.addEventListener('input', function () { V.query = input.value; paintSuggest(); });
-    input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && input.value.trim()) { add(input.value); } });
-    paintList(); paintSuggest();
+      '<header class="s-head"><div><div class="label">Shared list</div><h1 class="serif">Groceries</h1></div><div class="s-count"></div>' +
+      '<button class="btn btn--solid" data-addsheet>' + App.icon('plus', 24) + 'Add item</button></header>' +
+      '<nav class="s-rail cats glass" aria-label="Categories"></nav>' +
+      '<div class="s-list panel glass glass--dense"></div></div>';
+    paintList();
+  }
+
+  // Quick-add: the input, suggestions and usuals in a sheet. It stays open for several adds; each add toasts.
+  function addSheet() {
+    V.query = '';
+    App.sheet('<div class="sheet-pad s-addsheet"><h2 class="sheet-h serif">Add to the list</h2>' +
+      '<label class="s-input-wrap">' + App.icon('plus', 30) + '<input class="s-input" placeholder="Add an item…" autocomplete="off" enterkeyhint="done"></label>' +
+      '<div class="s-suggest"></div></div>', {
+      cls: 's-sheet',
+      onMount: function (box) {
+        V.sheet = box;
+        box.addEventListener('click', onClick);
+        var input = box.querySelector('.s-input');
+        input.addEventListener('input', function () { V.query = input.value; paintSuggest(); });
+        input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && input.value.trim()) { add(input.value); } });
+        paintSuggest();
+      },
+      onClose: function () { V.sheet = null; V.query = ''; }
+    });
+  }
+
+  // Quantity: rare, so behind the row's pill. One write to Bring! after the last tap (debounced).
+  function qtySheet(g) {
+    function body() {
+      return '<div class="sheet-pad"><h2 class="sheet-h serif">' + App.esc(g.name) + '</h2><div class="s-qty">' +
+        '<button data-q="-1" aria-label="Less">' + App.icon('minus', 28) + '</button><span class="num">' + g.qty + '</span>' +
+        '<button data-q="1" aria-label="More">' + App.icon('plus', 28) + '</button></div>' +
+        '<div class="sheet-actions"><button class="btn btn--solid" data-close>Done</button></div></div>';
+    }
+    App.sheet(body(), {
+      onMount: function (box) {
+        box.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-q]');
+          if (!b) return;
+          g.qty = Math.max(1, g.qty + +b.dataset.q);
+          box.querySelector('.s-qty .num').textContent = g.qty;
+          clearTimeout(V.qtyTimer[g.id]);
+          V.qtyTimer[g.id] = setTimeout(function () { sync('add', g); }, 700);
+        });
+      },
+      onClose: function () { paintList(); App.emit('data'); }
+    });
   }
 
   function add(name) {
@@ -137,8 +185,8 @@
     if (g) {
       g.qty++;
       msg = 'Already on the list · now <b>×' + g.qty + '</b> ' + App.esc(g.name);
-      var q = V.el.querySelector('.s-list [data-id="' + g.id + '"] .s-qty .num');
-      if (q) q.textContent = g.qty;
+      var q = V.el.querySelector('.s-list [data-id="' + g.id + '"] .s-q');
+      if (q) q.textContent = '×' + g.qty;
     } else if ((g = find(name, true))) {
       g.done = false; g.qty = 1;
       msg = 'Added back <b>' + App.esc(g.name) + '</b>';
@@ -153,7 +201,7 @@
     sync('add', g);
     var hadQuery = !!V.query.trim();
     V.query = '';
-    var input = V.el.querySelector('.s-input');
+    var input = root().querySelector('.s-input');
     if (input) input.value = '';
     if (hadQuery) paintSuggest(); else refreshSuggestFor(g);
     flash(g);
@@ -196,20 +244,14 @@
       else if (g) { delete V.pending[g.id]; t.parentNode.classList.remove('is-checking'); }
       return;
     }
-    if ((t = e.target.closest('[data-qty]'))) {
-      var q = D.groceries.filter(function (x) { return x.id === t.dataset.id; })[0];
-      q.qty = Math.max(1, q.qty + +t.dataset.qty);
-      t.parentNode.querySelector('.num').textContent = q.qty;
-      refreshSuggestFor(q);
-      clearTimeout(V.qtyTimer[q.id]); // debounce: one write after the last tap
-      V.qtyTimer[q.id] = setTimeout(function () { sync('add', q); }, 700);
-      return;
-    }
+    if ((t = e.target.closest('[data-qsheet]'))) return qtySheet(D.groceries.filter(function (x) { return x.id === t.dataset.qsheet; })[0]);
+    if ((t = e.target.closest('[data-addsheet]'))) return addSheet();
+    if ((t = e.target.closest('[data-filter]'))) { V.cat = t.dataset.filter; paintList(); V.el.querySelector('.s-list').scrollTop = 0; return; }
     if ((t = e.target.closest('[data-add]'))) return add(t.dataset.add);
     if ((t = e.target.closest('[data-drawer]'))) { V.drawer = !V.drawer; return paintList(); }
     if ((t = e.target.closest('[data-revive]'))) {
       var r = D.groceries.filter(function (x) { return x.id === t.dataset.revive; })[0];
-      r.done = false; sync('add', r); paintList(); paintSuggest(); App.emit('data');
+      r.done = false; sync('add', r); paintList(); App.emit('data');
       return App.toast('Added back <b>' + App.esc(r.name) + '</b>', { icon: 'cart', ms: 2500 });
     }
     if ((t = e.target.closest('[data-clear]'))) {
@@ -232,6 +274,7 @@
   App.register('shopping', {
     show: function (el) {
       if (!V.el) { V.el = el; el.addEventListener('click', onClick); }
+      V.cat = 'all';
       render();
     }
   });

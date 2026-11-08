@@ -6,7 +6,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null, showUsed: false };
+  var V = { el: null, showUsed: false, cat: 'all' }; // cat: 'soon', 'past', 'all' or a section name
   var EUR = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
   var OVERDUE = 18 * 36e5; // the longest gap between job runs is about 15 h
 
@@ -31,6 +31,27 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     return '<div class="f-cols">' + SECTIONS.map(function (s) { return group(s, list.filter(function (r) { return r.section === s; })); }).join('') + '</div>';
   }
   function byState(rows, state) { return rows.filter(function (r) { return r.state === state; }); }
+
+  // Category rail: Use soon and Check these first (the reasons to open the fridge), then All and each section
+  function cat(id, label, n, cls) {
+    return '<button class="cat' + (cls ? ' ' + cls : '') + (V.cat === id ? ' is-on' : '') + '" data-cat="' + App.esc(id) + '" aria-pressed="' + (V.cat === id) + '"><span>' + label + '</span><b>' + n + '</b></button>';
+  }
+  function railHTML(all) {
+    var soon = byState(all, 'soon').length, past = byState(all, 'past').length;
+    return (soon ? cat('soon', 'Use soon', soon, 'cat--soon') : '') + (past ? cat('past', 'Check these', past) : '') +
+      cat('all', 'All', all.length) + '<div class="cats-sep"></div>' +
+      SECTIONS.map(function (sec) { var n = all.filter(function (r) { return r.section === sec; }).length; return n ? cat(sec, App.esc(sec), n) : ''; }).join('');
+  }
+  function listFor(all) {
+    if (V.cat === 'soon') return group('Use soon · estimate', byState(all, 'soon'));
+    if (V.cat === 'past') return group('Past the estimate · still there?', byState(all, 'past'));
+    return sections(V.cat === 'all' ? all : all.filter(function (r) { return r.section === V.cat; }));
+  }
+  // A category that emptied (last item used up) falls back to All
+  function validCat(all) {
+    var ok = V.cat === 'all' || all.some(function (r) { return V.cat === 'soon' || V.cat === 'past' ? r.state === V.cat : r.section === V.cat; });
+    if (!ok) V.cat = 'all';
+  }
 
   function checked() {
     var m = D.fridgeMeta, d = m && m.updatedAt && new Date(m.updatedAt);
@@ -58,16 +79,19 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     btn.textContent = 'Used ' + used.length;
     btn.classList.toggle('is-on', V.showUsed);
     btn.setAttribute('aria-pressed', V.showUsed);
-    rail.innerHTML = V.showUsed ? '' : group('Use soon · estimate', soon) + group('Check these', byState(all, 'past'));
-    list.innerHTML = V.showUsed ? sections(used) : all.length ? sections(byState(all, ''))
+    validCat(all);
+    rail.innerHTML = V.showUsed || !all.length ? '' : railHTML(all);
+    list.innerHTML = V.showUsed ? sections(used) : all.length ? (V.cat === 'soon' || V.cat === 'past' ? '<div class="f-cols f-one">' + listFor(all) + '</div>' : listFor(all))
       : '<div class="s-empty serif">' + (used.length ? 'All used up.' : 'No receipts yet.') + '<br><i>The next REWE shop lands here.</i></div>';
     list.scrollTop = st;
   }
 
   function render() {
+    // Opens on what needs eating: Use soon when there is any, otherwise everything
+    V.cat = byState(fridgeRows(D.fridge, App.now()), 'soon').length ? 'soon' : 'all';
     V.el.innerHTML = '<div class="fridge">' +
       '<header class="s-head"><h1 class="serif">Fridge</h1><div class="s-count"></div><div class="f-checked"></div><span class="f-tag f-over" hidden>Overdue</span><button class="f-used" data-used hidden></button></header>' +
-      '<aside class="f-rail"></aside><div class="f-list"></div></div>';
+      '<nav class="f-rail cats glass" aria-label="Sections"></nav><div class="f-list panel glass glass--dense"></div></div>';
     paint();
   }
 
@@ -97,6 +121,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
           var t = e.target.closest('[data-rm]');
           if (t) tap(t.dataset.rm.split(' '), t.querySelector('b').textContent);
           else if (e.target.closest('[data-used]')) { V.showUsed = !V.showUsed; paint(); }
+          else if ((t = e.target.closest('[data-cat]'))) { V.cat = t.dataset.cat; paint(); V.el.querySelector('.f-list').scrollTop = 0; }
         });
       }
       render();

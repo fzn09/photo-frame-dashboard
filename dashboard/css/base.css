@@ -53,31 +53,30 @@ ul { margin: 0; padding: 0; list-style: none; }
   width: var(--stage-w, 1280px); height: 800px;
   margin: -400px 0 0 calc(var(--stage-w, 1280px) / -2);
   transform-origin: 50% 50%;
-  background:
-    radial-gradient(900px 500px at 6% 0%, var(--g1), rgba(255, 255, 255, 0)),
-    radial-gradient(800px 360px at 70% 108%, var(--g2), rgba(255, 255, 255, 0)),
-    var(--paper);
+  /* grainy gradient: one 160 px speck tile (public/bg/grain.png, tools/make-grain.mjs) over the theme's --ground */
+  background: url('/bg/grain.png') 0 0 / 160px 160px repeat, var(--ground);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 76px 1fr;
+  grid-template-columns: 96px 1fr;
 }
 
 /* ---------------------------------------------------------------- rail */
+/* a floating glass panel; the active view is a raised white pill */
 .rail {
-  display: flex; flex-direction: column;
-  padding: 8px 0 12px;
-  border-right: 1px solid var(--line);
-  background: var(--rail);
+  display: flex; flex-direction: column; gap: 2px;
+  margin: 14px 0 14px 12px; padding: 8px 6px 10px;
+  border-radius: 22px; background: var(--mod);
+  box-shadow: inset 0 0 0 1px var(--mod-line), inset 0 1px 0 var(--mod-hi), var(--card-shadow);
   z-index: 5;
 }
 .rail-item {
-  height: 68px;
+  height: 66px; border-radius: 16px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   font-size: var(--fs-min); font-weight: 500;
   color: var(--ink-2);
   position: relative;
 }
-.rail-item.is-active { background: var(--rail-on); color: var(--ink); box-shadow: inset 3px 0 0 var(--accent); }
+.rail-item.is-active { background: var(--rail-on); color: var(--ink); box-shadow: 0 2px 8px rgba(70, 45, 25, .12); }
 .rail-item:active { background: rgb(var(--ov) / .08); }
 .rail-item.is-active:active { background: rgb(var(--accent-rgb) / .2); }
 .rail-stale { margin-top: auto; padding: 6px 0; text-align: center; line-height: 1.2; font-size: var(--fs-min); color: var(--mute); }
@@ -99,7 +98,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 .view--bleed { padding: 0; }
 
 /* ---------------------------------------------------------------- components */
-.card { background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line), var(--card-shadow); border-radius: var(--r); padding: 16px 18px; position: relative; }
+/* glass: translucent fill, 1px light edge, 1px top highlight, one soft shadow. Painted once, never animated. */
+.card, .glass { background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line), inset 0 1px 0 var(--mod-hi), var(--card-shadow); border-radius: var(--r-card); }
+.card { padding: 16px 18px; position: relative; }
+.glass--dense { background: var(--mod-dense); }
 button.card { display: block; width: 100%; }
 button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 
@@ -168,8 +170,25 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .ring-bg { fill: none; stroke: rgb(var(--c-rgb) / .16); stroke-width: 7; }
 .ring-fg { fill: none; stroke: var(--c); stroke-width: 7; stroke-linecap: round; }
 
+/* ---------------------------------------------------------------- list views (Fridge, Shopping)
+   A glass category rail with counts on the left filters one dense glass panel on the right, which scrolls by drag.
+   Rows stay flat (no fill or shadow per row), so scrolling repaints only text and hairlines over one surface. */
+.cats { min-height: 0; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.cat { flex: none; min-height: 58px; padding: 0 14px; border-radius: 14px; display: flex; align-items: center; gap: 10px; font-size: var(--fs-body); font-weight: 500; color: var(--ink); text-align: left; }
+.cat span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat b { flex: none; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cat.is-on { background: var(--rail-on); box-shadow: 0 2px 8px rgba(70, 45, 25, .1); }
+.cat.is-on b { color: var(--ink); }
+.cat:active { background: rgb(var(--ov) / .08); }
+.cat--soon { color: var(--accent); font-weight: 700; }
+.cat--soon b { color: var(--accent); }
+.cat--soon.is-on { background: var(--accent); color: var(--on-accent); }
+.cat--soon.is-on b { color: var(--on-accent); }
+.cats-sep { flex: none; height: 1px; margin: 4px 10px; background: var(--line); }
+.panel { min-height: 0; overflow-y: auto; padding: 4px 22px 40px; scrollbar-width: none; }
+
 /* ---------------------------------------------------------------- toasts */
-.toasts { position: absolute; left: 76px; right: 0; bottom: 24px; display: flex; justify-content: center; pointer-events: none; z-index: 60; }
+.toasts { position: absolute; left: 96px; right: 0; bottom: 24px; display: flex; justify-content: center; pointer-events: none; z-index: 60; }
 .toast {
   pointer-events: auto;
   min-height: 72px; max-width: 760px; padding: 0 10px 0 24px;

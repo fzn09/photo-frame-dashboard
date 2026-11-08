@@ -4,7 +4,7 @@ description: A family's always-on kitchen dashboard on a 1280x800 Android photo 
 colors:
   silver-paper: "#EEF0F1"
   silver-pressed: "#E2E5E7"
-  card-white: "rgba(255, 255, 255, .88)"
+  card-white: "rgba(255, 255, 255, .7)"
   raise-white: "#FFFFFF"
   walnut-ink: "#2A2018"
   walnut-ink-2: "#55483D"
@@ -18,7 +18,7 @@ colors:
   amber-ink: "#8A5200"
   evening-paper: "#2A1C14"
   evening-pressed: "#3B2A1F"
-  evening-card: "rgba(255, 205, 165, .085)"
+  evening-card: "rgba(255, 205, 165, .14)"
   evening-ink: "#FBF6EF"
   evening-ink-2: "#E3D3C2"
   evening-mute: "#C2AD98"
@@ -71,7 +71,7 @@ typography:
 rounded:
   tag: "6px"
   tile: "12px"
-  card: "16px"
+  card: "20px"
   toast: "20px"
   sheet: "24px"
   pill: "999px"
@@ -139,8 +139,8 @@ components:
   rail-item-active:
     backgroundColor: "{colors.raise-white}"
     textColor: "{colors.walnut-ink}"
-    width: "76px"
-    height: "68px"
+    width: "72px"
+    height: "66px"
   input-field:
     textColor: "{colors.walnut-ink}"
     typography: "{typography.item}"
@@ -167,7 +167,7 @@ components:
 
 Home HQ is a household object before it is an app. It hangs where the family cooks and is read from across the room, at about 3 m for the clock and 1.5 m for counts and titles, and touched at arm's length with busy hands. The system is built for that distance: big type, calm surfaces, and colour that only appears when it means something. By day the ground is a cool silver with near-white cards and walnut-brown ink. From sunset to 07:00 the clock switches to Walnut Evening: the same layout on a deep, warm brown with cream ink and a brighter copper. Nothing is themed by hand. Both palettes are one token set with two values.
 
-The feel is quiet and legible at 3 m. Instrument Serif carries the voice (the clock, view titles, people's names, empty states in italics), and narrow Archivo carries the facts (times, counts, item names). Cards are near-flat, separated by a hairline and a whisper of shadow by day and by tint alone at night. Lists are ruled rows, not boxed items. Motion is almost absent: a press scales a control a few percent and that's all, because an always-on frame cannot afford animation that never ends.
+The feel is quiet and legible at 3 m. Instrument Serif carries the voice (the clock, view titles, people's names, empty states in italics), and narrow Archivo carries the facts (times, counts, item names). Cards are frosted glass on a grainy gradient: a translucent fill, a 1 px light edge, a 1 px top highlight and one soft shadow. The frame cannot run `backdrop-filter`, so the ground itself is soft (radial gradients plus a speck tile) and a translucent card over it reads as frosted. One solid copper card (Next up) anchors Home. Lists are ruled rows, not boxed items. Motion is almost absent: a press scales a control a few percent and that's all, because an always-on frame cannot afford animation that never ends.
 
 The page is a fixed 1280×800 stage at 1 CSS px per device pixel (160 ppi), so every size below is a physical size: 16 px is 2.5 mm, the smallest text anywhere.
 
@@ -175,7 +175,7 @@ The page is a fixed 1280×800 stage at 1 CSS px per device pixel (160 ppi), so e
 - One token set, two palettes (Silver & Walnut by day, Walnut Evening at night), switched by the clock.
 - Serif voice, narrow-sans data, mono labels with a dot.
 - Copper means today, selection, or "act soon". Person colours mean who. Everything else is ink and paper.
-- Near-flat cards and ruled lists; depth only for things that float (sheets, toasts, banners).
+- Glass cards on a grainy gradient, one solid copper card, ruled lists.
 - Nothing below 16 px; nothing tappable below 48 px; primary controls 64 px.
 
 ## Colors
@@ -191,9 +191,9 @@ A cool silver-and-walnut neutral field with a single copper voice and two person
 - **Person colours** (`person-fauzan` blue, `person-amanda` magenta, `person-family` warm grey): identity, never emphasis. They colour event blocks, lane underlines, avatar discs, chore checkboxes and the dots that say who else is in an event. Text on them is white.
 
 ### Neutral
-- **Silver Paper** (`silver-paper`) and **Evening Paper** (`evening-paper`): the stage ground, with a faint radial light top-left and a copper warmth at the bottom.
+- **Silver Paper** (`silver-paper`) and **Evening Paper** (`evening-paper`): the page colour. The stage ground is `--ground` in `tokens.css`: radial gradients (white light top-left, silver-blue top-right and copper warmth at the bottom by day; ember and copper on walnut at night) under `public/bg/grain.png`, a 160 px speck tile made by `dashboard/tools/make-grain.mjs`.
 - **Silver Pressed** (`silver-pressed`) and **Evening Pressed** (`evening-pressed`): the rail, pressed states and quiet fills such as unselected chips.
-- **Card White** (`card-white`) and **Evening Card** (`evening-card`): module cards. At night the card is a warm translucent tint, because the panel greys out low-saturation browns and a white tint read as slate.
+- **Glass** (`--mod`, a gradient from `card-white` 0.7 to 0.5 by day; a warm tint 0.14 to 0.075 at night): module cards, the rail and the list category rails. At night the glass is a warm tint, because the panel greys out low-saturation browns and a white tint read as slate. **Dense glass** (`--mod-dense`, 0.86 to 0.76 white by day, near-opaque walnut at night) is for panels that scroll, so text over the gradient stays steady.
 - **Raise White** (`raise-white`; `evening-pressed` at night): surfaces that float above the page: sheets, toasts, banners.
 - **Walnut Ink, Ink 2, Mute** (`walnut-ink`, `walnut-ink-2`, `walnut-mute`, and their `evening-` counterparts): primary text, secondary text, and tertiary text plus past or inactive items. Mute still clears 4.5:1 on its ground.
 - **Hairline** (`hairline`, `evening-hairline`): card edges, row rules, outlines.
@@ -230,9 +230,9 @@ A cool silver-and-walnut neutral field with a single copper voice and two person
 
 ## Layout
 
-A fixed 1280×800 stage, scaled with a CSS transform on other screens (wider than 16:10 widens the stage, narrower letterboxes). A 76 px rail on the left holds eight sections, the stale-data note and the clock. The content box is 1176×772 inside 14 px padding. Views are absolute layers switched with `content-visibility`; only Calendar's time grid and long lists scroll.
+A fixed 1280×800 stage, scaled with a CSS transform on other screens (wider than 16:10 widens the stage, narrower letterboxes). A 96 px column on the left holds the rail, a floating glass panel (12 px from the edge, 14 px from top and bottom) with eight sections, the stale-data note and the clock. The content box is 1156×772 inside 14 px padding. Views are absolute layers switched with `content-visibility`; only Calendar's time grid and long lists scroll.
 
-Home never scrolls: a 24-column grid in three rows (236 px, 252 px, then the rest) with a 14 px gap. Row 1 is the clock (7 columns, wide enough for the widest time, "00:00", because the serif has no tabular figures), weather (11) and transit (6); the clock's digits start level with the weather temperature and its stacked date ends on the hour row's line. Row 2 is "next up" (10) and the people (14), which leaves out the event already in "next up". Row 3 holds equal cards for shopping, fridge, chores and the photo tile, and a disabled view's card drops out so the others widen. List views pair a list with a side panel (Shopping 1fr + 420 px, Fridge 372 px + 1fr). Long lists run in two columns because the stage is too wide for one.
+Home never scrolls: a 24-column grid in three rows (236 px, 252 px, then the rest) with a 14 px gap. Row 1 is the clock (7 columns, wide enough for the widest time, "00:00", because the serif has no tabular figures), weather (11) and transit (6); the clock's digits start level with the weather temperature and its stacked date ends on the hour row's line. Row 2 is "next up" (10) and the people (14), which leaves out the event already in "next up". Row 3 holds equal cards for shopping, fridge, chores and the photo tile, and a disabled view's card drops out so the others widen. List views pair a glass category rail with counts (Shopping 250 px, Fridge 280 px) with one dense glass panel that scrolls by drag. A category tap filters the panel; "All" shows every group. Fridge opens on "Use soon" when anything needs eating. Fridge runs in two columns, Shopping in three (item names at 22 px narrow Archivo, 700). Shopping's quick-add and usuals live in a sheet behind "Add item", the quantity in a sheet behind the row's "×N" pill, and ticked items in a collapsed "In the cart" group at the end of the list.
 
 Rhythm is tight inside a group and wider between groups: 14 px gaps, 16×18 px card padding, 48 px minimum row height for anything tappable and 64 px for primary controls.
 
@@ -241,20 +241,21 @@ Rhythm is tight inside a group and wider between groups: 14 px gaps, 16×18 px c
 
 ## Elevation & Depth
 
-Tonal layering with a minimal shadow by day and none at night. Cards are separated from the ground by a 1 px inset hairline plus a 1–3 px warm shadow; Walnut Evening drops the shadow and relies on the tint. Real elevation is reserved for things that float over the page and must be dismissed.
+Glass layering. Cards are separated from the ground by a 1 px light edge, a 1 px top highlight and one soft shadow, painted once and never animated. Things that float over the page and must be dismissed keep the deeper shadows below.
 
 ### Shadow Vocabulary
-- **Card rest** (`box-shadow: 0 1px 3px rgba(70, 45, 25, .10)`): module cards, by day only.
+- **Glass card** (`box-shadow: inset 0 0 0 1px var(--mod-line), inset 0 1px 0 var(--mod-hi), 0 8px 22px rgba(70, 45, 25, .11)`; `.3` black at night): cards, the rail, category rails.
+- **Solid card** (`0 10px 26px rgba(150, 50, 10, .24)`): Next up, in copper.
 - **Toast** (`box-shadow: 0 18px 40px rgba(0, 0, 0, .25)`): the single bottom toast.
 - **Banner** (`box-shadow: 0 16px 40px rgba(0, 0, 0, .22)`): amber alert banners.
 - **Sheet** (`box-shadow: 0 30px 80px rgba(0, 0, 0, .35)`): modal sheets, over a 60% black scrim.
 
 ### Named Rules
-**The Float Earns Shadow Rule.** Only sheets, toasts and banners carry a real shadow. A card that needs to stand out uses copper or a person colour, never a bigger shadow.
+**The Float Earns Shadow Rule.** Every card carries the same glass shadow; only sheets, toasts and banners go deeper. A card that needs to stand out uses a solid fill (copper, or alert for expiring food), never a bigger shadow.
 
 ## Shapes
 
-Soft, generous rounding that grows with the size of the surface: 6 px tags, 12 px tiles and day cells, 16 px cards, 20 px toasts and banners, 24 px sheets, and full pills for every button, segment, chip and status pill. Circles are kept for avatars, icon buttons and the dots of the label and lane language. Edges are hairlines drawn as inset box-shadows, so borders never change a box's size. Lists use ruled rows, a 1 px rule under each row, rather than separate boxes.
+Soft, generous rounding that grows with the size of the surface: 6 px tags, 12 px tiles and day cells, 16 px inner surfaces, 20 px cards (`--r-card`) toasts and banners, 22 px for the rail, 24 px sheets, and full pills for every button, segment, chip and status pill. Circles are kept for avatars, icon buttons and the dots of the label and lane language. Edges are hairlines drawn as inset box-shadows, so borders never change a box's size. Lists use ruled rows, a 1 px rule under each row, rather than separate boxes.
 
 ## Components
 
@@ -276,7 +277,7 @@ Quiet, pill-shaped, sized for a thumb.
 
 ### Next up (the decision card)
 - **Big figure:** the decision, at Hero size (76 px serif). With a travel time it is when to leave ("Leave in 13 min" under an hour, "Leave 11:45" further out, "Leave now · 2 min late"); without one, the start ("in 45 min", or "at 17:00" with the meta line shortened to "Until 17:30"). The start time is never shown twice.
-- **Escalation:** at rest a plain card with a 4 px top edge in the person's colour (warm grey for everyone). Within 15 minutes, a 12% copper tint with a copper figure. At leave time, solid alert. With nothing left today, a plain card with no edge.
+- **Escalation:** the one solid card on Home. At rest, a copper gradient (`#D9622B → #C2410C → #A83A0D`) with white text in every theme, since white on evening copper fails contrast; the person colour is the ringed label dot. Within 15 minutes, a white 4 px inner ring. At leave time, solid alert. With nothing left today, a glass card.
 - **The people card beside it** shows the rest of the day and leaves out the event already here.
 
 ### Status pills and tags
@@ -285,10 +286,12 @@ Quiet, pill-shaped, sized for a thumb.
 - **Stale badge:** amber ink on a 10% ink tint pill in a card's top-right corner, "Updated 75 min ago".
 
 ### Cards / Containers
-- **Corner Style:** 16 px.
-- **Background:** Card White by day, Evening Card at night.
-- **Shadow Strategy:** card rest by day, none at night (see Elevation & Depth).
-- **Border:** 1 px inset hairline.
+- **Corner Style:** 20 px.
+- **Background:** glass (`--mod`); dense glass (`--mod-dense`) for scrolling panels.
+- **Shadow Strategy:** the glass card shadow in every theme (see Elevation & Depth).
+- **Border:** 1 px inset light edge and a 1 px top highlight.
+- **Home bottom row:** a 40 px white icon disc leads the label. Fridge turns solid alert while something expires today or tomorrow.
+- **Weather hours:** a frosted strip; the current hour is a copper chip, and a 4 px bar under each hour shows the rain chance.
 - **Internal Padding:** 16 px top and bottom, 18 px sides; a mono label first, then a serif statement or a count.
 
 ### Lists
@@ -300,8 +303,8 @@ Quiet, pill-shaped, sized for a thumb.
 - **Focus:** the field wrapper shows a 2 px inset copper ring.
 
 ### Navigation
-- **Rail:** 76 px wide; 68 px items with a 26 px stroke icon over a 16 px label in Ink 2.
-- **Active:** raised fill, ink text, a 3 px copper bar on the inner left edge, `aria-current="page"`. Tabs switch on finger-down.
+- **Rail:** a floating glass panel in a 96 px column; 66 px items with 16 px corners, a 26 px stroke icon over a 16 px label in Ink 2.
+- **Active:** a raised white pill (warm tint at night) with ink text, `aria-current="page"`. Tabs switch on finger-down.
 - **Foot:** the stale-data note ("Sample data", "Updated N min ago") and a 30 px serif clock; holding the clock opens the About sheet.
 
 ### Sheets

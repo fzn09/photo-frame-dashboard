@@ -194,19 +194,26 @@
   --paper-2: #E2E5E7;            /* pressed / quiet fill, rail */
   --card: rgba(255, 255, 255, .7);
   --raise: #FFFFFF;              /* toasts, banners, panels that sit above the page */
-  --mod: rgba(255, 255, 255, .88); /* home module cards */
-  --mod-line: #D8D3CD;
-  --card-shadow: 0 1px 3px rgba(70, 45, 25, .10);
+  /* Glass cards on a grainy gradient (2026-11 redesign). No backdrop-filter: the ground is already soft, so a
+     translucent card over it reads as frosted. Gradients are painted once; --mod is a background, never a colour. */
+  --mod: linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .5)); /* glass cards */
+  --mod-dense: linear-gradient(180deg, rgba(255, 255, 255, .86), rgba(255, 255, 255, .76)); /* scrolling list panels */
+  --mod-line: rgba(255, 255, 255, .7);   /* glass edge */
+  --mod-hi: rgba(255, 255, 255, .95);    /* 1px top highlight */
+  --card-shadow: 0 8px 22px rgba(70, 45, 25, .11);
+  --row: rgba(255, 255, 255, .62);       /* frosted inner rows (hour strip) */
+  --row-line: rgba(255, 255, 255, .8);
+  --ground: radial-gradient(820px 540px at 6% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0)),
+    radial-gradient(760px 480px at 100% 0%, rgba(165, 182, 198, .5), rgba(165, 182, 198, 0)),
+    radial-gradient(920px 540px at 64% 112%, rgba(255, 146, 86, .55), rgba(255, 146, 86, 0)),
+    radial-gradient(620px 420px at 0% 104%, rgba(190, 120, 80, .28), rgba(190, 120, 80, 0)), #E8E5E2;
   --ink: #2A2018;
   --ink-rgb: 42 32 24;
   --ink-2: #55483D;
   --mute: #6E6054;
   --line: #D8D3CD;
   --ov: 42 32 24;                /* rgb of a tint that shows on this ground: rgb(var(--ov) / .1) */
-  --rail: #E2E5E7;
-  --rail-on: #FFFFFF;
-  --g1: rgba(255, 255, 255, .9); /* stage light, top left */
-  --g2: rgba(255, 150, 90, .22); /* stage warmth, bottom */
+  --rail-on: rgba(255, 255, 255, .94);
 
   /* signal colours: copper (--accent) is the house accent: today, selection, what's due soon. The red-orange alert
      tone is kept for the moment itself (leave now, overdue, errors, the now-line), so it reads above copper. */
@@ -247,6 +254,7 @@
 
   /* shape + space */
   --r: 16px;
+  --r-card: 20px;               /* glass cards and panels */
   --r-s: 12px;
   --gap: 14px;
   --pad: 14px;
@@ -263,19 +271,23 @@
   --paper-2: #3B2A1F;
   --card: rgba(255, 205, 165, .085);
   --raise: #3B2A1F;
-  --mod: rgba(255, 205, 165, .085);
-  --mod-line: rgba(255, 220, 190, .16);
-  --card-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  --mod: linear-gradient(180deg, rgba(255, 205, 165, .14), rgba(255, 205, 165, .075));
+  --mod-dense: linear-gradient(180deg, rgba(58, 40, 29, .94), rgba(50, 34, 24, .94));
+  --mod-line: rgba(255, 220, 190, .2);
+  --mod-hi: rgba(255, 230, 210, .24);
+  --card-shadow: 0 8px 22px rgba(0, 0, 0, .3);
+  --row: rgba(255, 205, 165, .1);
+  --row-line: rgba(255, 220, 190, .15);
+  --ground: radial-gradient(820px 540px at 6% 0%, rgba(255, 190, 140, .16), rgba(255, 190, 140, 0)),
+    radial-gradient(720px 500px at 100% 0%, rgba(120, 70, 50, .4), rgba(120, 70, 50, 0)),
+    radial-gradient(920px 560px at 64% 112%, rgba(255, 138, 87, .42), rgba(255, 138, 87, 0)), #24170F;
   --ink: #FBF6EF;
   --ink-rgb: 251 246 239;
   --ink-2: #E3D3C2;
   --mute: #C2AD98;
   --line: rgba(255, 220, 190, .16);
   --ov: 255 228 205;
-  --rail: #20150F;
-  --rail-on: rgba(255, 205, 165, .10);
-  --g1: rgba(255, 190, 140, .10);
-  --g2: rgba(255, 138, 87, .22);
+  --rail-on: rgba(255, 205, 165, .2);
   --accent: #FF8A57;
   --accent-rgb: 255 138 87;
   --on-accent: #2B2420;
@@ -292,19 +304,22 @@
   --paper-2: #0D1820;
   --card: rgba(255, 255, 255, .05);
   --raise: #13222C;
-  --mod: rgba(8, 22, 32, .78);
+  --mod: linear-gradient(180deg, rgba(20, 44, 60, .62), rgba(8, 22, 32, .55));
+  --mod-dense: linear-gradient(180deg, rgba(13, 28, 38, .95), rgba(10, 22, 30, .95));
   --mod-line: rgba(255, 255, 255, .14);
-  --card-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  --mod-hi: rgba(255, 255, 255, .18);
+  --card-shadow: 0 8px 22px rgba(0, 0, 0, .35);
+  --row: rgba(255, 255, 255, .06);
+  --row-line: rgba(255, 255, 255, .12);
+  --ground: radial-gradient(900px 500px at 6% 0%, rgba(2, 151, 222, .3), rgba(2, 151, 222, 0)),
+    radial-gradient(800px 360px at 70% 108%, rgba(252, 115, 77, .22), rgba(252, 115, 77, 0)), #02070A;
   --ink: #EEF3F6;
   --ink-rgb: 238 243 246;
   --ink-2: #C3CDD3;
   --mute: #A3B1BA;
   --line: rgba(255, 255, 255, .13);
   --ov: 255 255 255;
-  --rail: #02070A;
-  --rail-on: rgba(252, 115, 77, .10);
-  --g1: rgba(2, 151, 222, .30);
-  --g2: rgba(252, 115, 77, .22);
+  --rail-on: rgba(255, 255, 255, .12);
   --accent: #FC734D;
   --accent-rgb: 252 115 77;
   --on-accent: #02070A;
