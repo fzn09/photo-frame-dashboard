@@ -1,6 +1,6 @@
 // Run: node test/calc.test.mjs   (from dashboard/). Throws on the first failed assertion.
 import assert from 'node:assert/strict';
-import { CALC0, press, fmt, convert, fridgeItem, fridgeRows } from '../calc.js';
+import { CALC0, press, fmt, convert, fridgeItem, fridgeRows, restockRows } from '../calc.js';
 
 const run = keys => keys.split(' ').reduce(press, CALC0).display;
 
@@ -52,3 +52,13 @@ const marked = [
 assert.deepEqual(fridgeRows(marked, nov6).map(r => [r.ids.join(''), r.total]), [['ac', 1.5]], 'used lines left out, a missing price counts as 0');
 assert.deepEqual(fridgeRows(marked, nov6, true).map(r => r.ids.join('')), ['b'], 'or only the used ones');
 console.log('calc ok');
+
+// restock: used lately and not re-bought, then past the estimate; used first
+const day = (id, name, date, used) => ({ id, name, qty: 1, date, used });
+const re = restockRows([
+  day('a', 'MANGO', '2026-11-04', true), day('b', 'GURKE', '2026-10-01', true),        // used recently / too long ago
+  day('c', 'BANANE', '2026-11-03', true), day('d', 'BANANE', '2026-11-05'),             // used but bought again
+  day('e', 'BASILIKUM', '2026-10-20'), day('f', 'BROCCOLI', '2026-11-05', true)          // past est. / used, newer
+], new Date(2026, 10, 6));
+assert.deepEqual(re.map(r => r.label + ':' + r.kind), ['Broccoli:used', 'Mango:used', 'Basilikum:past']);
+console.log('restock ok');

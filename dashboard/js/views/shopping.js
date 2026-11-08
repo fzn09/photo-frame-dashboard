@@ -1,4 +1,6 @@
-// Shopping: categorized list (left) + quick-add with usuals (right).
+// Shopping: categorized list (left) + quick-add (right): restock cards from the fridge, else the usuals.
+import { restockRows } from '../../calc.js';
+
 (function () {
   'use strict';
   var D = window.DATA;
@@ -57,12 +59,20 @@
         return '<button class="s-ac-row" data-add="' + App.esc(m[0]) + '"><b>' + App.esc(m[0]) + '</b><span class="label">' + (on ? 'On list · ×' + on.qty : m[1]) + '</span>' + App.icon('plus', 26) + '</button>';
       }).join('') + (exact ? '' : '<button class="s-ac-row s-ac-row--new" data-add="' + App.esc(V.query.trim()) + '"><b>Add “' + App.esc(V.query.trim()) + '”</b><span class="label">' + categorize(V.query) + '</span>' + App.icon('plus', 26) + '</button>') + '</div>';
     }
-    return '<div class="label">Usuals · tap to add</div><div class="s-usuals">' + D.usuals.map(usualTile).join('') + '</div>';
+    var re = restock();
+    if (re.length) {
+      return '<div class="label">Restock · from the fridge</div><div class="s-usuals">' + re.map(function (r) {
+        return usualTile(r.label, why(r));
+      }).join('') + '</div>';
+    }
+    return '<div class="label">Usuals · tap to add</div><div class="s-usuals">' + D.usuals.map(function (n) { return usualTile(n); }).join('') + '</div>';
   }
-  function usualTile(name) {
+  function why(r) { return r.kind === 'used' ? 'Used up' : 'Past est.'; }
+  function restock() { return App.enabled('fridge') ? restockRows(D.fridge, App.now()) : []; }
+  function usualTile(name, sub) {
     var on = find(name, false);
     return '<button class="s-tile' + (on ? ' is-on' : '') + '" data-add="' + App.esc(name) + '">' +
-      '<b>' + App.esc(name) + '</b><span>' + (on ? App.icon('check', 16) + 'On list' + (on.qty > 1 ? ' ×' + on.qty : '') : categorize(name)) + '</span></button>';
+      '<b>' + App.esc(name) + '</b><span>' + (on ? App.icon('check', 16) + 'On list' + (on.qty > 1 ? ' ×' + on.qty : '') : sub || categorize(name)) + '</span></button>';
   }
 
   // ---- granular updates (full list + usuals rebuild costs ~500ms on the wall tablet)
@@ -74,7 +84,8 @@
   function refreshSuggestFor(g) {
     if (V.query.trim()) return paintSuggest();
     var t = V.el.querySelector('.s-usuals [data-add="' + App.esc(g.name) + '"]');
-    if (t) swap(t, usualTile(g.name));
+    var r = restock().filter(function (x) { return x.label === g.name; })[0];
+    if (t) swap(t, usualTile(g.name, r && why(r)));
   }
   function catCount(cat) {
     var c = V.el.querySelector('.s-cat[data-cat="' + cat + '"]');
@@ -227,6 +238,11 @@
   App.on('shopping', function () {
     if (App.current !== 'shopping' || !V.el || !V.el.firstChild || Object.keys(V.pending).length) return;
     paintList(); paintSuggest();
+  });
+
+  // Fridge changed (used up / put back / new receipts): the restock cards follow. Not while typing.
+  App.on('fridge', function () {
+    if (App.current === 'shopping' && V.el && V.el.firstChild && !V.query.trim()) paintSuggest();
   });
 
   App.register('shopping', {

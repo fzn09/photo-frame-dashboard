@@ -122,3 +122,13 @@ export function fridgeRows(items, today, used = false) {
   const rank = r => r.state === 'soon' ? r.left : r.state === 'past' ? 100 - r.left : r.left === null ? 9999 : 1000 + r.left;
   return Object.values(rows).sort((a, b) => rank(a) - rank(b));
 }
+
+// Shopping's restock cards: used up lately (by purchase date: KV keeps no used-at time) and not bought again,
+// then what's past its estimate. One card per label, used first, 12 max (the tile grid).
+export function restockRows(items, today, maxAge = 14) {
+  const have = fridgeRows(items, today), seen = new Set(have.filter(r => r.state !== 'past').map(r => r.label));
+  const used = fridgeRows(items, today, true).filter(r => r.newest <= maxAge).sort((a, b) => a.newest - b.newest)
+    .map(r => ({ label: r.label, kind: 'used', age: r.newest }));
+  const past = have.filter(r => r.state === 'past').map(r => ({ label: r.label, kind: 'past', age: r.age }));
+  return used.concat(past).filter(r => !seen.has(r.label) && seen.add(r.label)).slice(0, 12);
+}

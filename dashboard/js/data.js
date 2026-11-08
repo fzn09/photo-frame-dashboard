@@ -151,8 +151,9 @@ window.DATA = (function () {
     ['BROCCOLI BIO', 1, 1.79, -2], ['BANANE', 1, 1.49, -1], ['KAROTTE BIO', 2, 3.18, -1], ['EIER M', 1, 3.29, -1],
     ['BUTTER', 1, 2.39, -3], ['GOUDA GERIEBEN', 1, 2.49, -3], ['KOERNER BALANCE', 1, 2.89, -1], ['ORZO', 1, 1.99, -3],
     ['BABY SPINAT', 1, 1.99, -2], ['RICOTTA', 1, 1.69, -5], ['HA-UNTERSCHENKEL', 1, 4.99, -1], ['NUTELLA 450G', 1, 3.99, -6],
-    ['BASILIKUM', 1, 1.79, -9], ['CURLY POMMES', 1, 2.79, -6], ['APFELSAFT', 1, 1.59, -1]
-  ].map(function (r, i) { return { id: 'r' + i, name: r[0], qty: r[1], total: r[2], date: mealDate(r[3]) }; });
+    ['BASILIKUM', 1, 1.79, -9], ['CURLY POMMES', 1, 2.79, -6], ['APFELSAFT', 1, 1.59, -1],
+    ['MANGO', 1, 1.29, -4, true], ['GURKE', 1, 0.79, -5, true], ['LACHSFORELLEN', 1, 4.49, -3, true] // used up: Shopping's restock cards
+  ].map(function (r, i) { return { id: 'r' + i, name: r[0], qty: r[1], total: r[2], date: mealDate(r[3]), used: !!r[4] }; });
   var fridgeMeta = { updatedAt: new Date(Date.now() - 2 * 36e5).toISOString(), status: 'ok', message: '' };
   var usuals = ['Milk 2%', 'Eggs', 'Bananas', 'Bread', 'Apples', 'Coffee beans', 'Greek yogurt', 'Cheddar', 'Butter', 'Baby spinach', 'Chicken thighs', 'Paper towels'];
 
