@@ -55,7 +55,7 @@
       var h = d.getHours(), m = d.getMinutes();
       return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
     },
-    hour: function (d) { return App.fmt.time(d); },
+    hour: function (d) { return (d.getHours() < 10 ? '0' : '') + d.getHours(); },
     range: function (a, b) { return App.fmt.time(a) + ' – ' + App.fmt.time(b); },
     day: function (d) { return DAYS[d.getDay()]; },
     dayShort: function (d) { return DAYS[d.getDay()].slice(0, 3); },
@@ -162,7 +162,7 @@
     var W = D.weather, h = App.now().getHours(), out = [];
     for (var i = 0; i < count; i++) {
       var x = (h + i) % 24;
-      out.push({ h: x, t: W.t[x], c: W.c[x], p: W.p[x], label: i === 0 ? 'Now' : (x < 10 ? '0' : '') + x + ':00' });
+      out.push({ h: x, t: W.t[x], c: W.c[x], p: W.p[x], label: i === 0 ? 'Now' : (x < 10 ? '0' : '') + x });
     }
     return out;
   };

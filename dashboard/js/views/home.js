@@ -207,37 +207,14 @@ import { fridgeRows } from '../../calc.js';
       }).join('') + '</div>' + ageLine;
   }
 
-  // News: a lead headline and two short ones. Every 2 minutes the next three slide in (no animation).
-  // A tap opens the summary in a sheet; the frame has no browser tab to open the article in.
-  V.newsAt = 0;
-  function newsAge(at) {
-    var m = Math.max(0, Math.round((Date.now() - at) / 60000));
-    return !at ? '' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago';
-  }
-  function news() {
-    var list = D.news || [];
-    if (!list.length) return ageTag('news') + '<div class="label">News</div><div class="h-calm serif"><i>No headlines</i> right now</div>';
-    if (V.newsAt >= list.length) V.newsAt = 0;
-    var shown = list.slice(V.newsAt, V.newsAt + 3);
-    return ageTag('news') + '<div class="label">News<span class="h-news-n">' + (V.newsAt + 1) + '–' + (V.newsAt + shown.length) + ' / ' + list.length + '</span></div>' +
-      shown.map(function (n, i) {
-        var age = newsAge(n.at);
-        return '<button class="h-nw' + (i ? '' : ' h-nw--lead') + '" data-news="' + (V.newsAt + i) + '">' +
-          '<span class="h-nw-t' + (i ? '' : ' serif') + '">' + App.esc(n.title) + '</span>' +
-          '<span class="h-nw-m"><b>' + App.esc(n.src) + '</b>' + (age ? ' · ' + age : '') + '</span></button>';
-      }).join('');
-  }
-  function newsSheet(i) {
-    var n = (D.news || [])[i];
-    if (!n) return;
-    var age = newsAge(n.at);
-    App.sheet('<div class="sheet-pad"><div class="label">' + App.esc(n.src) + (age ? ' · ' + age : '') + '</div>' +
-      '<h2 class="serif sheet-h">' + App.esc(n.title) + '</h2>' +
-      (n.desc ? '<p class="h-nw-desc">' + App.esc(n.desc) + '</p>' : '') + '</div>');
+  // Both lists empty: shop + fridge shrink and the photo takes twice their width (CSS: .home[data-lean]).
+  function lean() {
+    V.el.firstChild.toggleAttribute('data-lean', !D.groceries.some(function (g) { return !g.done; }) && !D.fridge.some(function (f) { return !f.used; }));
   }
 
   function paint() {
     var el = V.el;
+    lean();
     el.querySelector('.h-clock').innerHTML = clock();
     el.querySelector('.h-weather').innerHTML = weather();
     el.querySelector('.h-hero-slot').innerHTML = hero();
@@ -246,7 +223,11 @@ import { fridgeRows } from '../../calc.js';
     el.querySelector('.h-transit').innerHTML = transit();
     if (App.enabled('fridge')) el.querySelector('.h-fridge').innerHTML = fridge();
     if (App.enabled('tasks')) el.querySelector('.h-chores').innerHTML = chores();
-    el.querySelector('.h-news').innerHTML = news();
+  }
+
+  function photoCaption(s) {
+    var m = App.photoMeta(s.photos[0]);
+    V.el.querySelector('.h-photo-cap').innerHTML = '<b>' + (m.onThisDay ? 'On this day · ' : '') + m.kicker + '</b><span>' + App.esc(m.place) + '</span>';
   }
 
   App.register('home', {
@@ -263,11 +244,9 @@ import { fridgeRows } from '../../calc.js';
           '<div class="h-shop card" data-go="shopping"></div>' +
           '<div class="h-fridge card" data-go="fridge"></div>' +
           '<div class="h-chores card" data-go="tasks"></div>' +
-          '<div class="h-news card"></div>' +
+          '<button class="h-photo" data-go="photos"><div class="h-photo-stage"></div><div class="h-photo-cap"></div></button>' +
           '</div></div>';
         el.addEventListener('click', function (e) {
-          var nw = e.target.closest('[data-news]');
-          if (nw) { newsSheet(+nw.dataset.news); return; }
           var m = e.target.closest('[data-meal]');
           if (m) { App.recipeSheet(m.dataset.meal); return; }
           var ev = e.target.closest('[data-ev]');
@@ -275,9 +254,13 @@ import { fridgeRows } from '../../calc.js';
           var g = e.target.closest('[data-go]');
           if (g) App.go(g.dataset.go);
         });
+        V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, interval: 12000, onChange: photoCaption });
       }
       paint();
-    }
+      if (App.enabled('photos')) V.slides.start();
+    },
+    resume: function () { if (App.enabled('photos')) V.slides.start(); },
+    hide: function () { if (V.slides) V.slides.stop(); }
   });
   // Every minute: just the clock and next-up countdown (cheap, even while hidden). Weather on the hour.
   App.on('minute', function (n) {
@@ -286,18 +269,15 @@ import { fridgeRows } from '../../calc.js';
     V.el.querySelector('.h-hero-slot').innerHTML = hero();
     V.el.querySelector('.h-transit').innerHTML = transit();
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
-    if (n.getMinutes() % 2 === 0 && D.news && D.news.length > 3) {
-      V.newsAt = V.newsAt + 3 >= D.news.length ? 0 : V.newsAt + 3;
-      V.el.querySelector('.h-news').innerHTML = news();
-    }
     ages();
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
-  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) V.el.querySelector('.h-fridge').innerHTML = fridge(); });
-  App.on('news', function () { if (V.el && V.el.firstChild) V.el.querySelector('.h-news').innerHTML = news(); });
+  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); V.el.querySelector('.h-fridge').innerHTML = fridge(); } });
   App.on('chores', function () { if (App.current === 'home' && App.enabled('tasks')) V.el.querySelector('.h-chores').innerHTML = chores(); });
   App.on('views', function () {
     if (!V.el || !V.el.firstChild) return;
     paint();
+    if (!V.slides) return;
+    if (App.enabled('photos') && App.current === 'home') V.slides.start(); else V.slides.stop();
   });
 })();

@@ -222,6 +222,5 @@
     pullChores = poll('chores', updateChores, 5, function () { return choreWrites > 0 || !App.enabled('tasks'); });
     poll('transit',  updateTransit,   1);
     poll('meals',    updateMeals,    30, function () { return !App.enabled('meals'); });
-    poll('news',     updateNews,     15);
   });
 })();
