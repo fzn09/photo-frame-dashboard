@@ -155,7 +155,8 @@
       advice = W.t[h] < 12 ? 'Jacket weather' : 'Light layers';
     }
     var labels = { sun: 'Sunny', moon: 'Clear', partly: 'Partly cloudy', cloud: 'Overcast', rain: 'Rain' };
-    return { temp: W.t[h], cond: W.c[h], label: labels[W.c[h]], hi: W.hi, lo: W.lo, summary: summary, advice: advice, wet: rainAt > -1, hour: h };
+    var feels = W.f && W.f[h] != null ? W.f[h] : null; // older Worker builds don't send f
+    return { temp: W.t[h], feels: feels, cond: W.c[h], label: labels[W.c[h]], hi: W.hi, lo: W.lo, summary: summary, advice: advice, wet: rainAt > -1, hour: h };
   };
   App.hourly = function (count) {
     var W = D.weather, h = App.now().getHours(), out = [];
@@ -188,7 +189,7 @@
     list = list.filter(function (n) { return n !== 'home' && $('#view-' + n); });
     D.views = ['home'].concat(list);
     App.$$('.rail-item').forEach(function (b) { b.hidden = !App.enabled(b.dataset.go); });
-    // CSS hook: Today hides the cards of views that are off (.stage[data-off~="tasks"] .h-photo)
+    // CSS hook: Today hides the cards of views that are off (.stage[data-off~="tasks"] .h-chores)
     $('#stage').dataset.off = App.$$('.view[data-view]').map(function (v) { return v.dataset.view; })
       .filter(function (n) { return !App.enabled(n); }).join(' ');
     try { localStorage.setItem('hq-views', D.views.join(',')); } catch (e) { /* private mode: just not cached */ }

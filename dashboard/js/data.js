@@ -172,10 +172,12 @@ window.DATA = (function () {
     hi: 17, lo: 8, feels: -2, humidity: 71, wind: 18,
     t: [9, 9, 8, 8, 8, 8, 9, 10, 11, 12, 13, 15, 16, 17, 16, 15, 14, 13, 12, 12, 11, 10, 10, 9],
     c: ['moon', 'moon', 'moon', 'moon', 'moon', 'moon', 'partly', 'partly', 'sun', 'sun', 'sun', 'partly', 'partly', 'cloud', 'cloud', 'cloud', 'rain', 'rain', 'rain', 'rain', 'cloud', 'cloud', 'moon', 'moon'],
-    p: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 10, 20, 25, 40, 80, 90, 70, 55, 20, 10, 0, 0]
+    p: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 10, 20, 25, 40, 80, 90, 70, 55, 20, 10, 0, 0],
+    f: [7, 7, 6, 6, 5, 5, 6, 8, 9, 10, 12, 14, 15, 16, 15, 13, 11, 10, 9, 9, 8, 8, 8, 7], // feels-like
+    rise: '07:13', sun: '16:29'
   };
   // 48 hours like the Worker (today, then tomorrow); the sample's tomorrow repeats today
-  ['t', 'c', 'p'].forEach(function (k) { weather[k] = weather[k].concat(weather[k]); });
+  ['t', 'c', 'p', 'f'].forEach(function (k) { weather[k] = weather[k].concat(weather[k]); });
 
   // ---------------------------------------------------------------- photos
   var t = new Date(base);

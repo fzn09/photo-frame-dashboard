@@ -33,7 +33,9 @@ import { fridgeRows } from '../../calc.js';
     return ageTag('weather') + '<div class="h-wx-top">' +
       '<span class="h-wx-icon">' + App.icon(w.cond, 60) + '</span>' +
       '<span class="h-wx-temp num">' + w.temp + '°</span>' +
-      '<span class="h-wx-meta"><b>' + w.label + '</b><span>H ' + w.hi + '°  L ' + w.lo + '°</span></span>' +
+      '<span class="h-wx-meta"><b>' + w.label + '</b>' +
+      (w.feels != null ? '<span>Feels like <b>' + w.feels + '°</b></span>' : '') +
+      '<span>H ' + w.hi + '°  L ' + w.lo + '°</span></span>' +
       (side ? '<div class="h-wx-side">' + side + '</div>' : '') +
       '</div><div class="h-wx-say' + (w.wet ? ' is-wet' : '') + '"><b>' + w.summary + '.</b> ' + w.advice + '.</div>' +
       '<div class="h-wx-hours">' + hours.map(function (h) {
@@ -47,7 +49,8 @@ import { fridgeRows } from '../../calc.js';
 
   function airSun() {
     var W = D.weather, bits = [];
-    // Two short phrases, not a label/value table: "Sunset 16:22", "Air fair"
+    // Short phrases, not a label/value table: "Sunrise 07:13", "Sunset 16:22", "Air fair"
+    if (W && W.rise) bits.push('<div>Sunrise <b>' + App.fmt.time(new Date('1970-01-01T' + W.rise)) + '</b></div>');
     if (W && W.sun) bits.push('<div>Sunset <b>' + App.fmt.time(new Date('1970-01-01T' + W.sun)) + '</b></div>');
     if (W && W.aqi != null) bits.push('<div>Air <b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1].toLowerCase() + '</b></div>');
     return bits.length ? '<div class="h-air">' + bits.join('') + '</div>' : '';
