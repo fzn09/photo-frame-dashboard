@@ -38,10 +38,12 @@
 .h-wx-icon { color: var(--ink); }
 .h-wx-icon svg { width: 56px; height: 56px; }
 .h-wx-temp { font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: var(--fs-hero); line-height: .8; letter-spacing: 0; font-variant-numeric: tabular-nums; }
-.h-wx-meta { display: flex; flex-direction: column; gap: 2px; }
-.h-wx-meta b { font-size: var(--fs-body); font-weight: 500; }
-.h-wx-meta span { font-size: var(--fs-body); color: var(--ink-2); white-space: pre; }
-.h-wx-side { flex: 1; min-width: 0; max-width: 210px; margin-left: auto; display: flex; flex-direction: column; gap: 6px; overflow: hidden; text-align: right; }
+/* meta and side share one row rhythm (20 px / 1.2, 2 px gap) so their lines sit level across the rule */
+.h-wx-meta, .h-air { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-body); line-height: 1.2; }
+.h-wx-meta b { font-weight: 500; }
+.h-wx-meta span { color: var(--ink-2); white-space: pre; }
+.h-wx-meta span b { color: var(--ink); }
+.h-wx-side { flex: 0 1 176px; min-width: 0; margin-left: auto; align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding-left: 16px; box-shadow: inset 1px 0 0 var(--line); overflow: hidden; }
 .h-wx-say { font-size: var(--fs-body); line-height: 1.2; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h-wx-say b { font-weight: 500; color: var(--ink); }
 /* rain coming: the statement reads from the stove (34 px serif, copper); "No rain today" stays a quiet line */
@@ -55,10 +57,10 @@
 .h-hr b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .h-hr.is-wet .h-hr-i { color: var(--accent); }
 
-/* ---- sunset + air (weather side column): one quiet phrase per row, right-aligned, no rule */
-.h-air { display: flex; flex-direction: column; gap: 4px; }
-.h-air div { font-size: var(--fs-body); line-height: 1.2; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.h-air b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+/* ---- sunrise, sunset, air (weather side column): label left, value right, behind a hairline */
+.h-air div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; white-space: nowrap; }
+.h-air span { color: var(--mute); }
+.h-air b { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* ---- transit: departure board */
 .h-transit .label { flex: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

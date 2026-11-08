@@ -28,7 +28,7 @@ import { fridgeRows } from '../../calc.js';
   function weather() {
     var w = App.weatherNow();
     var hours = App.hourly(7);
-    // Side column: sunset + air as two short rows. The advice gets a full-width line under the top row.
+    // Side column: sunrise, sunset, air behind a hairline. The advice gets a full-width line under the top row.
     var side = airSun();
     return ageTag('weather') + '<div class="h-wx-top">' +
       '<span class="h-wx-icon">' + App.icon(w.cond, 60) + '</span>' +
@@ -49,10 +49,10 @@ import { fridgeRows } from '../../calc.js';
 
   function airSun() {
     var W = D.weather, bits = [];
-    // Short phrases, not a label/value table: "Sunrise 07:13", "Sunset 16:22", "Air fair"
-    if (W && W.rise) bits.push('<div>Sunrise <b>' + App.fmt.time(new Date('1970-01-01T' + W.rise)) + '</b></div>');
-    if (W && W.sun) bits.push('<div>Sunset <b>' + App.fmt.time(new Date('1970-01-01T' + W.sun)) + '</b></div>');
-    if (W && W.aqi != null) bits.push('<div>Air <b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1].toLowerCase() + '</b></div>');
+    // Label/value rows, one per line of the meta column beside them: Sunrise 07:13 / Sunset 16:22 / Air Fair
+    if (W && W.rise) bits.push('<div><span>Sunrise</span><b>' + App.fmt.time(new Date('1970-01-01T' + W.rise)) + '</b></div>');
+    if (W && W.sun) bits.push('<div><span>Sunset</span><b>' + App.fmt.time(new Date('1970-01-01T' + W.sun)) + '</b></div>');
+    if (W && W.aqi != null) bits.push('<div><span>Air</span><b>' + AQ.filter(function (b) { return W.aqi < b[0]; })[0][1] + '</b></div>');
     return bits.length ? '<div class="h-air">' + bits.join('') + '</div>' : '';
   }
 
