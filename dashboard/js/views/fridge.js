@@ -20,17 +20,22 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     return r.age <= 0 ? 'Today' : r.age === 1 ? 'Yesterday' : r.age + ' days ago';
   }
   function row(r) {
-    return '<button class="f-row" data-rm="' + r.ids.join(' ') + '" aria-label="' + (V.showUsed ? 'Put back ' : 'Used up ') + App.esc(r.label) + '">' +
+    return '<div class="f-row">' +
       '<span class="f-name"><b>' + App.esc(r.label) + '</b><small>' + (r.qty > 1 ? '<em>×' + r.qty + '</em>' : '') + '<span>' + bought(r) + '</span>' + (r.total ? '<span class="f-eur">' + EUR.format(r.total) + '</span>' : '') + '</small></span>' +
-      (V.showUsed ? '' : tag(r)) + '<span class="f-x">' + App.icon(V.showUsed ? 'plus' : 'x', 22) + '</span></button>';
+      (V.showUsed ? '' : tag(r)) +
+      '<button class="f-x" data-rm="' + r.ids.join(' ') + '" data-label="' + App.esc(r.label) + '" aria-label="' + (V.showUsed ? 'Put back ' : 'Used up ') + App.esc(r.label) + '">' +
+      (V.showUsed ? 'Put back' : 'Used') + '</button></div>';
   }
   function group(name, list) {
-    return list.length ? '<section class="f-sec"><h2 class="f-h"><span class="serif">' + name + '</span><span class="f-n">' + list.length + '</span></h2>' + list.map(row).join('') + '</section>' : '';
+    return list.length ? '<section class="f-sec"><h2 class="f-h"><span class="label">' + name + '</span><span class="label">' + list.length + '</span></h2>' + list.map(row).join('') + '</section>' : '';
   }
   function sections(list) {
-    return '<div class="f-cols">' + SECTIONS.map(function (s) { return group(s, list.filter(function (r) { return r.section === s; })); }).join('') + '</div>';
+    return '<div class="f-cols">' + SECTIONS.map(function (s) { return group(secName(s), list.filter(function (r) { return r.section === s; })); }).join('') + '</div>';
   }
   function byState(rows, state) { return rows.filter(function (r) { return r.state === state; }); }
+  // Shown with Shopping's category names, so one product sits under one name on both lists
+  var NAME = { 'Fruit & veg': 'Produce', 'Meat & fish': 'Meat & Fish', 'Dairy & eggs': 'Dairy & Eggs', 'Bread': 'Bakery' };
+  function secName(s) { return NAME[s] || s; }
 
   // Category rail: Use soon and Check these first (the reasons to open the fridge), then All and each section
   function cat(id, label, n, cls) {
@@ -40,7 +45,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     var soon = byState(all, 'soon').length, past = byState(all, 'past').length;
     return (soon ? cat('soon', 'Use soon', soon, 'cat--soon') : '') + (past ? cat('past', 'Check these', past) : '') +
       cat('all', 'All', all.length) + '<div class="cats-sep"></div>' +
-      SECTIONS.map(function (sec) { var n = all.filter(function (r) { return r.section === sec; }).length; return n ? cat(sec, App.esc(sec), n) : ''; }).join('');
+      SECTIONS.map(function (sec) { var n = all.filter(function (r) { return r.section === sec; }).length; return n ? cat(sec, App.esc(secName(sec)), n) : ''; }).join('');
   }
   function listFor(all) {
     if (V.cat === 'soon') return group('Use soon · estimate', byState(all, 'soon'));
@@ -72,7 +77,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     var list = V.el.querySelector('.f-list'), rail = V.el.querySelector('.f-rail'), btn = V.el.querySelector('.f-used'), st = list.scrollTop;
     if (!used.length) V.showUsed = false;
     V.el.querySelector('.s-count').innerHTML = '<span class="num">' + all.length + '</span> ' + (all.length === 1 ? 'item' : 'items') +
-      (soon.length ? ' · <span class="num">' + soon.length + '</span> to use soon' : '') + (total ? ' · ' + EUR.format(total) : '');
+      (soon.length ? ' · <span class="num is-due">' + soon.length + '</span> to use soon' : '') + (total ? ' · ' + EUR.format(total) : '');
     V.el.querySelector('.f-checked').textContent = checked();
     V.el.querySelector('.f-over').hidden = !overdue();
     btn.hidden = !used.length;
@@ -80,8 +85,11 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     btn.classList.toggle('is-on', V.showUsed);
     btn.setAttribute('aria-pressed', V.showUsed);
     validCat(all);
-    rail.innerHTML = V.showUsed || !all.length ? '' : railHTML(all);
-    list.innerHTML = V.showUsed ? sections(used) : all.length ? (V.cat === 'soon' || V.cat === 'past' ? '<div class="f-cols f-one">' + listFor(all) + '</div>' : listFor(all))
+    var groups = SECTIONS.filter(function (sec) { return all.some(function (r) { return r.section === sec; }); }).length;
+    var needRail = all.length && (groups > 1 || byState(all, 'soon').length || byState(all, 'past').length);
+    rail.innerHTML = V.showUsed || !needRail ? '' : railHTML(all);
+    var one = V.cat === 'soon' || V.cat === 'past', big = one && byState(all, V.cat).length <= 6;
+    list.innerHTML = V.showUsed ? sections(used) : all.length ? (one ? '<div class="f-cols f-one' + (big ? ' f-big' : '') + '">' + listFor(all) + '</div>' : listFor(all))
       : '<div class="s-empty serif">' + (used.length ? 'All used up.' : 'No receipts yet.') + '<br><i>The next REWE shop lands here.</i></div>';
     list.scrollTop = st;
   }
@@ -119,7 +127,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
         V.el = el;
         el.addEventListener('click', function (e) {
           var t = e.target.closest('[data-rm]');
-          if (t) tap(t.dataset.rm.split(' '), t.querySelector('b').textContent);
+          if (t) tap(t.dataset.rm.split(' '), t.dataset.label);
           else if (e.target.closest('[data-used]')) { V.showUsed = !V.showUsed; paint(); }
           else if ((t = e.target.closest('[data-cat]'))) { V.cat = t.dataset.cat; paint(); V.el.querySelector('.f-list').scrollTop = 0; }
         });

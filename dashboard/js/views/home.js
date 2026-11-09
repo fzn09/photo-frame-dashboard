@@ -39,7 +39,7 @@ import { fridgeRows } from '../../calc.js';
       (side ? '<div class="h-wx-side">' + side + '</div>' : '') +
       '</div><div class="h-wx-say' + (w.wet ? ' is-wet' : '') + '"><b>' + w.summary + '.</b> ' + w.advice + '.</div>' +
       '<div class="h-wx-hours">' + hours.map(function (h) {
-        return '<div class="h-hr' + (h.p >= 50 ? ' is-wet' : '') + '"><span class="h-hr-l">' + h.label + '</span>' +
+        return '<div class="h-hr' + (h.p >= 50 ? ' is-wet' : '') + (h.p >= 40 ? ' is-rain' : '') + '"><span class="h-hr-l">' + h.label + '</span>' +
           '<span class="h-hr-i">' + App.icon(h.c, 22) + '</span><b>' + h.t + '°</b>' +
           '<span class="h-hr-rb" aria-label="Rain ' + (h.p || 0) + '%"><i style="width:' + Math.min(100, h.p || 0) + '%"></i></span></div>';
       }).join('') + '</div>';
@@ -61,11 +61,18 @@ import { fridgeRows } from '../../calc.js';
     var e = App.nextEvent(), now = App.now();
     if (!e) {
       var tomorrow = App.timedOn(App.addDays(now, 1))[0];
+      // Nothing left today: the card looks ahead to tomorrow's first event (the people card already says who is free)
+      if (tomorrow) {
+        var tw = App.isFamily(tomorrow) ? 'Everyone' : tomorrow.people.map(function (id) { return App.person(id).name; }).join(' + ');
+        return '<button class="h-hero h-hero--empty h-hero--next" style="' + App.pstyle(App.evColor(tomorrow)) + '" data-ev="' + tomorrow.id + '">' + ageTag('calendar') +
+          '<div class="h-hero-main"><div class="label">Tomorrow · ' + App.esc(tw) + '</div>' +
+          '<div class="h-hero-title serif">' + App.esc(tomorrow.title) + '</div>' +
+          '<div class="h-hero-meta">Nothing else today</div></div>' +
+          '<div class="h-hero-count num"><em>at</em>' + App.fmt.time(tomorrow.start) + '</div></button>';
+      }
       return '<div class="h-hero h-hero--empty" data-go="calendar">' + ageTag('calendar') +
         '<div class="label">Rest of today</div>' +
-        '<div class="h-hero-title serif">Nothing else scheduled.<br><i>Enjoy the quiet.</i></div>' +
-        (tomorrow ? '<div class="h-hero-meta">Tomorrow starts with <b>' + App.esc(tomorrow.title) + '</b> at ' + App.fmt.time(tomorrow.start) + '</div>' : '') +
-        '</div>';
+        '<div class="h-hero-title serif">Nothing else scheduled.<br><i>Enjoy the quiet.</i></div></div>';
     }
     var p = App.evColor(e);
     var mins = Math.round((e.start - now) / 60000);
@@ -117,6 +124,9 @@ import { fridgeRows } from '../../calc.js';
         return '<button class="h-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<b>' + App.esc(r.name) + '</b></button>';
       }).join('') + '</div>' : '') +
       (together.length ? '<div class="h-together">' + shared + '</div>' : '') +
+      // Nobody has anything left: one line across both columns, not "Free" twice beside an empty Next up
+      (!together.length && !hero && D.people.every(function (p) { return !live(p.id).length; })
+        ? '<div class="h-free h-free--all serif"><i>Everyone</i> is free for the rest of the day</div>' :
       D.people.map(function (p) {
         var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
         var shown = list.slice(0, cap), more = list.length - shown.length;
@@ -129,7 +139,7 @@ import { fridgeRows } from '../../calc.js';
           (shown.length ? shown.map(function (e) { return row(e); }).join('') :
             '<div class="h-free serif">' + (busy ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
           '</div>';
-      }).join('');
+      }).join(''));
   }
 
   function ring(done, total, size) {
@@ -145,9 +155,10 @@ import { fridgeRows } from '../../calc.js';
     return '<div class="label h-tile-h"><span class="h-ico">' + App.icon(icon, 20) + '</span><span class="h-tile-t">' + text + '</span></div>';
   }
 
-  // Something expires today or tomorrow: the Fridge card turns solid alert (PRODUCT.md: alert is for "expiring")
+  // Something expires today: the Fridge card turns alert (PRODUCT.md: alert is for "expiring"). "Tomorrow" is copper.
+  // In the evening the card stays glass with an alert edge (css): a full fill was the brightest thing in a dim kitchen.
   function fridgeHot() {
-    return fridgeRows(D.fridge, App.now()).some(function (r) { return r.state === 'soon' && r.left <= 1; });
+    return fridgeRows(D.fridge, App.now()).some(function (r) { return r.state === 'soon' && r.left === 0; });
   }
   function paintFridge(card) {
     card.classList.toggle('is-alert', fridgeHot());
@@ -187,7 +198,7 @@ import { fridgeRows } from '../../calc.js';
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>' + (open.length ? 'to do today' : 'all done today') + '</small></div>' +
       '<ul class="h-recent">' + open.slice(0, 3).map(function (c) {
         return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i><span class="h-name">' + App.esc(c.title) + '</span>' +
-          (c.overdue ? '<span class="h-exp is-due">Overdue</span>' : c.time ? '<span class="h-exp' + (dueSoon(c.time) ? ' is-due' : '') + '">' + App.esc(c.time) + '</span>' : '') + '</li>';
+          (c.overdue ? '<span class="h-exp is-over">Overdue</span>' : c.time ? '<span class="h-exp' + (dueSoon(c.time) ? ' is-due' : '') + '">' + App.esc(c.time) + '</span>' : '') + '</li>';
       }).join('') + '</ul>';
   }
 
@@ -199,7 +210,8 @@ import { fridgeRows } from '../../calc.js';
     var last = newest[0].newest;
     // "shopped yesterday" rides in the label (like "Transit · Gleisdreieck"), so the stat stays one line
     return ageTag('fridge') + head('fridge', 'Fridge · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago')) +
-      '<div class="h-stat"><span class="num">' + inside.length + '</span><small>' + (inside.length === 1 ? 'item' : 'items') + '</small></div>' +
+      '<div class="h-stat"><span class="num">' + inside.length + '</span><small>' + (inside.length === 1 ? 'item' : 'items') +
+      (soon.length ? ' · <b class="h-due">' + soon.length + ' to use soon</b>' : '') + '</small></div>' +
       '<ul class="h-recent">' + (soon.length ? soon : newest).slice(0, 3).map(function (r) {
         return '<li><i></i><span class="h-name">' + App.esc(r.label) + '</span>' + (r.state !== 'soon' ? '' : '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
           (r.left === 0 ? 'Today' : r.left === 1 ? 'Tomorrow' : '~' + r.left + ' days') + '</span>') + '</li>';

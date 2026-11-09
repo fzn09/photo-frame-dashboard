@@ -50,14 +50,15 @@
 /* rain coming: the statement reads from the stove (34 px serif, copper); "No rain today" stays a quiet line */
 .h-wx-say.is-wet { line-height: 1.1; }
 .h-wx-say.is-wet b { color: var(--accent); font-family: var(--serif); font-size: var(--fs-l); font-weight: 400; margin-right: 6px; }
-.h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: auto; padding: 3px; border-radius: 16px; background: var(--row); box-shadow: inset 0 0 0 1px var(--row-line); }
+.h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: auto; padding: 4px 0 0; border-top: 1px solid var(--line); } /* a ruled row, not a card inside the card */
 .h-hr { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 2px 0 4px; border-radius: 12px; font-size: var(--fs-m); line-height: 1; }
 /* the current hour is a copper chip (The Copper Means Now Rule); white on #C2410C is 5.2:1 in every theme */
-.h-hr:first-child { background: linear-gradient(160deg, #D9622B, #C2410C); color: #FFFFFF; box-shadow: 0 4px 10px rgba(150, 50, 10, .25); }
+.h-hr:first-child { background: #C2410C; color: #FFFFFF; }
 .h-hr:first-child .h-hr-l, .h-hr:first-child.is-wet .h-hr-i { color: #FFFFFF; }
 /* rain chance as a bar: empty track on a dry hour, so the row reads at a glance */
 .h-hr-rb { width: 60%; height: 4px; margin-top: 3px; border-radius: 2px; background: rgb(var(--ov) / .12); overflow: hidden; }
-.h-hr-rb i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.h-hr-rb i { display: block; height: 100%; border-radius: 2px; background: rgb(var(--ov) / .45); }
+.h-hr.is-rain .h-hr-rb i { background: var(--accent); } /* copper only when rain is likely (40 %+): The Copper Means Now Rule */
 .h-hr:first-child .h-hr-rb { background: rgba(255, 255, 255, .3); }
 .h-hr:first-child .h-hr-rb i { background: #FFFFFF; }
 .h-hr-l { font-size: var(--fs-label); line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--mute); }
@@ -99,16 +100,16 @@
 .h-hero {
   display: flex; flex-direction: column; justify-content: space-between; gap: 4px; width: 100%;
   padding: 18px 22px 14px; border-radius: var(--r-card); overflow: hidden; position: relative; color: #FFFFFF;
-  background: linear-gradient(140deg, #D9622B 0%, #C2410C 55%, #A83A0D 100%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), inset 0 1px 0 rgba(255, 255, 255, .35), 0 10px 26px rgba(150, 50, 10, .24);
+  background: linear-gradient(150deg, #B23A0A 0%, #C2410C 60%, #CC5019 100%); /* white text 5.2:1 or better where text sits */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), inset 0 1px 0 rgba(255, 255, 255, .3), 0 8px 22px rgba(70, 45, 25, .16);
 }
 .h-hero-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.h-hero .label { color: rgba(255, 255, 255, .9); }
+.h-hero .label { color: #FFFFFF; }
 .h-hero .label::before { background: var(--c); box-shadow: 0 0 0 2px #FFFFFF; } /* whose: the person colour, ringed so it reads on copper */
 .h-hero-title { font-size: var(--fs-l); line-height: 1; margin: 2px 0 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.h-hero-meta { font-size: var(--fs-body); color: rgba(255, 255, 255, .9); }
-.h-hero.is-soon { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .7), 0 10px 26px rgba(150, 50, 10, .3); }
-.h-hero.is-now { background: var(--alert); color: var(--on-accent); box-shadow: 0 10px 26px rgba(150, 30, 20, .3); }
+.h-hero-meta { font-size: var(--fs-body); color: #FFFFFF; }
+.h-hero.is-soon { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .7), 0 8px 22px rgba(70, 45, 25, .16); }
+.h-hero.is-now { background: var(--alert); color: var(--on-accent); box-shadow: 0 8px 22px rgba(70, 45, 25, .16); }
 .h-hero.is-now .label, .h-hero.is-now .h-hero-meta { color: var(--on-accent); }
 .h-hero.is-now .label::before { background: var(--on-accent); }
 .h-hero-foot { display: flex; align-items: center; gap: 14px; margin-top: 2px; }
@@ -119,6 +120,10 @@
 .h-hero--empty .label { color: var(--ink-2); }
 .h-hero--empty .label::before { box-shadow: none; }
 .h-hero--empty .h-hero-meta { color: var(--ink-2); }
+.h-hero--next { justify-content: space-between; }
+.h-hero--next .label::before { box-shadow: none; }
+.h-hero--next .h-hero-count { color: var(--ink); }
+.h-free--all { grid-column: 1 / -1; font-size: var(--fs-l); padding-top: 18px; }
 .h-hero--empty .label::before { background: var(--mute); }
 .h-hero--empty .h-hero-title { font-size: var(--fs-l); line-height: 1.05; -webkit-line-clamp: 3; }
 .h-hero--empty .h-hero-meta { font-family: var(--sans); }
@@ -170,6 +175,18 @@
 .h-fridge.is-alert .h-ico { background: rgba(255, 255, 255, .22); color: var(--on-accent); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
 .h-fridge.is-alert .h-recent li { border-top-color: rgba(255, 255, 255, .3); }
 .h-fridge.is-alert .h-recent i { background: var(--on-accent); }
+:root[data-theme="dark"] .h-fridge.card.is-alert, :root[data-theme="midnight"] .h-fridge.card.is-alert {
+  background: var(--mod-dense); color: var(--ink); box-shadow: inset 0 0 0 2px var(--alert), var(--card-shadow);
+}
+:root[data-theme="dark"] .h-fridge.is-alert .label, :root[data-theme="dark"] .h-fridge.is-alert .h-stat small,
+:root[data-theme="midnight"] .h-fridge.is-alert .label, :root[data-theme="midnight"] .h-fridge.is-alert .h-stat small { color: var(--ink-2); }
+:root[data-theme="dark"] .h-fridge.is-alert .h-exp, :root[data-theme="midnight"] .h-fridge.is-alert .h-exp { color: var(--mute); }
+:root[data-theme="dark"] .h-fridge.is-alert .h-exp.is-due, :root[data-theme="midnight"] .h-fridge.is-alert .h-exp.is-due { color: var(--alert); }
+:root[data-theme="dark"] .h-fridge.is-alert .h-ico, :root[data-theme="midnight"] .h-fridge.is-alert .h-ico { background: var(--alert); color: var(--on-accent); box-shadow: none; }
+:root[data-theme="dark"] .h-fridge.is-alert .h-recent li, :root[data-theme="midnight"] .h-fridge.is-alert .h-recent li { border-top-color: var(--line); }
+:root[data-theme="dark"] .h-fridge.is-alert .h-recent i, :root[data-theme="midnight"] .h-fridge.is-alert .h-recent i { background: var(--mute); }
+.h-due { font-weight: 700; color: var(--accent); }
+.h-fridge.is-alert .h-due { color: inherit; }
 
 /* feed overdue: amber badge in the card's top-right corner (App.feedAge) */
 .h-age {
@@ -185,6 +202,7 @@
 .h-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .h-exp { flex: none; padding-left: 8px; font-size: var(--fs-label); font-weight: 500; color: var(--mute); }
 .h-exp.is-due { color: var(--accent); }
+.h-exp.is-over { color: var(--alert); font-weight: 700; } /* overdue is the alert tone everywhere (Chores uses it too) */
 .h-recent .h-who { width: 10px; height: 10px; background: var(--c); }
 
 /* ---- today's meals: shared, so a band above the two people, no time */
@@ -198,7 +216,9 @@
 .h-meal b { font-size: var(--fs-body); font-weight: 500; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---- photo */
-.h-photo { position: relative; display: block; width: 100%; border-radius: var(--r-card); overflow: hidden; background: var(--paper-2); box-shadow: inset 0 0 0 1px var(--mod-line); }
+.h-photo { position: relative; display: block; width: 100%; border-radius: var(--r-card); overflow: hidden; box-shadow: inset 0 0 0 1px var(--mod-line);
+  background: url('/bg/grain.png') 0 0 / 160px 160px repeat, linear-gradient(160deg, #6B4A36 0%, #3B2A1F 55%, #2A1C14 100%); }
+.h-photo .slide { background: transparent; } /* the tile's walnut fallback shows until a photo has loaded */
 .h-photo-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 .h-photo-cap {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 16px 12px;

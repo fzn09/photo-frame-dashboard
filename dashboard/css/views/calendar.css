@@ -40,6 +40,8 @@
 }
 .ad small { font-size: var(--fs-min); font-weight: 500; margin-left: 4px; } /* smaller and lighter than the title, not faded: .75 opacity fell to 3.7:1 */
 .ad--cont { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+/* everyone's all-day items: raised surface with ink text, like family events on the grid; warm grey fill read as disabled */
+.ad--family { background: var(--raise); color: var(--ink); box-shadow: inset 0 0 0 1px var(--mod-line); }
 
 .grid-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; position: relative; }
 .grid { position: relative; margin: 14px 0; }
@@ -94,7 +96,7 @@
 }
 .ev--more small { font-variant-numeric: tabular-nums; font-size: var(--fs-min); }
 
-.now-line { position: absolute; left: 64px; right: 0; height: 0; border-top: 3px solid var(--alert); z-index: 4; pointer-events: none; }
+.now-line { position: absolute; left: 64px; right: 0; height: 0; border-top: 3px solid var(--alert); z-index: 0; pointer-events: none; } /* under event blocks (z 1); the current event carries its own ring */
 .now-line::before { content: ''; position: absolute; left: -7px; top: -8px; width: 13px; height: 13px; border-radius: 50%; background: var(--alert); }
 .now-line span {
   position: absolute; right: calc(100% + 10px); top: -15px;

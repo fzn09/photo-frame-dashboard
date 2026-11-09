@@ -1,8 +1,9 @@
-// Chores: one list (open first, done today at the bottom) + quick-add of the usual chores for a person.
+// Chores: one list on a glass panel (open first, done today at the bottom); the usual chores for a person are added
+// from a sheet behind "Add chore", the same pattern as Shopping.
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null, who: 'any', pending: {}, sync: {} };
+  var V = { el: null, sheet: null, who: 'any', pending: {}, sync: {} };
   var cid = 0;
 
   function open() { return D.chores.filter(function (c) { return !c.done; }); }
@@ -47,21 +48,27 @@
 
   function paintList() { var l = V.el.querySelector('.c-list'); var st = l.scrollTop; l.innerHTML = listHTML(); l.scrollTop = st; paintHead(); }
   function paintAdd() {
-    V.el.querySelector('.c-pick').innerHTML = D.people.map(function (p) { return whoBtn(p.id); }).join('') + whoBtn('any');
-    V.el.querySelector('.c-usuals').innerHTML = D.choreUsuals.map(tile).join('');
+    if (!V.sheet) return;
+    V.sheet.querySelector('.c-pick').innerHTML = D.people.map(function (p) { return whoBtn(p.id); }).join('') + whoBtn('any');
+    V.sheet.querySelector('.c-usuals').innerHTML = D.choreUsuals.map(tile).join('');
+  }
+  function addSheet() {
+    App.sheet('<div class="sheet-pad c-addsheet"><h2 class="sheet-h serif">Add a chore</h2>' +
+      '<div class="c-add-h"><span class="label">For</span><div class="seg c-pick"></div></div><div class="c-usuals"></div></div>', {
+      cls: 'c-sheet',
+      onMount: function (box) { V.sheet = box; box.addEventListener('click', onClick); paintAdd(); },
+      onClose: function () { V.sheet = null; }
+    });
   }
   function paintHead() {
     var n = open().length, done = sorted().length - n;
-    V.el.querySelector('.c-count').innerHTML = '<span class="num">' + n + '</span> to do' + (done ? ' · ' + done + ' done' : '');
+    V.el.querySelector('.c-count').innerHTML = '<span class="num' + (n ? ' is-due' : '') + '">' + n + '</span> to do' + (done ? ' · ' + done + ' done' : '');
   }
   function render() {
     V.el.innerHTML = '<div class="chores">' +
-      '<header class="c-head"><h1 class="serif">Chores</h1><div class="c-count"></div></header>' +
-      '<div class="c-list"></div>' +
-      '<section class="c-add">' +
-      '  <div class="c-add-h"><span class="label">Add a usual for</span><div class="seg c-pick"></div></div>' +
-      '  <div class="c-usuals"></div>' +
-      '</section></div>';
+      '<header class="c-head"><h1 class="serif">Chores</h1><div class="c-count"></div>' +
+      '<button class="btn btn--solid" data-addsheet>' + App.icon('plus', 24) + 'Add chore</button></header>' +
+      '<div class="c-list panel glass glass--dense"></div></div>';
     paintList(); paintAdd();
   }
 
@@ -104,6 +111,7 @@
 
   function onClick(e) {
     var t;
+    if ((t = e.target.closest('[data-addsheet]'))) return addSheet();
     if ((t = e.target.closest('[data-who]'))) { V.who = t.dataset.who; return paintAdd(); }
     if ((t = e.target.closest('[data-add]'))) return add(t.dataset.add);
     if ((t = e.target.closest('[data-ch]'))) {

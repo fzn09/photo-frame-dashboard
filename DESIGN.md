@@ -191,7 +191,7 @@ A cool silver-and-walnut neutral field with a single copper voice and two person
 - **Person colours** (`person-fauzan` blue, `person-amanda` magenta, `person-family` warm grey): identity, never emphasis. They colour event blocks, lane underlines, avatar discs, chore checkboxes and the dots that say who else is in an event. Text on them is white.
 
 ### Neutral
-- **Silver Paper** (`silver-paper`) and **Evening Paper** (`evening-paper`): the page colour. The stage ground is `--ground` in `tokens.css`: radial gradients (white light top-left, silver-blue top-right and copper warmth at the bottom by day; ember and copper on walnut at night) under `public/bg/grain.png`, a 160 px speck tile made by `dashboard/tools/make-grain.mjs`.
+- **Silver Paper** (`silver-paper`) and **Evening Paper** (`evening-paper`): the page colour. The stage ground is `--ground` in `tokens.css`: radial gradients (white light top-left, silver-blue top-right and a low, faint walnut warmth below the bottom edge by day; ember top-left and a copper glow kept below the bottom row at night, so it never lifts the cards' ground) under `public/bg/grain.png`, a 160 px speck tile made by `dashboard/tools/make-grain.mjs`.
 - **Silver Pressed** (`silver-pressed`) and **Evening Pressed** (`evening-pressed`): the rail, pressed states and quiet fills such as unselected chips.
 - **Glass** (`--mod`, a gradient from `card-white` 0.7 to 0.5 by day; a warm tint 0.14 to 0.075 at night): module cards, the rail and the list category rails. At night the glass is a warm tint, because the panel greys out low-saturation browns and a white tint read as slate. **Dense glass** (`--mod-dense`, 0.86 to 0.76 white by day, near-opaque walnut at night) is for panels that scroll, so text over the gradient stays steady.
 - **Raise White** (`raise-white`; `evening-pressed` at night): surfaces that float above the page: sheets, toasts, banners.
@@ -200,7 +200,7 @@ A cool silver-and-walnut neutral field with a single copper voice and two person
 - **Amber Ink** (`amber-ink`): only the "Updated N min ago" stale-feed badge.
 
 ### Named Rules
-**The Copper Means Now Rule.** Copper is spent on today, the current selection, and what needs doing soon. Good news is never copper: "No rain today" is ink, "Rain from 16:00" is copper.
+**The Copper Means Now Rule.** Copper is spent on today, the current selection, and what needs doing soon. Good news is never copper: "No rain today" is ink, "Rain from 16:00" is copper. Zero counts, plain totals, a dry hour's rain bar and the calculator's "=" are ink. Overdue is alert everywhere, never copper.
 
 **The Who Not What Rule.** Person colours say whose something is. They never mark status or importance.
 
@@ -232,7 +232,7 @@ A cool silver-and-walnut neutral field with a single copper voice and two person
 
 A fixed 1280×800 stage, scaled with a CSS transform on other screens (wider than 16:10 widens the stage, narrower letterboxes). A 96 px column on the left holds the rail, a floating glass panel (12 px from the edge, 14 px from top and bottom) with eight sections, the stale-data note and the clock. The content box is 1156×772 inside 14 px padding. Views are absolute layers switched with `content-visibility`; only Calendar's time grid and long lists scroll.
 
-Home never scrolls: a 24-column grid in three rows (236 px, 252 px, then the rest) with a 14 px gap. Row 1 is the clock (7 columns, wide enough for the widest time, "00:00", because the serif has no tabular figures), weather (11) and transit (6); the clock's digits start level with the weather temperature and its stacked date ends on the hour row's line. Row 2 is "next up" (10) and the people (14), which leaves out the event already in "next up". Row 3 holds equal cards for shopping, fridge, chores and the photo tile, and a disabled view's card drops out so the others widen. List views pair a glass category rail with counts (Shopping 250 px, Fridge 280 px) with one dense glass panel that scrolls by drag. A category tap filters the panel; "All" shows every group. Fridge opens on "Use soon" when anything needs eating. Fridge runs in two columns, Shopping in three (item names at 22 px narrow Archivo, 700). Shopping's quick-add and usuals live in a sheet behind "Add item", the quantity in a sheet behind the row's "×N" pill, and ticked items in a collapsed "In the cart" group at the end of the list.
+Home never scrolls: a 24-column grid in three rows (236 px, 252 px, then the rest) with a 14 px gap. Row 1 is the clock (7 columns, wide enough for the widest time, "00:00", because the serif has no tabular figures), weather (11) and transit (6); the clock's digits start level with the weather temperature and its stacked date ends on the hour row's line. Row 2 is "next up" (10) and the people (14), which leaves out the event already in "next up". Row 3 holds equal cards for shopping, fridge, chores and the photo tile, and a disabled view's card drops out so the others widen. List views pair a glass category rail with counts (Shopping 250 px, Fridge 280 px) with one dense glass panel that scrolls by drag. A category tap filters the panel; "All" shows every group. Fridge opens on "Use soon" when anything needs eating. Fridge runs in two columns, Shopping in three (item names at 22 px narrow Archivo, 700). Shopping's quick-add and usuals live in a sheet behind "Add item", the quantity in a sheet behind the row's "×N" pill, and ticked items in a collapsed "In the cart" group at the end of the list. Chores follows the same pattern: the list on a dense glass panel, the usuals in a sheet behind "Add chore". The category rail collapses when there is one category or none. Fridge shows Shopping's category names and section heads (mono label over a hairline); a row acts only through its 48 px "Used" button, so a brushing hand cannot remove food, and a Use soon list of six or fewer runs at item size. Meals rolls: today and the next six days.
 
 Rhythm is tight inside a group and wider between groups: 14 px gaps, 16×18 px card padding, 48 px minimum row height for anything tappable and 64 px for primary controls.
 
@@ -277,7 +277,7 @@ Quiet, pill-shaped, sized for a thumb.
 
 ### Next up (the decision card)
 - **Big figure:** the decision, at Hero size (76 px serif). With a travel time it is when to leave ("Leave in 13 min" under an hour, "Leave 11:45" further out, "Leave now · 2 min late"); without one, the start ("in 45 min", or "at 17:00" with the meta line shortened to "Until 17:30"). The start time is never shown twice.
-- **Escalation:** the one solid card on Home. At rest, a copper gradient (`#D9622B → #C2410C → #A83A0D`) with white text in every theme, since white on evening copper fails contrast; the person colour is the ringed label dot. Within 15 minutes, a white 4 px inner ring. At leave time, solid alert. With nothing left today, a glass card.
+- **Escalation:** the one solid card on Home. At rest, a copper gradient (`#B23A0A → #C2410C → #CC5019`, dark end behind the text) with white text in every theme, since white on evening copper fails contrast; the person colour is the ringed label dot. Within 15 minutes, a white 4 px inner ring. At leave time, solid alert. With nothing left today, a glass card that looks ahead ("Tomorrow · Amanda", the title, "at 07:00"); when nobody has anything left, the people card says so once across both columns.
 - **The people card beside it** shows the rest of the day and leaves out the event already here.
 
 ### Status pills and tags
@@ -290,8 +290,9 @@ Quiet, pill-shaped, sized for a thumb.
 - **Background:** glass (`--mod`); dense glass (`--mod-dense`) for scrolling panels.
 - **Shadow Strategy:** the glass card shadow in every theme (see Elevation & Depth).
 - **Border:** 1 px inset light edge and a 1 px top highlight.
-- **Home bottom row:** a 40 px white icon disc leads the label. Fridge turns solid alert while something expires today or tomorrow.
-- **Weather hours:** a frosted strip; the current hour is a copper chip, and a 4 px bar under each hour shows the rain chance.
+- **Home bottom row:** a 40 px white icon disc leads the label. Fridge shows "N to use soon" in copper; it turns solid alert by day only while something expires today, and in the evening it stays dense glass with a 2 px alert edge and alert tags.
+- **Weather hours:** a ruled row under the advice; the current hour is a solid copper chip, and a 4 px bar under each hour shows the rain chance, in ink below 40 % and copper from 40 %.
+- **Counts:** view-header counts are ink; copper only when something needs doing (items to get, chores to do, food to use soon).
 - **Internal Padding:** 16 px top and bottom, 18 px sides; a mono label first, then a serif statement or a count.
 
 ### Lists

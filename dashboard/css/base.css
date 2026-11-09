@@ -208,7 +208,7 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   font-size: var(--fs-body); font-weight: 800; font-stretch: 75%; letter-spacing: .08em; text-transform: uppercase;
 }
 .toast-undo:active { background: rgb(var(--ov) / .2); }
-.toast:not(:has(.toast-undo)) { padding-right: 28px; }
+.toast--plain { padding-right: 28px; } /* no Undo button (a class: :has() is not supported on the frame) */
 
 /* ---------------------------------------------------------------- sheets */
 .sheet-layer { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; pointer-events: none; }

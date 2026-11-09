@@ -93,7 +93,7 @@
       var idx = D.people.map(function (p) { return p.id; }).indexOf(e.people[0]);
       var col = fam2 ? '1 / -1' : (idx + 1) + ' / span 1';
       var s = App.dayStart(day), spanDays = Math.round((e.end - e.start) / 864e5), dayN = Math.round((s - e.start) / 864e5) + 1;
-      return '<button class="ad' + (e.start < s ? ' ad--cont' : '') + '" data-ev="' + e.id + '" style="grid-column:' + col + ';' + App.pstyle(App.evColor(e)) + '">' +
+      return '<button class="ad' + (e.start < s ? ' ad--cont' : '') + (App.isFamily(e) ? ' ad--family' : '') + '" data-ev="' + e.id + '" style="grid-column:' + col + ';' + App.pstyle(App.evColor(e)) + '">' +
         (e.start < s ? App.icon('left', 16) : '') + App.esc(e.title) + (spanDays > 1 ? ' <small>Day ' + dayN + ' of ' + spanDays + '</small>' : '') + '</button>';
     }).join('') + (meals.length ? '<div class="ad-meals">' + meals.map(function (r) { return '<button class="ad-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<span>' + App.esc(r.name) + '</span></button>'; }).join('') + '</div>' : '') + '</div></div>' : '';
     var grid = '<div class="grid-scroll"><div class="grid" style="height:' + (END - START) * PX + 'px">' +
@@ -138,7 +138,7 @@
       var list = App.events().filter(function (e) { return e.allDay && e.start < s3 && e.end > s0; });
       ad = '<div class="allday"><div class="gutter label">All day</div><div class="allday-grid allday-grid--3">' + list.map(function (e) {
         var a = Math.max(0, Math.round((e.start - s0) / 864e5)), b = Math.min(3, Math.round((e.end - s0) / 864e5));
-        return '<button class="ad' + (e.start < s0 ? ' ad--cont' : '') + '" data-ev="' + e.id + '" style="grid-column:' + (a + 1) + ' / ' + (b + 1) + ';' + App.pstyle(App.evColor(e)) + '">' +
+        return '<button class="ad' + (e.start < s0 ? ' ad--cont' : '') + (App.isFamily(e) ? ' ad--family' : '') + '" data-ev="' + e.id + '" style="grid-column:' + (a + 1) + ' / ' + (b + 1) + ';' + App.pstyle(App.evColor(e)) + '">' +
           (e.start < s0 ? App.icon('left', 16) : '') + App.esc(e.title) + (e.end > s3 ? App.icon('right', 16) : '') + '</button>';
       }).join('') + days.map(function (d, i) {
         return App.mealsOn(d).map(function (r) { return '<button class="ad-meal" data-meal="' + App.esc(r.id) + '" style="grid-column:' + (i + 1) + '">' + App.mealThumb(r) + '<span>' + App.esc(r.name) + '</span></button>'; }).join('');

@@ -41,7 +41,7 @@
     var items = open(), groups = groupsOf(items);
     if (V.cat !== 'all' && !groups.some(function (gr) { return gr.cat === V.cat; })) V.cat = 'all'; // emptied: back to All
     var btn = function (id, label, n) { return '<button class="cat' + (V.cat === id ? ' is-on' : '') + '" data-filter="' + App.esc(id) + '" aria-pressed="' + (V.cat === id) + '"><span>' + App.esc(label) + '</span><b>' + n + '</b></button>'; };
-    return items.length ? btn('all', 'All', items.length) + '<div class="cats-sep"></div>' + groups.map(function (gr) { return btn(gr.cat, gr.cat, gr.items.length); }).join('') : '';
+    return groups.length > 1 ? btn('all', 'All', items.length) + '<div class="cats-sep"></div>' + groups.map(function (gr) { return btn(gr.cat, gr.cat, gr.items.length); }).join('') : '';
   }
   function listHTML() {
     var items = open(), groups = groupsOf(items);
@@ -125,12 +125,13 @@
   function paintList() { var l = V.el.querySelector('.s-list'); var st = l.scrollTop; l.innerHTML = listHTML(); l.scrollTop = st; paintHead(); }
   function paintSuggest() { var s = root().querySelector('.s-suggest'); if (s) s.innerHTML = suggestHTML(); }
   function paintHead() {
-    V.el.querySelector('.s-count').innerHTML = '<span class="num">' + open().length + '</span> to get';
+    var n = open().length;
+    V.el.querySelector('.s-count').innerHTML = '<span class="num' + (n ? ' is-due' : '') + '">' + n + '</span> to get';
     paintCats();
   }
   function render() {
     V.el.innerHTML = '<div class="shop">' +
-      '<header class="s-head"><div><div class="label">Shared list</div><h1 class="serif">Groceries</h1></div><div class="s-count"></div>' +
+      '<header class="s-head"><div><div class="label">Shared list</div><h1 class="serif">Shopping</h1></div><div class="s-count"></div>' +
       '<button class="btn btn--solid" data-addsheet>' + App.icon('plus', 24) + 'Add item</button></header>' +
       '<nav class="s-rail cats glass" aria-label="Categories"></nav>' +
       '<div class="s-list panel glass glass--dense"></div></div>';

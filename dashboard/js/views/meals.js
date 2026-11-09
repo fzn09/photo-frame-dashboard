@@ -6,7 +6,8 @@
   var DAYS = [0, 1, 2, 3, 4, 5, 6], RETRY = [3000, 10000];
 
   function key(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
-  function monday() { var d = App.dayStart(App.now()); return App.addDays(d, -((d.getDay() + 6) % 7)); }
+  // The strip rolls: today and the next six days. A Monday-to-Sunday week showed only past days on a Sunday.
+  function first() { return App.dayStart(App.now()); }
   function find(id) {
     var hit = null;
     D.meals.days.forEach(function (d) { d.recipes.forEach(function (r) { if (r.id === id) hit = r; }); });
@@ -80,19 +81,24 @@
   // ---- view
   function head() {
     var n = 0, age = App.feedAge ? App.feedAge('meals') : 0;
-    DAYS.forEach(function (i) { n += App.mealsOn(App.addDays(monday(), i)).length; });
-    return '<h1 class="serif">Meals</h1><small>' + (n ? n + (n === 1 ? ' recipe' : ' recipes') + ' this week' : 'Nothing planned this week') + '</small>' +
+    DAYS.forEach(function (i) { n += App.mealsOn(App.addDays(first(), i)).length; });
+    return '<h1 class="serif">Meals</h1><small>' + (n ? n + (n === 1 ? ' recipe' : ' recipes') + ' in the next 7 days' : 'Nothing planned for the next 7 days') + '</small>' +
       '<span class="m-age"' + (age ? '>Updated ' + (age < 90 ? age + ' min' : Math.round(age / 60) + ' h') + ' ago' : ' hidden>') + '</span>' +
-      (D.meals.device ? '<div class="m-device">' + App.icon('jug', 24) + '<span><b>Thermomix ' + App.esc(D.meals.device) + '</b> · paired</span></div>' : '');
+      (D.meals.device ? '<div class="m-device">' + App.icon('jug', 24) + '<span><b>Thermomix ' + App.esc(D.meals.device) + '</b></span></div>' : '');
   }
   function strip() {
     var now = App.dayStart(App.now());
     return DAYS.map(function (i) {
-      var d = App.addDays(monday(), i), k = key(d);
+      var d = App.addDays(first(), i), k = key(d);
       return '<button class="mc-day' + (+d === +now ? ' is-today' : '') + (d < now ? ' is-past' : '') + (k === V.day ? ' is-on' : '') + '" aria-pressed="' + (k === V.day) + '" data-day="' + k + '">' +
         '<span><b>' + App.fmt.dayShort(d) + '</b><span class="num">' + d.getDate() + '</span></span>' +
-        '<span class="mc-th">' + App.mealsOn(d).slice(0, 3).map(App.mealThumb).join('') + '</span></button>';
+        '<span class="mc-th">' + thumbs(App.mealsOn(d)) + '</span></button>';
     }).join('');
+  }
+  function thumbs(list) {
+    if (!list.length) return '';
+    if (!list.some(function (r) { return r.img; })) return '<span class="mc-n">' + list.length + (list.length === 1 ? ' recipe' : ' recipes') + '</span>';
+    return list.slice(0, 3).map(App.mealThumb).join('');
   }
   function card(r) {
     return '<button class="mc-card card' + (r.photo ? '' : ' mc-card--plain') + '" data-meal="' + App.esc(r.id) + '">' + (r.photo ? pic(r.photo) : '') + '<div class="mc-in"><h2 class="mc-t">' + App.esc(r.name) + '</h2>' +

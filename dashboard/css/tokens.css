@@ -204,9 +204,8 @@
   --row: rgba(255, 255, 255, .62);       /* frosted inner rows (hour strip) */
   --row-line: rgba(255, 255, 255, .8);
   --ground: radial-gradient(820px 540px at 6% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0)),
-    radial-gradient(760px 480px at 100% 0%, rgba(165, 182, 198, .5), rgba(165, 182, 198, 0)),
-    radial-gradient(920px 540px at 64% 112%, rgba(255, 146, 86, .55), rgba(255, 146, 86, 0)),
-    radial-gradient(620px 420px at 0% 104%, rgba(190, 120, 80, .28), rgba(190, 120, 80, 0)), #E8E5E2;
+    radial-gradient(800px 520px at 100% 0%, rgba(160, 176, 190, .45), rgba(160, 176, 190, 0)),
+    radial-gradient(900px 360px at 60% 130%, rgba(150, 100, 70, .3), rgba(150, 100, 70, 0)), #E5E7E8; /* silver, a low walnut warmth */
   --ink: #2A2018;
   --ink-rgb: 42 32 24;
   --ink-2: #55483D;
@@ -280,7 +279,7 @@
   --row-line: rgba(255, 220, 190, .15);
   --ground: radial-gradient(820px 540px at 6% 0%, rgba(255, 190, 140, .16), rgba(255, 190, 140, 0)),
     radial-gradient(720px 500px at 100% 0%, rgba(120, 70, 50, .4), rgba(120, 70, 50, 0)),
-    radial-gradient(920px 560px at 64% 112%, rgba(255, 138, 87, .42), rgba(255, 138, 87, 0)), #24170F;
+    radial-gradient(900px 340px at 60% 136%, rgba(255, 138, 87, .4), rgba(255, 138, 87, 0)), #24170F; /* glow kept under the bottom row: it lifted the cards' ground and dropped mute text to 3.1:1 */
   --ink: #FBF6EF;
   --ink-rgb: 251 246 239;
   --ink-2: #E3D3C2;

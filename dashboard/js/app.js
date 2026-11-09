@@ -232,7 +232,7 @@
     var ms = opts.ms || 5000;
     var act = opts.action || (opts.undo && { label: App.icon('undo', 22) + 'Undo', fn: opts.undo });
     var t = document.createElement('div');
-    t.className = 'toast' + (opts.tone ? ' toast--' + opts.tone : '');
+    t.className = 'toast' + (opts.tone ? ' toast--' + opts.tone : '') + (act ? '' : ' toast--plain');
     t.style.setProperty('--ms', ms + 'ms');
     t.innerHTML = (opts.icon ? App.icon(opts.icon, 26) : '') + '<span class="toast-msg">' + html + '</span>' +
       (act ? '<button class="toast-undo">' + act.label + '</button>' : '');
