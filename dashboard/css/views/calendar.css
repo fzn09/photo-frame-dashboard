@@ -112,7 +112,7 @@
 .cal-next { flex: none; display: flex; align-items: center; gap: 14px; margin: 8px 4px 0; padding: 10px 14px; border-radius: var(--r-s); background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
 .cal-next .label { flex: none; }
 .cal-next-ev { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; min-height: 40px; font-size: var(--fs-body); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cal-next-ev span { font-variant-numeric: tabular-nums; font-size: var(--fs-body); color: var(--accent); }
+.cal-next-ev span { font-variant-numeric: tabular-nums; font-size: var(--fs-body); color: var(--ink-2); } /* tomorrow is not now: ink */
 .cal-empty {
   position: absolute; left: 64px; right: 0; top: 45%; text-align: center;
   font-size: 48px; line-height: 1.05; color: var(--mute); pointer-events: none;
@@ -131,7 +131,7 @@
 /* ---- week */
 .week { height: 100%; display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
 .wk-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.wk-head { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 10px 8px; border-bottom: 2px solid var(--line); margin-bottom: 4px; }
+.wk-head { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 10px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
 .wk-head b { font-family: var(--serif); font-size: var(--fs-body); font-weight: 400; }
 .wk-head .num { font-size: var(--fs-l); line-height: .9; }
 .wk-col.is-today .wk-head { background: var(--accent); color: var(--on-accent); border-color: var(--accent); border-radius: 12px 12px 0 0; }
@@ -150,7 +150,7 @@
 .wk-ev.is-past .wk-t, .wk-ev.is-past .wk-n { color: var(--mute); }
 .wk-t::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-right: 6px; vertical-align: 1px; }
 .wk-t { font-size: var(--fs-min); font-weight: 400; font-variant-numeric: tabular-nums; color: var(--ink-2); }
-.wk-n { font-size: var(--fs-min); font-weight: 600; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.wk-n { font-size: var(--fs-body); font-weight: 600; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .wk-more { min-height: 48px; font-variant-numeric: tabular-nums; font-size: var(--fs-min); font-weight: 400; color: var(--accent); text-align: left; padding: 0 10px; color: var(--ink-2); }
 .wk-free { font-size: var(--fs-body); color: var(--mute); padding: 8px 10px; }
 

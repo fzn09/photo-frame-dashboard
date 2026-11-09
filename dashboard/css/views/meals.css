@@ -26,6 +26,9 @@
 .mc-th img, .mc-th .m-noimg { display: grid; width: 46px; height: 46px; margin-left: -20px; border-radius: 50%; object-fit: cover; background: rgb(var(--ov) / .12); box-shadow: 0 0 0 2px var(--paper); }
 .mc-th :first-child { margin-left: 0; }
 .mc-n { font-size: var(--fs-min); font-weight: 600; white-space: nowrap; }
+.mc-h { margin: 14px 0 4px; font-family: var(--mono); font-size: var(--fs-label); font-weight: 400; color: var(--ink-2); }
+.mc-steps { margin: 0; padding-left: 24px; font-size: var(--fs-body); line-height: 1.35; color: var(--ink); }
+.mc-steps li { padding: 4px 0; }
 
 .mc-main { flex: 1; min-height: 0; display: flex; gap: var(--gap); overflow-x: auto; }
 .mc-card { flex: 1 0 372px; min-width: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }

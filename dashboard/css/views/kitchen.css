@@ -30,7 +30,13 @@
 .k-t-time { min-width: 220px; font-family: var(--serif); font-size: 96px; line-height: 1; font-weight: 400; font-variant-numeric: tabular-nums; }
 .k-t-x { width: var(--tap); height: var(--tap); border-radius: 50%; display: grid; place-items: center; }
 .k-t-x:active { background: var(--line); }
-.k-timer.is-done { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+.k-timer.is-done { background: var(--alert); color: var(--on-accent); box-shadow: none; } /* the moment itself: alert, as the rail and the toast */
 .k-timer.is-done .label { color: inherit; }
-.k-none { flex: 1; display: grid; place-content: center; text-align: center; font-size: var(--fs-l); line-height: 1.2; color: var(--ink-2); border-radius: var(--r-card); box-shadow: inset 0 0 0 1px var(--line); }
+.k-timer.is-done .label::before { background: currentColor; }
+.k-none { padding: 18px 4px; font-size: var(--fs-m); line-height: 1.25; color: var(--ink-2); }
+/* idle: the presets are the screen, big enough to start with a knuckle */
+.kitchen.is-idle .k-presets { flex: 1; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; }
+.kitchen.is-idle .k-presets .k-chip { font-family: var(--serif); font-weight: 400; font-size: var(--fs-xl); }
+.kitchen.is-idle .k-presets .k-chip--screen { font-family: var(--sans); font-weight: 600; font-size: var(--fs-body); }
+.kitchen.is-idle .k-timers { flex: none; }
 .k-none i { color: var(--ink); }

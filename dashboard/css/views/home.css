@@ -53,7 +53,7 @@
 .h-wx-hours { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: auto; padding: 4px 0 0; border-top: 1px solid var(--line); } /* a ruled row, not a card inside the card */
 .h-hr { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 2px 0 4px; border-radius: 12px; font-size: var(--fs-m); line-height: 1; }
 /* the current hour is a copper chip (The Copper Means Now Rule); white on #C2410C is 5.2:1 in every theme */
-.h-hr:first-child { background: #C2410C; color: #FFFFFF; }
+.h-hr:first-child { background: var(--copper-solid); color: #FFFFFF; }
 .h-hr:first-child .h-hr-l, .h-hr:first-child.is-wet .h-hr-i { color: #FFFFFF; }
 /* rain chance as a bar: empty track on a dry hour, so the row reads at a glance */
 .h-hr-rb { width: 60%; height: 4px; margin-top: 3px; border-radius: 2px; background: rgb(var(--ov) / .12); overflow: hidden; }
@@ -101,15 +101,15 @@
   display: flex; flex-direction: column; justify-content: space-between; gap: 4px; width: 100%;
   padding: 18px 22px 14px; border-radius: var(--r-card); overflow: hidden; position: relative; color: #FFFFFF;
   background: linear-gradient(150deg, #B23A0A 0%, #C2410C 60%, #CC5019 100%); /* white text 5.2:1 or better where text sits */
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), inset 0 1px 0 rgba(255, 255, 255, .3), 0 8px 22px rgba(70, 45, 25, .16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18), inset 0 1px 0 rgba(255, 255, 255, .3), var(--solid-shadow);
 }
 .h-hero-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .h-hero .label { color: #FFFFFF; }
 .h-hero .label::before { background: var(--c); box-shadow: 0 0 0 2px #FFFFFF; } /* whose: the person colour, ringed so it reads on copper */
-.h-hero-title { font-size: var(--fs-l); line-height: 1; margin: 2px 0 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.h-hero-title { font-size: 44px; line-height: 1; margin: 2px 0 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .h-hero-meta { font-size: var(--fs-body); color: #FFFFFF; }
-.h-hero.is-soon { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .7), 0 8px 22px rgba(70, 45, 25, .16); }
-.h-hero.is-now { background: var(--alert); color: var(--on-accent); box-shadow: 0 8px 22px rgba(70, 45, 25, .16); }
+.h-hero.is-soon { box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .7), var(--solid-shadow); }
+.h-hero.is-now { background: var(--alert); color: var(--on-accent); box-shadow: var(--solid-shadow); }
 .h-hero.is-now .label, .h-hero.is-now .h-hero-meta { color: var(--on-accent); }
 .h-hero.is-now .label::before { background: var(--on-accent); }
 .h-hero-foot { display: flex; align-items: center; gap: 14px; margin-top: 2px; }
@@ -123,7 +123,9 @@
 .h-hero--next { justify-content: space-between; }
 .h-hero--next .label::before { box-shadow: none; }
 .h-hero--next .h-hero-count { color: var(--ink); font-size: var(--fs-xl); } /* tomorrow: smaller than a live countdown, the clock stays the anchor */
-.h-free--all { grid-column: 1 / -1; font-size: var(--fs-l); padding-top: 18px; }
+.h-free--all { grid-column: 1 / -1; font-size: var(--fs-l); padding-top: 10px; }
+.h-tomorrow { grid-column: 1 / -1; margin-top: 12px; }
+.h-tomorrow .label { margin-bottom: 4px; }
 .h-hero--empty .label::before { background: var(--mute); }
 .h-hero--empty .h-hero-title { font-size: var(--fs-l); line-height: 1.05; -webkit-line-clamp: 3; }
 .h-hero--empty .h-hero-meta { font-family: var(--sans); }
@@ -165,7 +167,7 @@
 /* bottom-row card head: a white icon disc, then the label text */
 .home .card > .label.h-tile-h { display: flex; align-items: center; gap: 10px; }
 .home .card > .label.h-tile-h::before { display: none; }
-.h-ico { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--raise); color: var(--ink); box-shadow: 0 2px 8px rgba(70, 45, 25, .12); }
+.h-ico { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--raise); color: var(--ink); box-shadow: var(--lift); }
 .h-tile-t { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Fridge with something expiring today or tomorrow: solid alert (white text by day, dark in the evening) */
@@ -200,9 +202,10 @@
 .stage:not([data-off~="photos"]) .home[data-lean] .h-photo { flex-grow: 2; }
 /* the name gives way, never the tag: "Tomorrow" and "Overdue" are the point of the row */
 .h-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.h-exp { flex: none; padding-left: 8px; font-size: var(--fs-label); font-weight: 500; color: var(--mute); }
-.h-exp.is-due { color: var(--accent); }
+.h-exp { flex: none; padding-left: 8px; font-size: var(--fs-body); font-weight: 500; color: var(--mute); } /* status at body size: read from the counter */
+.h-exp.is-due { color: var(--accent); font-weight: 700; }
 .h-exp.is-over { color: var(--alert); font-weight: 700; } /* overdue is the alert tone everywhere (Chores uses it too) */
+:root[data-theme="dark"] .h-exp.is-over { font-weight: 500; } /* evening: the alert tone and the word, without the extra weight */
 .h-recent .h-who { width: 10px; height: 10px; background: var(--c); }
 
 /* ---- today's meals: shared, so a band above the two people, no time */
@@ -218,7 +221,9 @@
 /* ---- photo */
 .h-photo { position: relative; display: block; width: 100%; border-radius: var(--r-card); overflow: hidden; box-shadow: inset 0 0 0 1px var(--mod-line);
   background: url('/bg/grain.png') 0 0 / 160px 160px repeat, linear-gradient(160deg, #B98A64 0%, #8A5E40 50%, #5A3B27 100%); }
-.h-photo .slide, .h-photo .kb { background: transparent; } /* the tile's walnut fallback shows until a photo has loaded (.kb painted its own near-black gradient) */
+.h-photo .slide, .h-photo .kb { background: transparent; }
+/* evening: the photo steps down with the room instead of staying the brightest thing on the wall */
+:root[data-theme="dark"] .h-photo-stage::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(20, 12, 8, .35); } /* the tile's walnut fallback shows until a photo has loaded (.kb painted its own near-black gradient) */
 .h-photo-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 .h-photo-cap {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 16px 12px;

@@ -29,10 +29,13 @@
 .c-name small { font-size: var(--fs-min); color: var(--mute); }
 .c-late { color: var(--alert); font-weight: 700; }
 .c-soon { color: var(--accent); font-weight: 700; }
+.c-late, .c-soon { font-size: var(--fs-body); } /* the status reads from the counter, not only the name */
+:root[data-theme="dark"] .c-late { font-weight: 500; } /* evening: still the alert tone and the word, without the extra weight */
 .c-who { display: flex; align-items: center; gap: 10px; flex: none; font-size: var(--fs-min); color: var(--mute); }
 .c-who .avatar { background: var(--c); color: var(--c-ink); }
 
-.c-row.is-checking .c-box, .c-row.is-done .c-box { background: var(--c); color: var(--c-ink); box-shadow: none; }
+.c-row.is-checking .c-box { background: var(--c); color: var(--c-ink); box-shadow: none; }
+.c-row.is-done .c-box { background: var(--ink-2); color: var(--paper); box-shadow: none; } /* done is a state, not a person: neutral */
 .c-row.is-checking .c-box { transform: scale(1.12); }
 .c-row.is-checking .c-name b, .c-row.is-done .c-name b { color: var(--mute); text-decoration: line-through; text-decoration-thickness: 3px; }
 .c-row.is-done .c-who .avatar { background: var(--mute); color: var(--paper); }

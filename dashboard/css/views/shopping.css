@@ -10,7 +10,7 @@
 .s-cols { column-count: 3; column-gap: 24px; }
 .s-rail:empty { display: none; }
 .s-rail:empty + .s-list { grid-column: 1 / -1; } /* one category or none: the list takes the rail's column */
-.s-cat-h { column-span: all; }
+.s-cat-h { break-after: avoid; } /* group heads flow inline: groups no longer restart all three columns */
 .s-cat { margin-bottom: 14px; }
 .s-cat:first-child .s-cat-h { padding-top: 14px; }
 .s-cat-h { display: flex; justify-content: space-between; padding: 6px 4px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }

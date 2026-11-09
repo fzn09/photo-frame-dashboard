@@ -32,4 +32,6 @@
 
 /* orange = eat it now; past an estimate only means "is it still there?", so it stays quiet */
 .f-tag { flex: none; padding: 2px 8px; border-radius: 6px; font-size: var(--fs-min); font-weight: 400; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); white-space: nowrap; }
+.f-tag { min-width: 104px; text-align: center; } /* a fixed tag column keeps the prices in line */
+.f-tag--none { box-shadow: none; }
 .f-tag.is-soon { background: var(--accent); color: var(--on-accent); box-shadow: none; font-weight: 700; }

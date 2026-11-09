@@ -120,6 +120,13 @@
       while (rows.length > 1 && card.scrollHeight > card.clientHeight) ing.removeChild(rows[rows.length - 1]);
       rest = full.ingredients.length - rows.length;
       if (rest > 0) slot('[data-more]').textContent = 'Open recipe · ' + rest + ' more ingredient' + (rest > 1 ? 's' : '');
+      // room left: the first steps, as many as fit (a card is a preview; the sheet has the whole recipe)
+      if (!rest && full.steps && full.steps.length) {
+        ing.insertAdjacentHTML('afterend', '<h3 class="mc-h">First steps</h3><ol class="r-steps mc-steps">' + full.steps.slice(0, 3).map(step).join('') + '</ol>');
+        var ol = card.querySelector('.mc-steps');
+        while (ol.children.length && card.scrollHeight > card.clientHeight) ol.removeChild(ol.lastChild);
+        if (!ol.children.length) { ol.previousSibling.remove(); ol.remove(); }
+      }
     }).catch(function () {
       var ing = slot('[data-ing]');
       if (ing) ing.innerHTML = '<li class="mc-note">Ingredients didn’t load</li>';

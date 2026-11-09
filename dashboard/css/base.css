@@ -76,7 +76,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: var(--ink-2);
   position: relative;
 }
-.rail-item.is-active { background: var(--rail-on); color: var(--ink); box-shadow: 0 2px 8px rgba(70, 45, 25, .12); }
+.rail-item.is-active { background: var(--rail-on); color: var(--ink); box-shadow: var(--lift); }
 .rail-item:active { background: rgb(var(--ov) / .08); }
 .rail-item.is-active:active { background: rgb(var(--accent-rgb) / .2); }
 .rail-stale { margin-top: auto; padding: 6px 0; text-align: center; line-height: 1.2; font-size: var(--fs-min); color: var(--mute); }
@@ -84,7 +84,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .rail-stale + .rail-clock { margin-top: 0; }
 .rail-timer { margin-top: auto; padding: 8px 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: var(--fs-min); font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .rail-timer[hidden] { display: none; }
-.rail-timer.is-done { color: var(--on-accent); background: var(--accent); }
+.rail-timer.is-done { color: var(--on-accent); background: var(--alert); } /* a finished timer is the moment itself: alert, as its card and toast */
 .rail-timer:not([hidden]) + .rail-stale { margin-top: 0; }
 .rail-clock { margin-top: auto; padding: 10px 0; text-align: center; line-height: 1; position: relative; overflow: hidden; }
 .rail-clock.is-holding { background: var(--paper-2); }
@@ -178,7 +178,7 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .cat { flex: none; min-height: 58px; padding: 0 14px; border-radius: 14px; display: flex; align-items: center; gap: 10px; font-size: var(--fs-body); font-weight: 500; color: var(--ink); text-align: left; }
 .cat span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cat b { flex: none; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.cat.is-on { background: var(--rail-on); box-shadow: 0 2px 8px rgba(70, 45, 25, .1); }
+.cat.is-on { background: var(--rail-on); box-shadow: var(--lift); }
 .cat.is-on b { color: var(--ink); }
 .cat:active { background: rgb(var(--ov) / .08); }
 .cat--soon { color: var(--accent); font-weight: 700; }
@@ -206,8 +206,10 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   min-height: 56px; padding: 0 22px; margin-left: 6px;
   display: inline-flex; align-items: center; gap: 8px;
   border-radius: 14px; background: rgb(var(--ov) / .1);
-  font-size: var(--fs-body); font-weight: 800; font-stretch: 75%; letter-spacing: .08em; text-transform: uppercase;
+  font-size: var(--fs-body); font-weight: 700;
 }
+.toast-more { color: var(--ink-2); white-space: nowrap; }
+.toast--error .toast-more { color: inherit; }
 .toast-undo:active { background: rgb(var(--ov) / .2); }
 .toast--plain { padding-right: 28px; } /* no Undo button (a class: :has() is not supported on the frame) */
 
@@ -289,13 +291,13 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .tk-btn.is-on { background: var(--ok); }
 .tk-btn.is-holding { background: rgba(255, 255, 255, .34); }
 
-.takeover--alarm { background: #C2410C; color: #fff; }
+.takeover--alarm { background: var(--copper-solid); color: #fff; }
 .tk-alarm { position: absolute; left: 60px; right: 60px; top: 60px; bottom: 60px; display: flex; flex-direction: column; justify-content: flex-end; }
 .tk-alarm-icon { position: absolute; right: 0; top: 0; width: 200px; height: 200px; border-radius: 50%; background: rgba(255, 255, 255, .15); display: grid; place-items: center; }
 .tk-huge { font-size: 210px; font-weight: 900; font-stretch: 62%; text-transform: uppercase; line-height: .82; letter-spacing: -.02em; word-spacing: .12em; margin: 14px 0 18px; }
 .tk-sub { font-size: 30px; margin-bottom: 36px; max-width: 800px; }
 .tk-btn--light { background: rgba(255, 255, 255, .18); }
-.tk-btn--light.tk-btn--solid { background: #fff; color: #C2410C; }
+.tk-btn--light.tk-btn--solid { background: #fff; color: var(--copper-solid); }
 
 
 /* ---------------------------------------------------------------- demo drawer */

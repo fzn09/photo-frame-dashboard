@@ -126,7 +126,7 @@ import { fridgeRows } from '../../calc.js';
       (together.length ? '<div class="h-together">' + shared + '</div>' : '') +
       // Nobody has anything left: one line across both columns, not "Free" twice beside an empty Next up
       (!together.length && !hero && D.people.every(function (p) { return !live(p.id).length; })
-        ? '<div class="h-free h-free--all serif"><i>Everyone</i> is free for the rest of the day</div>' :
+        ? '<div class="h-free h-free--all serif"><i>Everyone</i> is free for the rest of the day</div>' + laterTomorrow(now) :
       D.people.map(function (p) {
         var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
         var shown = list.slice(0, cap), more = list.length - shown.length;
@@ -140,6 +140,15 @@ import { fridgeRows } from '../../calc.js';
             '<div class="h-free serif">' + (busy ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
           '</div>';
       }).join(''));
+  }
+
+  // The evening people card looks ahead: tomorrow after its first event (that one is in the Next up card)
+  function laterTomorrow(now) {
+    var tm = App.timedOn(App.addDays(now, 1)).slice(1, 4);
+    return tm.length ? '<div class="h-tomorrow"><div class="label">Later tomorrow</div>' + tm.map(function (e) {
+      return '<button class="h-ev" data-ev="' + e.id + '"><span class="h-ev-t">' + App.fmt.time(e.start, false) + '</span>' +
+        '<span class="h-ev-n">' + App.esc(e.title) + '</span>' + App.dots(e.people, 12) + '</button>';
+    }).join('') + '</div>' : '';
   }
 
   function ring(done, total, size) {

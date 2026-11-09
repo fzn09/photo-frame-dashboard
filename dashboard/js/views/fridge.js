@@ -22,7 +22,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
   function row(r) {
     return '<div class="f-row">' +
       '<span class="f-name"><b>' + App.esc(r.label) + '</b><small>' + (r.qty > 1 ? '<em>×' + r.qty + '</em>' : '') + '<span>' + bought(r) + '</span>' + (r.total ? '<span class="f-eur">' + EUR.format(r.total) + '</span>' : '') + '</small></span>' +
-      (V.showUsed ? '' : tag(r)) +
+      (V.showUsed ? '' : tag(r) || '<span class="f-tag f-tag--none"></span>') +
       '<button class="f-x" data-rm="' + r.ids.join(' ') + '" data-label="' + App.esc(r.label) + '" aria-label="' + (V.showUsed ? 'Put back ' : 'Used up ') + App.esc(r.label) + '">' +
       (V.showUsed ? 'Put back' : 'Used') + '</button></div>';
   }
@@ -43,7 +43,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
   }
   function railHTML(all) {
     var soon = byState(all, 'soon').length, past = byState(all, 'past').length;
-    return (soon ? cat('soon', 'Use soon', soon, 'cat--soon') : '') + (past ? cat('past', 'Check these', past) : '') +
+    return (soon ? cat('soon', 'Use soon', soon, 'cat--soon') : '') + (past ? cat('past', 'Still there?', past) : '') +
       cat('all', 'All', all.length) + '<div class="cats-sep"></div>' +
       SECTIONS.map(function (sec) { var n = all.filter(function (r) { return r.section === sec; }).length; return n ? cat(sec, App.esc(secName(sec)), n) : ''; }).join('');
   }
@@ -77,7 +77,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     var list = V.el.querySelector('.f-list'), rail = V.el.querySelector('.f-rail'), btn = V.el.querySelector('.f-used'), st = list.scrollTop;
     if (!used.length) V.showUsed = false;
     V.el.querySelector('.s-count').innerHTML = '<span class="num">' + all.length + '</span> ' + (all.length === 1 ? 'item' : 'items') +
-      (soon.length ? ' · <span class="num is-due">' + soon.length + '</span> to use soon' : '') + (total ? ' · ' + EUR.format(total) : '');
+      (soon.length ? ' · <span class="num is-due">' + soon.length + '</span> to use soon' : '') + (total ? ' · worth ' + EUR.format(total) : '');
     V.el.querySelector('.f-checked').textContent = checked();
     V.el.querySelector('.f-over').hidden = !overdue();
     btn.hidden = !used.length;

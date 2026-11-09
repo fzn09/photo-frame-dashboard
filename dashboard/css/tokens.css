@@ -201,6 +201,9 @@
   --mod-line: rgba(255, 255, 255, .7);   /* glass edge */
   --mod-hi: rgba(255, 255, 255, .95);    /* 1px top highlight */
   --card-shadow: 0 8px 22px rgba(70, 45, 25, .11);
+  --lift: 0 2px 8px rgba(70, 45, 25, .12);           /* raised pills: active rail item, selected category, icon discs */
+  --solid-shadow: 0 8px 22px rgba(70, 45, 25, .16);  /* the solid Next up card */
+  --copper-solid: #C2410C;                           /* fill under white text, same in every theme (5.2:1) */
   --row: rgba(255, 255, 255, .62);       /* frosted inner rows (hour strip) */
   --row-line: rgba(255, 255, 255, .8);
   --ground: radial-gradient(820px 540px at 6% 0%, rgba(255, 255, 255, .95), rgba(255, 255, 255, 0)),
@@ -275,6 +278,8 @@
   --mod-line: rgba(255, 220, 190, .2);
   --mod-hi: rgba(255, 230, 210, .24);
   --card-shadow: 0 8px 22px rgba(0, 0, 0, .3);
+  --lift: 0 2px 8px rgba(0, 0, 0, .3);
+  --solid-shadow: 0 8px 22px rgba(0, 0, 0, .35);
   --row: rgba(255, 205, 165, .1);
   --row-line: rgba(255, 220, 190, .15);
   --ground: radial-gradient(820px 540px at 6% 0%, rgba(255, 190, 140, .16), rgba(255, 190, 140, 0)),
@@ -308,6 +313,8 @@
   --mod-line: rgba(255, 255, 255, .14);
   --mod-hi: rgba(255, 255, 255, .18);
   --card-shadow: 0 8px 22px rgba(0, 0, 0, .35);
+  --lift: 0 2px 8px rgba(0, 0, 0, .35);
+  --solid-shadow: 0 8px 22px rgba(0, 0, 0, .4);
   --row: rgba(255, 255, 255, .06);
   --row-line: rgba(255, 255, 255, .12);
   --ground: radial-gradient(900px 500px at 6% 0%, rgba(2, 151, 222, .3), rgba(2, 151, 222, 0)),
@@ -323,8 +330,8 @@
   --accent-rgb: 252 115 77;
   --on-accent: #02070A;
   --glow: #0297DE;
-  --alert: #FC734D;
-  --alert-rgb: 252 115 77;
+  --alert: #FF5470;              /* rose red: distinct from Midnight's orange accent */
+  --alert-rgb: 255 84 112;
   --amber-ink: #FF9500;
   --on-amber: #02070A;
   --warm: #FC734D;

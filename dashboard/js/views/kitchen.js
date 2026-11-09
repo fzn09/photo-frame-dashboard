@@ -80,8 +80,9 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
   }
   document.getElementById('railTimer').addEventListener('click', function () { App.go('kitchen'); });
   function paintTimers() {
-    var box = V.el && V.el.querySelector('.k-timers');
-    if (box) box.innerHTML = T.length ? T.map(timerHTML).join('') : '<div class="k-none serif"><i>No timers running.</i><br>Tap a time above to start one.</div>';
+    var box = V.el && V.el.querySelector('.k-timers'), k = V.el && V.el.querySelector('.kitchen');
+    if (k) k.classList.toggle('is-idle', !T.length); // no timer: the presets grow into the space
+    if (box) box.innerHTML = T.length ? T.map(timerHTML).join('') : '<div class="k-none serif"><i>No timers running.</i> Tap a time to start one.</div>';
     paintRail();
   }
   App.timers = function () { return T.filter(function (t) { return !t.done; }).map(function (t) { return { end: t.end }; }); };
@@ -145,8 +146,13 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
       return;
     }
     if ((t = e.target.closest('[data-tx]'))) {
+      var gone = T.filter(function (x) { return x.id === +t.dataset.tx; })[0];
       T = T.filter(function (x) { return x.id !== +t.dataset.tx; });
       paintTimers();
+      // a running timer cancelled by a wet tap comes back with Undo (it kept counting meanwhile)
+      if (gone && !gone.done) App.toast('<b>' + label(gone) + '</b> timer cancelled', { icon: 'clock', undo: function () {
+        if (T.length < MAX && T.indexOf(gone) < 0) { T.push(gone); T.sort(function (a, b) { return a.id - b.id; }); paintTimers(); }
+      } });
     }
   }
 

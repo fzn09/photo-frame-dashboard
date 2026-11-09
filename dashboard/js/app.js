@@ -246,14 +246,19 @@
 
   // ------------------------------------------------------------ toasts (single, with undo or one action)
   // opts.undo = fn (an Undo button), or opts.action = { label: html, fn }
-  var toastTimer;
+  var toastTimer, undos = []; // undos of the toast on screen, oldest first
   App.toast = function (html, opts) {
     opts = opts || {};
     var box = $('#toasts');
+    if (!(opts.undo && undos.length && box.firstChild)) undos = []; // a second undoable action merges into the toast
     box.innerHTML = '';
     clearTimeout(toastTimer);
-    var ms = opts.ms || 5000;
-    var act = opts.action || (opts.undo && { label: App.icon('undo', 22) + 'Undo', fn: opts.undo });
+    if (opts.undo) undos.push(opts.undo);
+    var n = undos.length, all = undos.slice();
+    var ms = opts.undo ? Math.max(opts.ms || 0, 8000) : opts.ms || 5000;
+    var undo = n > 1 ? function () { all.slice().reverse().forEach(function (f) { f(); }); } : opts.undo;
+    if (n > 1) html += ' <span class="toast-more">+' + (n - 1) + ' earlier</span>';
+    var act = opts.action || (opts.undo && { label: App.icon('undo', 22) + (n > 1 ? 'Undo all' : 'Undo'), fn: undo });
     var t = document.createElement('div');
     t.className = 'toast' + (opts.tone ? ' toast--' + opts.tone : '') + (act ? '' : ' toast--plain');
     t.style.setProperty('--ms', ms + 'ms');
@@ -261,7 +266,7 @@
       (act ? '<button class="toast-undo">' + act.label + '</button>' : '');
     box.appendChild(t);
     t.classList.add('is-in');
-    function kill() { t.remove(); }
+    function kill() { t.remove(); undos = []; }
     toastTimer = setTimeout(kill, ms);
     if (act) t.querySelector('.toast-undo').addEventListener('click', function () { clearTimeout(toastTimer); act.fn(); kill(); });
   };

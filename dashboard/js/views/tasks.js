@@ -3,11 +3,18 @@
 (function () {
   'use strict';
   var D = window.DATA;
-  var V = { el: null, sheet: null, who: 'any', pending: {}, sync: {} };
+  var V = { el: null, sheet: null, who: 'any', pending: {}, sync: {}, hold: {}, order: null };
   var cid = 0;
 
   function open() { return D.chores.filter(function (c) { return !c.done; }); }
-  function sorted() { return D.chores.slice().sort(App.choreSort); } // same order and states as the Home card
+  // Same order and states as the Home card. While a finished chore's Undo toast is up, rows keep their places, so a
+  // second tap lands where the finger aimed instead of on the row that slid up.
+  function sorted() {
+    var list = D.chores.slice().sort(App.choreSort);
+    if (!V.order || !Object.keys(V.hold).length) return list;
+    var at = function (c) { var i = V.order.indexOf(c.id); return i < 0 ? 1e4 : i; };
+    return list.sort(function (a, b) { return at(a) - at(b); });
+  }
   function onList(title, who) {
     return open().filter(function (c) { return c.who === who && c.title.toLowerCase() === title.toLowerCase(); })[0];
   }
@@ -78,6 +85,12 @@
   function unschedule(c) { clearTimeout(V.sync[c.id]); delete V.sync[c.id]; }
 
   function complete(c, btn) {
+    if (!Object.keys(V.hold).length) V.order = sorted().map(function (x) { return x.id; });
+    clearTimeout(V.hold[c.id]);
+    V.hold[c.id] = setTimeout(function () {
+      delete V.hold[c.id];
+      if (!Object.keys(V.hold).length) { V.order = null; if (V.el && V.el.firstChild) paintList(); }
+    }, 8000);
     V.pending[c.id] = true;
     btn.classList.add('is-checking');
     setTimeout(function () {

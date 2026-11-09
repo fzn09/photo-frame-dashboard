@@ -167,6 +167,13 @@
         '<div class="wk-head"><b>' + App.fmt.dayShort(d) + '</b><span class="num">' + d.getDate() + '</span></div>' +
         meals.map(function (r) { return '<button class="wk-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<span>' + App.esc(r.name) + '</span></button>'; }).join('') +
         ad.map(function (e) { return '<button class="wk-ad" data-ev="' + e.id + '" style="' + App.pstyle(App.evColor(e)) + '">' + App.esc(e.title) + '</button>'; }).join('') +
+        // today: what is over folds into one "N earlier" row, so overflow drops the past and keeps what is to come
+        (function () {
+          var past = today ? list.filter(function (e) { return e.end <= now; }) : [];
+          if (!past.length || list.length <= max) return '';
+          list = list.filter(function (e) { return e.end > now; }); max -= 1; more = list.length - max;
+          return '<button class="wk-more wk-earlier" data-day="' + (+d) + '">' + past.length + ' earlier</button>';
+        })() +
         list.slice(0, max).map(function (e) {
           return '<button class="wk-ev' + (e.end <= now ? ' is-past' : '') + '" data-ev="' + e.id + '" style="' + App.pstyle(App.evColor(e)) + '">' +
             '<span class="wk-t">' + App.fmt.time(e.start, false) + '</span><span class="wk-n">' + App.esc(e.title) + '</span></button>';
@@ -197,7 +204,7 @@
   // ------------------------------------------------------------ header
   function title() {
     var d = V.date, now = App.now();
-    if (V.mode === 'day') return { k: App.fmt.month(d) + ' ' + d.getFullYear() + (App.sameDay(d, now) ? ' · Today' : ' · ' + App.fmt.rel(d)), t: App.fmt.day(d) + ' <i>' + d.getDate() + '</i>' };
+    if (V.mode === 'day') return { k: App.fmt.month(d) + ' ' + d.getFullYear() + (App.sameDay(d, now) ? '' : ' · ' + App.fmt.rel(d)), t: App.fmt.day(d) + ' <i>' + d.getDate() + '</i>' };
     if (V.mode === '3day') { var e = App.addDays(d, 2); return { k: App.fmt.month(d) + ' ' + d.getFullYear(), t: App.fmt.dayShort(d) + ' ' + d.getDate() + ' <i>–</i> ' + App.fmt.dayShort(e) + ' ' + e.getDate() }; }
     if (V.mode === 'week') { var w = App.addDays(d, 6); return { k: 'Next 7 days', t: App.fmt.monthShort(d) + ' ' + d.getDate() + ' <i>–</i> ' + App.fmt.monthShort(w) + ' ' + w.getDate() }; }
     return { k: d.getFullYear(), t: App.fmt.month(d) };
