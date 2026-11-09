@@ -316,6 +316,11 @@ Quiet, pill-shaped, sized for a thumb.
 - **Style:** a centred 620 px panel (1020 px for a recipe) on Raise White, 24 px corners, sheet shadow over a 60% scrim, a 64 px round close button top-right.
 - **Behaviour:** `role="dialog"`, named by its heading; tapping the scrim closes it. Event sheets lead with a person-coloured band holding a 68 px serif title.
 
+### Ambient and Night (idle overlays)
+- **Ambient** (after 10 min idle by day): the 230 px serif clock with a 28 px date, current weather (the rain line copper when rain is coming), and up to three ranked chips from `glance.js`: a running timer, the next event (as "Leave in N min" when it has a travel time, with the person's name), a departure within the hour near leave time (with its BVG delay), "Tonight: …" all-day items from 17:00, and "Today: …" for the planned meal between 10:00 and 19:00 unless the family is out that evening (the plan has no meal time). The first chip is the hero line at 34 px; the rest are 26 px. Copper (`--copper-solid`) means soon (leave within 15 min, a timer running); alert means the moment (leave now, a timer done or under a minute). The timer chip opens Kitchen. Photos dim 25 % in the evening.
+- **Travel time:** the Worker gives every timed calendar event that has a location `TRAVEL_DEFAULT_MIN` minutes (`wrangler.jsonc`, 20; 0 turns it off). That drives Leave-by on Home and Ambient.
+- **Night:** red serif on black (`--night-ink`, 3.7:1), every line 26 px or larger so the large-text contrast rule holds. A timer finishing at night keeps the room dark: Night shows "Timer done · tap to clear" in the alert tone, the beeps sound, and a tap opens Kitchen.
+
 ### Photo surfaces (signature)
 Photos, Ambient and the Home tile are full-bleed images under a bottom black gradient, with white serif captions and Copper on Photo for the kicker. Images are requested at the width they are shown (640 px for the tile, 1280 px full screen) as JPEG, and the tile only cycles while Home is visible in day mode.
 

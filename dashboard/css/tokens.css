@@ -234,6 +234,7 @@
   --warm: #C2410C;
   --warm-rgb: 194 65 12;
   --night: #D8321F;
+  --night-ink: #C22C1C;          /* Night overlay text on black: 3.7:1, used only at 26 px and up */
 
   /* person colour defaults (overridden inline per element) */
   --c: var(--ink);

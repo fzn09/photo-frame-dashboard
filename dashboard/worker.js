@@ -155,7 +155,14 @@ async function getGoogleToken(env) {
   return access_token;
 }
 
-async function fetchCalEvents(calId, personId, token, timeMin, timeMax) {
+// Travel time in minutes for an event: TRAVEL_DEFAULT_MIN for a timed event with a location, else null. The page turns it
+// into "Leave in N min" (Home's Next up, Ambient) and shows departures near leave time. Exported for test/travel.test.mjs.
+export function travelFor(ev, def) {
+  var m = parseInt(def, 10);
+  return ev && !ev.start?.date && ev.location && m > 0 ? m : null;
+}
+
+async function fetchCalEvents(calId, personId, token, timeMin, timeMax, travelDef) {
   const q = new URLSearchParams({ timeMin, timeMax, singleEvents: 'true', orderBy: 'startTime', maxResults: '250' });
   const res = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?${q}`,
@@ -174,7 +181,8 @@ async function fetchCalEvents(calId, personId, token, timeMin, timeMax) {
       allDay,
       people:  [personId],
       loc:     ev.location  || null,
-      notes:   ev.description || null
+      notes:   ev.description || null,
+      travel:  travelFor(ev, travelDef)
     };
   });
 }
@@ -190,7 +198,7 @@ async function handleCalendar(env) {
   const calMap = { alex: env.CAL_ALEX, jordan: env.CAL_JORDAN }; // Fauzan, Amanda
   const fetches = Object.entries(calMap)
     .filter(([, id]) => id)
-    .map(([person, id]) => fetchCalEvents(id, person, token, timeMin, timeMax));
+    .map(([person, id]) => fetchCalEvents(id, person, token, timeMin, timeMax, env.TRAVEL_DEFAULT_MIN));
   const all = (await Promise.all(fetches)).flat();
 
   // Merge events that appear in multiple calendars (shared invites) by iCalUID

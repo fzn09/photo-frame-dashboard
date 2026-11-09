@@ -86,7 +86,9 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
     paintRail();
   }
   App.timers = function () { return T.filter(function (t) { return !t.done; }).map(function (t) { return { end: t.end }; }); };
+  App.timerDone = function () { return T.some(function (t) { return t.done; }); }; // Night shows "Timer done" without lighting the room
   function ring(t) {
+    if (App.mode === 'night') { App.resetIdle(); App.emit('minute', App.now()); return; } // stays dark; Night repaints with "Done"
     if (App.mode !== 'day') App.setMode('day');
     App.resetIdle();
     App.closeSheet();
