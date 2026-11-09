@@ -122,6 +122,24 @@ The dashboard also uses the sunset from this feed to switch between the day and 
    "BVG_WALK_MIN": "10"            // departures leaving sooner than this are hidden
    ```
 
+**Live leave-by times (optional).** By default every timed event with a location gets `TRAVEL_DEFAULT_MIN` of
+travel. Give the Worker your home's coordinates and events in the next 12 hours get a real door-to-door time from
+the BVG journey planner instead, with live delays, and the leave-by chip shows the line to take:
+
+1. Right-click your house in Google Maps and click the coordinates to copy them (e.g. `52.5487, 13.4134`).
+2. In PowerShell, from `dashboard/`, store them as secrets (the repo is public, so not in `wrangler.jsonc`):
+
+   ```powershell
+   npx wrangler secret put HOME_LAT    # paste 52.5487
+   npx wrangler secret put HOME_LON    # paste 13.4134
+   ```
+
+   For `npm run dev:live`, add `HOME_LAT=…` and `HOME_LON=…` to `.dev.vars` as well.
+3. Optional: `"ARRIVE_EARLY_MIN"` in `wrangler.jsonc` (default `5`) is how early to plan to arrive.
+
+Write calendar locations as addresses ("Torstraße 1, 10119 Berlin") or well-known place names. A location BVG can't
+find keeps the default; links and "Zoom"/"Meet"/"Teams" get no travel at all.
+
 ### Google Calendar
 
 **Needs:** a Google service account and one calendar ID per person.
@@ -393,6 +411,8 @@ weather.
 | `BVG_STOP_ID` | For departures | BVG stop ID |
 | `BVG_STOP_NAME` | No | Stop name shown on screen |
 | `BVG_WALK_MIN` | No | Walk time to the stop; sooner departures are hidden |
+| `TRAVEL_DEFAULT_MIN` | No | Travel assumed for an event with a location, default `20` |
+| `ARRIVE_EARLY_MIN` | No | Live leave-by: minutes early to arrive, default `5` (needs the `HOME_LAT`/`HOME_LON` secrets) |
 | `VIEWS` | No | Views on the frame ([Step 9](#step-9-choose-which-views-to-show)) |
 | `PHOTO_QUERY` | No | Unsplash search term |
 | `BRING_LIST` | No | Shopping list name, default `home` |

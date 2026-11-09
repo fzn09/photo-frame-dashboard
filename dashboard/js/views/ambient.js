@@ -19,7 +19,9 @@ import { chips, mmss } from '../../glance.js';
       title: next ? next.title : '', time: next ? App.fmt.time(next.start) : '',
       who: next ? (App.isFamily(next) ? 'Everyone' : next.people.map(function (id) { return App.person(id).name; }).join(' + ')) : '',
       leaveMin: next && next.travel ? (App.leaveBy(next) - n) / 60000 : null,
-      dep: d && d[0], meal: rec[0] ? rec[0].name : '', mealMore: Math.max(0, rec.length - 1), familyEvening: familyEvening,
+      // The live route's first ride beats the home stop's next departure (it may be another stop and line), until it has
+      // left: the route is up to 5 min old, so a late start falls back to the live departures feed
+      dep: next && next.via && new Date(next.via.when) > n ? Object.assign({}, next.via, { when: new Date(next.via.when) }) : d && d[0], meal: rec[0] ? rec[0].name : '', mealMore: Math.max(0, rec.length - 1), familyEvening: familyEvening,
       tonight: App.allDayOn(n).map(function (e) { return e.title; })
     });
   }

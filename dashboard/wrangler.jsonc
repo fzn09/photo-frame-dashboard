@@ -26,6 +26,9 @@
 		"VIEWS": "home,calendar,tasks,shopping,fridge,meals,kitchen,photos",
 		// Minutes of travel assumed for a timed calendar event that has a location (0 or empty = off): drives "Leave in N min"
 		"TRAVEL_DEFAULT_MIN": "20",
+		// With the HOME_LAT/HOME_LON secrets set, events in the next 12 h get a live BVG door-to-door time instead,
+		// planned to arrive this many minutes early
+		"ARRIVE_EARLY_MIN": "5",
 		// Unsplash search term for the photo stream; remove for the editorial feed. Secret: UNSPLASH_KEY
 		"PHOTO_QUERY": "aesthetic wallpapers",
 		// Cookidoo country domain and language (week plan, cookidoo.js)
@@ -51,6 +54,8 @@
 	// Required: DASH_TOKEN (same value as VITE_DASH_TOKEN in dashboard/.env at build time). Gates the whole
 	//   site and the writes; open /?key=<DASH_TOKEN> once on each device to set the access cookie.
 	// Required for the Fridge feed: INGEST_KEY (bearer the REWE job sends to POST /api/ingest, PLAN-rewe-fridge.md)
+	// Optional: HOME_LAT, HOME_LON (the frame's address, decimal degrees): live leave-by times. Secrets, not vars,
+	//   because this repo is public.
 	// Optional: BRING_LIST var (default "home")
 	// Optional: TICKTICK_TOKEN (Chores view, see SETUP.md), TICKTICK_PROJECT var (default "Chores")
 }

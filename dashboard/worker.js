@@ -157,9 +157,47 @@ async function getGoogleToken(env) {
 
 // Travel time in minutes for an event: TRAVEL_DEFAULT_MIN for a timed event with a location, else null. The page turns it
 // into "Leave in N min" (Home's Next up, Ambient) and shows departures near leave time. Exported for test/travel.test.mjs.
+const ONLINE = /https?:|zoom|meet\.google|teams\.microsoft|webex/i; // a call, not a place: no travel
 export function travelFor(ev, def) {
   var m = parseInt(def, 10);
-  return ev && !ev.start?.date && ev.location && m > 0 ? m : null;
+  return ev && !ev.start?.date && ev.location && !ONLINE.test(ev.location) && m > 0 ? m : null;
+}
+
+// Live door-to-door time (BVG journey planner, from HOME_LAT/HOME_LON) replaces the default for events in the next 12 h.
+// Of the journeys that arrive by start − ARRIVE_EARLY_MIN, the latest to leave wins: travel = start − leaving home.
+// via = the first ride, for the leave-by chip. Exported for test/travel.test.mjs.
+export function pickJourney(journeys, start, deadline) {
+  const t = (leg, k) => +new Date(leg[k] || leg['planned' + k[0].toUpperCase() + k.slice(1)]);
+  const ok = (journeys || []).filter(j => j.legs?.length);
+  const onTime = ok.filter(j => t(j.legs[j.legs.length - 1], 'arrival') <= +new Date(deadline)); // live delays can make one late
+  const best = (onTime.length ? onTime : ok).reduce((a, j) => !a || t(j.legs[0], 'departure') > t(a.legs[0], 'departure') ? j : a, null);
+  if (!best) return null;
+  const ride = best.legs.find(l => !l.walking);
+  return {
+    travel: Math.ceil((+new Date(start) - t(best.legs[0], 'departure')) / 60000),
+    via: ride ? { line: ride.line?.name || '?', direction: ride.direction || '', stop: ride.origin?.name || '',
+      when: ride.departure || ride.plannedDeparture, delay: Math.round((ride.departureDelay || 0) / 60) } : null
+  };
+}
+
+// ponytail: cf.cacheTtl is a no-op on *.workers.dev, so every calendar poll asks BVG again (a few calls per 5 min,
+// well under its 100/min). Move the geocode into FRIDGE_KV if calendars grow many located events.
+async function bvg(path, ttl) {
+  const r = await fetch('https://v6.bvg.transport.rest' + path, { cf: { cacheTtl: ttl, cacheEverything: true }, signal: AbortSignal.timeout(5000) });
+  if (!r.ok) throw new Error('BVG ' + r.status);
+  return r.json();
+}
+
+export async function routeFor(e, env) {
+  const [to] = await bvg('/locations?' + new URLSearchParams({ query: e.loc, results: '1', addresses: 'true', poi: 'true' }), 30 * 86400);
+  if (!to) return null; // unknown place: keep the default
+  const p = to.location || to; // stops nest their coordinates
+  const deadline = new Date(+new Date(e.start) - (+env.ARRIVE_EARLY_MIN || 0) * 60000).toISOString();
+  const q = new URLSearchParams({ 'from.latitude': env.HOME_LAT, 'from.longitude': env.HOME_LON, 'from.address': 'Home',
+    'to.latitude': p.latitude, 'to.longitude': p.longitude, 'to.address': to.address || to.name || e.loc,
+    arrival: deadline, results: '3', stopovers: 'false', remarks: 'false' });
+  const soon = +new Date(e.start) - Date.now() < 3600e3;
+  return pickJourney((await bvg('/journeys?' + q, soon ? 120 : 600)).journeys, e.start, deadline);
 }
 
 async function fetchCalEvents(calId, personId, token, timeMin, timeMax, travelDef) {
@@ -211,7 +249,17 @@ async function handleCalendar(env) {
     }
   });
 
-  return new Response(JSON.stringify(Object.values(seen)), {
+  const events = Object.values(seen);
+  if (env.HOME_LAT && env.HOME_LON) {
+    const now = Date.now();
+    await Promise.all(events
+      .filter(e => !e.allDay && e.loc && !ONLINE.test(e.loc) && +new Date(e.start) > now && +new Date(e.start) - now < 12 * 3600e3)
+      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .slice(0, 8) // 2 BVG calls each; the free plan allows 50 subrequests per request, Google's included
+      .map(e => routeFor(e, env).then(r => r && Object.assign(e, r)).catch(err => console.warn('route', err.message)))); // BVG down: default stays
+  }
+
+  return new Response(JSON.stringify(events), {
     headers: { ...JSON_CORS, 'Cache-Control': 'max-age=300, s-maxage=300' }
   });
 }
