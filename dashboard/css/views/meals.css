@@ -46,7 +46,7 @@ button.mc-card { display: flex; }
 .mc-card--plain .mc-in { flex: 1; }
 .mc-card--plain .mc-t { font-size: var(--fs-xl); }
 .mc-in .r-ing .mc-note { display: block; border-bottom: 0; color: var(--mute); }
-.mc-more { margin: auto -18px -12px; padding: 0 18px; min-height: var(--tap); display: flex; align-items: center; border-top: 1px solid var(--line); font-size: var(--fs-body); font-weight: 700; color: var(--ink); } /* a real bar: the whole card taps, now it says so */
+.mc-more { margin: auto 0 6px; align-self: flex-start; padding: 0 28px; min-height: var(--tap); display: inline-flex; align-items: center; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: var(--fs-body); font-weight: 700; } /* a real button: the whole card taps, now it looks like it */
 .mc-card--plain .r-ing li { padding: 12px 0; }
 
 /* recipe sheet */

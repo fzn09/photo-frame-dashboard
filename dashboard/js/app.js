@@ -170,6 +170,28 @@
     return out;
   };
 
+  // ------------------------------------------------------------ chores: one time state for Home and Chores
+  // 'late': overdue from an earlier day, or today's time has passed. 'soon': due within 15 minutes. 'timed': later today.
+  // Late is the alert tone with the word "Late"; soon is copper; timed is plain (The Copper Means Now Rule).
+  App.choreState = function (c) {
+    if (c.done) return '';
+    if (c.overdue) return 'late';
+    if (!c.time) return '';
+    var p = String(c.time).split(':'), n = App.now(), t = new Date(n);
+    t.setHours(+p[0], +p[1], 0, 0);
+    return t <= n ? 'late' : t - n <= 15 * 60000 ? 'soon' : 'timed';
+  };
+  var CHORE_RANK = { late: 0, soon: 1, timed: 2, '': 3 };
+  // Open chores first; within them late, then due soon, then timed, then untimed
+  App.choreSort = function (a, b) {
+    return (a.done - b.done) || (CHORE_RANK[App.choreState(a)] - CHORE_RANK[App.choreState(b)]);
+  };
+  // Short label: "Late · 18:00", "Late" (an earlier day), "18:00"
+  App.choreWhen = function (c) {
+    var s = App.choreState(c);
+    return s === 'late' ? (c.overdue || !c.time ? 'Late' : 'Late · ' + c.time) : c.time || '';
+  };
+
   // ------------------------------------------------------------ router
   App.register = function (name, view) { App.views[name] = view; };
   // Views are built once and kept laid out (hidden with content-visibility), so switching tabs
@@ -207,6 +229,7 @@
       if (b.dataset.go === name) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
     App.current = name;
+    $('#stage').dataset.view = name; // css: the rail clock hides on Home, where the 168 px clock is
     var view = App.views[name];
     if (!view._built || view._dirty || opts.rerender || (view.minutely && view._min !== minuteKey())) build(name, opts);
     else if (view.resume) view.resume($('#view-' + name));

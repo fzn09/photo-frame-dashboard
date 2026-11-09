@@ -1,12 +1,16 @@
-/* Kitchen: calculator (left) + conversions and timers (right) */
-.kitchen { height: 100%; display: grid; grid-template-columns: 500px 1fr; gap: 28px; }
+/* Kitchen: timers (left, read from across the room) + calculator with scaling and conversions into metric (right) */
+.kitchen { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 440px; grid-template-rows: auto minmax(0, 1fr); gap: 12px 20px; }
+.k-head { grid-column: 1 / -1; display: flex; align-items: center; }
+.k-head h1 { font-size: 52px; line-height: .95; }
 
-.k-calc { min-height: 0; display: flex; flex-direction: column; gap: 14px; }
-.k-screen { background: var(--card); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); border-radius: var(--r); padding: 14px 26px 10px; text-align: right; }
-.k-line { min-height: 26px; font-size: var(--fs-body); font-variant-numeric: tabular-nums; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.k-display { font-family: var(--serif); font-size: 76px; line-height: 1.05; font-weight: 400; white-space: nowrap; overflow: hidden; }
-.k-keys { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 10px; }
-.k-key { display: grid; place-items: center; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); font-size: 36px; font-weight: 400; }
+.k-calc { min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.k-screen { background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line), inset 0 1px 0 var(--mod-hi), var(--card-shadow); color: var(--ink); border-radius: var(--r-card); padding: 10px 22px 6px; text-align: right; }
+.k-line { min-height: 24px; font-size: var(--fs-min); font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-display { font-family: var(--serif); font-size: 64px; line-height: 1.05; font-weight: 400; white-space: nowrap; overflow: hidden; }
+.k-conv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.k-conv .k-chip { min-height: 52px; font-size: var(--fs-min); }
+.k-keys { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 8px; }
+.k-key { display: grid; place-items: center; border-radius: 14px; background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line); font-size: 32px; font-weight: 400; }
 .k-key:active { transform: scale(.95); background: var(--line); }
 .k-key--fn { background: rgb(var(--ov) / .07); }
 .k-key--fn.is-op { background: var(--accent); color: var(--on-accent); box-shadow: none; }
@@ -14,18 +18,19 @@
 .k-key--wide { grid-column: span 2; }
 
 .k-side { min-height: 0; display: flex; flex-direction: column; gap: 12px; }
-.k-conv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.k-presets { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-.k-chip { min-height: 60px; padding: 0 8px; border-radius: 14px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--fs-body); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.k-presets { display: grid; grid-template-columns: repeat(5, 1fr) 1.6fr; gap: 8px; }
+.k-chip { min-height: var(--tap); padding: 0 8px; border-radius: 14px; background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line); font-size: var(--fs-body); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
 .k-chip:active { transform: scale(.95); background: var(--line); }
 .k-chip--screen { background: rgb(var(--ov) / .07); font-size: var(--fs-min); }
 
-.k-timers { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.k-timer { min-height: 84px; padding: 0 10px 0 22px; border-radius: var(--r); background: var(--card); box-shadow: inset 0 0 0 1px var(--line); display: flex; align-items: center; gap: 16px; text-align: left; }
-.k-timer .label { flex: 1; }
-.k-t-time { min-width: 140px; font-family: var(--serif); font-size: 52px; font-weight: 400; }
+/* a running timer is the one thing read from the stove: 96 px serif countdown on a glass card */
+.k-timers { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.k-timer { flex: 1 1 0; max-height: 200px; min-height: 120px; padding: 0 14px 0 28px; border-radius: var(--r-card); background: var(--mod); box-shadow: inset 0 0 0 1px var(--mod-line), inset 0 1px 0 var(--mod-hi), var(--card-shadow); display: flex; align-items: center; gap: 20px; text-align: left; }
+.k-timer .label { flex: 1; min-width: 0; }
+.k-t-time { min-width: 220px; font-family: var(--serif); font-size: 96px; line-height: 1; font-weight: 400; font-variant-numeric: tabular-nums; }
 .k-t-x { width: var(--tap); height: var(--tap); border-radius: 50%; display: grid; place-items: center; }
 .k-t-x:active { background: var(--line); }
-.k-timer.is-done { background: var(--accent); color: var(--on-accent); }
+.k-timer.is-done { background: var(--accent); color: var(--on-accent); box-shadow: none; }
 .k-timer.is-done .label { color: inherit; }
-.k-none { padding: 24px 4px; font-size: var(--fs-body); color: var(--mute); }
+.k-none { flex: 1; display: grid; place-content: center; text-align: center; font-size: var(--fs-l); line-height: 1.2; color: var(--ink-2); border-radius: var(--r-card); box-shadow: inset 0 0 0 1px var(--line); }
+.k-none i { color: var(--ink); }

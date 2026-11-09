@@ -13,10 +13,15 @@
   function sync(op, g) { if (App.shopSync) App.shopSync(op, g); }
 
   App.categorize = function (name) { return categorize(name); };
+  // German compounds carry the noun at the end ("Babyspinat", "Basmatireis"), so the longest catalog name inside the item
+  // wins: "Basmatireis" is Pantry via "Reis", not Frozen via "Eis". Names under 3 letters never match inside a word.
   function categorize(name) {
     var n = name.toLowerCase();
+    // inside the item ("babyspinat" holds "spinat"), or the item is a whole word of the name ("milk" in "Oat milk")
+    var part = D.catalog.filter(function (c) { var a = c[0].toLowerCase(); return a.length > 2 && (n.indexOf(a) > -1 || a.split(/[\s-]+/).indexOf(n) > -1); })
+      .sort(function (x, y) { return y[0].length - x[0].length; });
     var hit = D.catalog.filter(function (c) { return c[0].toLowerCase() === n; })[0] ||
-      D.catalog.filter(function (c) { var a = c[0].toLowerCase(); return a.indexOf(n) > -1 || n.indexOf(a) > -1; })[0] ||
+      part[0] ||
       D.catalog.filter(function (c) { return n.split(/\s+/).some(function (w) { return w.length > 3 && c[0].toLowerCase().indexOf(w) > -1; }); })[0];
     return hit ? hit[1] : 'Other';
   }

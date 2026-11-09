@@ -124,7 +124,7 @@ window.DATA = (function () {
 
   // ---------------------------------------------------------------- shopping
   var catOrder = {
-    all: ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry', 'Frozen', 'Snacks', 'Household']
+    all: ['Produce', 'Bakery', 'Meat & Fish', 'Dairy & Eggs', 'Pantry', 'Frozen', 'Snacks', 'Drinks', 'Household']
   };
   var gid = 0;
   // No mock list: the Shopping view shows only what Bring! returns (empty until the first /api/shopping answer).
@@ -134,7 +134,7 @@ window.DATA = (function () {
     ['Broccoli', 'Produce'], ['Carrots', 'Produce'], ['Cucumber', 'Produce'], ['Garlic', 'Produce'], ['Grapes', 'Produce'],
     ['Lemons', 'Produce'], ['Limes', 'Produce'], ['Onions', 'Produce'], ['Potatoes', 'Produce'], ['Strawberries', 'Produce'],
     ['Tomatoes', 'Produce'], ['Bread', 'Bakery'], ['Bagels', 'Bakery'], ['Croissants', 'Bakery'], ['Sourdough loaf', 'Bakery'],
-    ['Tortillas', 'Bakery'], ['Hamburger buns', 'Bakery'], ['Bacon', 'Meat & Fish'], ['Chicken breasts', 'Meat & Fish'],
+    ['Tortillas', 'Bakery'], ['Hamburger buns', 'Bakery'], ['Bacon', 'Meat & Fish'], ['Ham', 'Meat & Fish'], ['Chicken breasts', 'Meat & Fish'],
     ['Chicken thighs', 'Meat & Fish'], ['Ground beef', 'Meat & Fish'], ['Salmon fillets', 'Meat & Fish'], ['Shrimp', 'Meat & Fish'],
     ['Butter', 'Dairy & Eggs'], ['Cheddar', 'Dairy & Eggs'], ['Cream cheese', 'Dairy & Eggs'], ['Eggs', 'Dairy & Eggs'],
     ['Greek yogurt', 'Dairy & Eggs'], ['Milk 2%', 'Dairy & Eggs'], ['Oat milk', 'Dairy & Eggs'], ['Parmesan', 'Dairy & Eggs'],
@@ -144,7 +144,18 @@ window.DATA = (function () {
     ['Frozen berries', 'Frozen'], ['Ice cream', 'Frozen'], ['Pizza', 'Frozen'], ['Waffles', 'Frozen'], ['Chips', 'Snacks'],
     ['Crackers', 'Snacks'], ['Dark chocolate', 'Snacks'], ['Goldfish crackers', 'Snacks'], ['Granola bars', 'Snacks'],
     ['Popcorn', 'Snacks'], ['Dish soap', 'Household'], ['Dishwasher pods', 'Household'], ['Garbage bags', 'Household'],
-    ['Laundry detergent', 'Household'], ['Paper towels', 'Household'], ['Toilet paper', 'Household'], ['Toothpaste', 'Household']
+    ['Laundry detergent', 'Household'], ['Paper towels', 'Household'], ['Toilet paper', 'Household'], ['Toothpaste', 'Household'],
+    // Bring! item ids are German catalog keys ("Milch", "Eier"), so the German names categorise too. Suggestions show
+    // them as well, and adding one writes the key Bring! knows (its own icon and section in the phone app).
+    ['Äpfel', 'Produce'], ['Bananen', 'Produce'], ['Birnen', 'Produce'], ['Zitronen', 'Produce'], ['Limetten', 'Produce'], ['Orangen', 'Produce'], ['Trauben', 'Produce'], ['Erdbeeren', 'Produce'], ['Heidelbeeren', 'Produce'], ['Himbeeren', 'Produce'], ['Avocado', 'Produce'], ['Tomaten', 'Produce'], ['Gurke', 'Produce'], ['Paprika', 'Produce'], ['Zwiebeln', 'Produce'], ['Knoblauch', 'Produce'], ['Kartoffeln', 'Produce'], ['Süßkartoffeln', 'Produce'], ['Karotten', 'Produce'], ['Möhren', 'Produce'], ['Brokkoli', 'Produce'], ['Blumenkohl', 'Produce'], ['Zucchini', 'Produce'], ['Aubergine', 'Produce'], ['Spinat', 'Produce'], ['Salat', 'Produce'], ['Rucola', 'Produce'], ['Champignons', 'Produce'], ['Pilze', 'Produce'], ['Ingwer', 'Produce'], ['Lauch', 'Produce'], ['Sellerie', 'Produce'], ['Frühlingszwiebeln', 'Produce'], ['Basilikum', 'Produce'], ['Petersilie', 'Produce'], ['Koriander', 'Produce'], ['Schnittlauch', 'Produce'], ['Kräuter', 'Produce'], ['Obst', 'Produce'], ['Gemüse', 'Produce'],
+    ['Brot', 'Bakery'], ['Brötchen', 'Bakery'], ['Toast', 'Bakery'], ['Toastbrot', 'Bakery'], ['Vollkornbrot', 'Bakery'], ['Croissants', 'Bakery'], ['Baguette', 'Bakery'], ['Brezeln', 'Bakery'], ['Laugenbrezel', 'Bakery'], ['Wraps', 'Bakery'], ['Tortillas', 'Bakery'],
+    ['Hähnchen', 'Meat & Fish'], ['Hähnchenbrust', 'Meat & Fish'], ['Hähnchenschenkel', 'Meat & Fish'], ['Hackfleisch', 'Meat & Fish'], ['Rinderhack', 'Meat & Fish'], ['Schinken', 'Meat & Fish'], ['Salami', 'Meat & Fish'], ['Wurst', 'Meat & Fish'], ['Würstchen', 'Meat & Fish'], ['Speck', 'Meat & Fish'], ['Aufschnitt', 'Meat & Fish'], ['Lachs', 'Meat & Fish'], ['Fisch', 'Meat & Fish'], ['Thunfisch', 'Meat & Fish'], ['Garnelen', 'Meat & Fish'],
+    ['Milch', 'Dairy & Eggs'], ['Hafermilch', 'Dairy & Eggs'], ['Eier', 'Dairy & Eggs'], ['Butter', 'Dairy & Eggs'], ['Käse', 'Dairy & Eggs'], ['Gouda', 'Dairy & Eggs'], ['Emmentaler', 'Dairy & Eggs'], ['Mozzarella', 'Dairy & Eggs'], ['Feta', 'Dairy & Eggs'], ['Parmesan', 'Dairy & Eggs'], ['Joghurt', 'Dairy & Eggs'], ['Quark', 'Dairy & Eggs'], ['Sahne', 'Dairy & Eggs'], ['Schmand', 'Dairy & Eggs'], ['Frischkäse', 'Dairy & Eggs'], ['Skyr', 'Dairy & Eggs'], ['Ricotta', 'Dairy & Eggs'],
+    ['Nudeln', 'Pantry'], ['Spaghetti', 'Pantry'], ['Penne', 'Pantry'], ['Reis', 'Pantry'], ['Basmatireis', 'Pantry'], ['Mehl', 'Pantry'], ['Zucker', 'Pantry'], ['Salz', 'Pantry'], ['Pfeffer', 'Pantry'], ['Öl', 'Pantry'], ['Olivenöl', 'Pantry'], ['Essig', 'Pantry'], ['Kaffee', 'Pantry'], ['Kaffeebohnen', 'Pantry'], ['Tee', 'Pantry'], ['Müsli', 'Pantry'], ['Haferflocken', 'Pantry'], ['Honig', 'Pantry'], ['Marmelade', 'Pantry'], ['Nutella', 'Pantry'], ['Tomatenmark', 'Pantry'], ['Passata', 'Pantry'], ['Dosentomaten', 'Pantry'], ['Linsen', 'Pantry'], ['Kichererbsen', 'Pantry'], ['Bohnen', 'Pantry'], ['Brühe', 'Pantry'], ['Senf', 'Pantry'], ['Ketchup', 'Pantry'], ['Mayonnaise', 'Pantry'], ['Gewürze', 'Pantry'], ['Backpulver', 'Pantry'], ['Hefe', 'Pantry'], ['Tofu', 'Pantry'],
+    ['Tiefkühlpizza', 'Frozen'], ['Pommes', 'Frozen'], ['Fischstäbchen', 'Frozen'], ['Speiseeis', 'Frozen'], ['Eis', 'Frozen'], ['TK-Erbsen', 'Frozen'], ['TK-Gemüse', 'Frozen'], ['TK-Beeren', 'Frozen'],
+    ['Chips', 'Snacks'], ['Schokolade', 'Snacks'], ['Kekse', 'Snacks'], ['Nüsse', 'Snacks'], ['Gummibärchen', 'Snacks'], ['Cracker', 'Snacks'], ['Salzstangen', 'Snacks'],
+    ['Wasser', 'Drinks'], ['Mineralwasser', 'Drinks'], ['Saft', 'Drinks'], ['Apfelsaft', 'Drinks'], ['Orangensaft', 'Drinks'], ['Bier', 'Drinks'], ['Wein', 'Drinks'], ['Cola', 'Drinks'], ['Limonade', 'Drinks'],
+    ['Spülmittel', 'Household'], ['Spülmaschinentabs', 'Household'], ['Müllbeutel', 'Household'], ['Küchenrolle', 'Household'], ['Toilettenpapier', 'Household'], ['Waschmittel', 'Household'], ['Weichspüler', 'Household'], ['Zahnpasta', 'Household'], ['Zahnbürste', 'Household'], ['Shampoo', 'Household'], ['Duschgel', 'Household'], ['Seife', 'Household'], ['Taschentücher', 'Household'], ['Alufolie', 'Household'], ['Frischhaltefolie', 'Household'], ['Backpapier', 'Household'], ['Schwämme', 'Household'], ['Batterien', 'Household']
   ];
   // Fridge: invented REWE-shaped lines, one per purchase, dated from today. /api/fridge replaces them; here for npm run dev.
   var fridge = [
@@ -154,7 +165,8 @@ window.DATA = (function () {
     ['BASILIKUM', 1, 1.79, -9], ['CURLY POMMES', 1, 2.79, -6], ['APFELSAFT', 1, 1.59, -1]
   ].map(function (r, i) { return { id: 'r' + i, name: r[0], qty: r[1], total: r[2], date: mealDate(r[3]) }; });
   var fridgeMeta = { updatedAt: new Date(Date.now() - 2 * 36e5).toISOString(), status: 'ok', message: '' };
-  var usuals = ['Milk 2%', 'Eggs', 'Bananas', 'Bread', 'Apples', 'Coffee beans', 'Greek yogurt', 'Cheddar', 'Butter', 'Baby spinach', 'Chicken thighs', 'Paper towels'];
+  // Usuals in Bring!'s German catalog names, so "On list" matches what the list holds
+  var usuals = ['Milch', 'Eier', 'Bananen', 'Brot', 'Äpfel', 'Kaffee', 'Joghurt', 'Käse', 'Butter', 'Spinat', 'Hähnchen', 'Küchenrolle'];
 
   // ---------------------------------------------------------------- live city cams (Photos view -> Live)
   // type: 'img' = JPEG the view re-fetches every `every` s (safest on the frame's A33);

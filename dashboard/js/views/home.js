@@ -67,7 +67,7 @@ import { fridgeRows } from '../../calc.js';
         return '<button class="h-hero h-hero--empty h-hero--next" style="' + App.pstyle(App.evColor(tomorrow)) + '" data-ev="' + tomorrow.id + '">' + ageTag('calendar') +
           '<div class="h-hero-main"><div class="label">Tomorrow · ' + App.esc(tw) + '</div>' +
           '<div class="h-hero-title serif">' + App.esc(tomorrow.title) + '</div>' +
-          '<div class="h-hero-meta">Nothing else today</div></div>' +
+          (tomorrow.loc ? '<div class="h-hero-meta">' + App.esc(tomorrow.loc) + '</div>' : '') + '</div>' +
           '<div class="h-hero-count num"><em>at</em>' + App.fmt.time(tomorrow.start) + '</div></button>';
       }
       return '<div class="h-hero h-hero--empty" data-go="calendar">' + ageTag('calendar') +
@@ -182,23 +182,14 @@ import { fridgeRows } from '../../calc.js';
     return '<div class="h-stat"><span class="h-word serif">' + word + '</span></div>' + (note ? '<p class="h-note">' + note + '</p>' : '');
   }
 
-  // A timed chore due within 15 minutes (or already past today) turns copper like "Overdue": "Lock up 22:00" at 22:00
-  function dueSoon(hhmm) {
-    var p = String(hhmm).split(':'), n = App.now(), t = new Date(n);
-    t.setHours(+p[0], +p[1], 0, 0);
-    return t - n <= 15 * 60000;
-  }
-
-  // Open chores, overdue first then timed (same order as the Chores view). Dot = whose chore.
+  // Open chores in the Chores view's order (App.choreSort: late, due soon, timed, untimed). Dot = whose chore.
   function chores() {
-    var open = D.chores.filter(function (c) { return !c.done; }).sort(function (a, b) {
-      return ((b.overdue ? 1 : 0) - (a.overdue ? 1 : 0)) || ((a.time ? 0 : 1) - (b.time ? 0 : 1));
-    });
+    var open = D.chores.filter(function (c) { return !c.done; }).sort(App.choreSort);
     return ageTag('chores') + head('tasks', 'Chores') +
       '<div class="h-stat"><span class="num">' + open.length + '</span><small>' + (open.length ? 'to do today' : 'all done today') + '</small></div>' +
       '<ul class="h-recent">' + open.slice(0, 3).map(function (c) {
         return '<li style="' + App.pstyle(c.who) + '"><i class="h-who"></i><span class="h-name">' + App.esc(c.title) + '</span>' +
-          (c.overdue ? '<span class="h-exp is-over">Overdue</span>' : c.time ? '<span class="h-exp' + (dueSoon(c.time) ? ' is-due' : '') + '">' + App.esc(c.time) + '</span>' : '') + '</li>';
+          (App.choreWhen(c) ? '<span class="h-exp' + (App.choreState(c) === 'late' ? ' is-over' : App.choreState(c) === 'soon' ? ' is-due' : '') + '">' + App.esc(App.choreWhen(c)) + '</span>' : '') + '</li>';
       }).join('') + '</ul>';
   }
 
@@ -208,10 +199,11 @@ import { fridgeRows } from '../../calc.js';
     var soon = inside.filter(function (r) { return r.state === 'soon'; });
     var newest = inside.slice().sort(function (a, b) { return a.newest - b.newest; }); // nothing urgent: the latest shop
     var last = newest[0].newest;
-    // "shopped yesterday" rides in the label (like "Transit · Gleisdreieck"), so the stat stays one line
-    return ageTag('fridge') + head('fridge', 'Fridge · shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago')) +
+    // The label stays "Fridge" (a phrase there truncated); the stat line says what to eat, else when we shopped
+    var shopped = 'shopped ' + (last <= 0 ? 'today' : last === 1 ? 'yesterday' : last + ' days ago');
+    return ageTag('fridge') + head('fridge', 'Fridge') +
       '<div class="h-stat"><span class="num">' + inside.length + '</span><small>' + (inside.length === 1 ? 'item' : 'items') +
-      (soon.length ? ' · <b class="h-due">' + soon.length + ' to use soon</b>' : '') + '</small></div>' +
+      (soon.length ? ' · <b class="h-due">' + soon.length + ' to use soon</b>' : ' · ' + shopped) + '</small></div>' +
       '<ul class="h-recent">' + (soon.length ? soon : newest).slice(0, 3).map(function (r) {
         return '<li><i></i><span class="h-name">' + App.esc(r.label) + '</span>' + (r.state !== 'soon' ? '' : '<span class="h-exp' + (r.left <= 1 ? ' is-due' : '') + '">' +
           (r.left === 0 ? 'Today' : r.left === 1 ? 'Tomorrow' : '~' + r.left + ' days') + '</span>') + '</li>';
@@ -347,6 +339,7 @@ import { fridgeRows } from '../../calc.js';
     V.el.querySelector('.h-clock').innerHTML = clock();
     V.el.querySelector('.h-hero-slot').innerHTML = hero();
     V.el.querySelector('.h-transit').innerHTML = transit();
+    if (App.enabled('tasks')) name(V.el.querySelector('.h-chores'), chores()); // "18:00" becomes "Late · 18:00" on time
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
     ages();
   });

@@ -11,6 +11,7 @@
 .c-rows { padding-top: 6px; }
 .c-head .btn { flex: none; }
 .c-rows { columns: 2; column-gap: 32px; }
+.c-rows--one { columns: 1; }
 .c-row {
   display: flex; align-items: center; gap: 14px; break-inside: avoid;
   min-height: 70px; padding: 0 4px; border-bottom: 1px solid var(--line);
@@ -27,6 +28,7 @@
 .c-name b { font-size: var(--fs-m); font-weight: 500; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .c-name small { font-size: var(--fs-min); color: var(--mute); }
 .c-late { color: var(--alert); font-weight: 700; }
+.c-soon { color: var(--accent); font-weight: 700; }
 .c-who { display: flex; align-items: center; gap: 10px; flex: none; font-size: var(--fs-min); color: var(--mute); }
 .c-who .avatar { background: var(--c); color: var(--c-ink); }
 
@@ -43,5 +45,5 @@
 .c-add-h { display: flex; align-items: center; gap: 16px; }
 .c-pick button { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 20px 0 10px; }
 .c-pick .avatar { background: var(--c); color: var(--c-ink); }
-.c-usuals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.c-usuals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .c-usuals .s-tile { min-height: 84px; }

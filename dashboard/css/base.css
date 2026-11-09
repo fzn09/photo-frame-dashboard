@@ -88,6 +88,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .rail-timer:not([hidden]) + .rail-stale { margin-top: 0; }
 .rail-clock { margin-top: auto; padding: 10px 0; text-align: center; line-height: 1; position: relative; overflow: hidden; }
 .rail-clock.is-holding { background: var(--paper-2); }
+.stage[data-view="home"] .rail-clock { opacity: 0; } /* invisible but still holdable for About (visibility: hidden would drop the touch target) */
 .rail-clock b { display: block; font-family: var(--serif); font-size: 30px; font-weight: 400; font-variant-numeric: tabular-nums; }
 
 /* ---------------------------------------------------------------- views */

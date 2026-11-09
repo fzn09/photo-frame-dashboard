@@ -4,11 +4,11 @@
 /* The day swipe needs horizontal moves left to the page: with the default (manipulation) the browser takes a
    sideways drag as a pan and sends pointercancel, so pointerup never came. Also on the scroller, which starts its own touch-action scope. */
 #view-calendar, #view-calendar .grid-scroll { touch-action: pan-y; }
-.cal-head { display: flex; align-items: center; gap: 8px; height: 52px; margin-bottom: 8px; flex: none; }
-.cal-head .icon-btn { width: 52px; height: 52px; }
-.cal-head .btn { min-height: 52px; padding: 0 20px; font-size: var(--fs-min); }
-.cal-head .seg { padding: 3px; }
-.cal-head .seg button { min-height: 46px; padding: 0 18px; font-size: var(--fs-min); }
+.cal-head { display: flex; align-items: center; gap: 8px; height: var(--tap); margin-bottom: 8px; flex: none; }
+.cal-head .icon-btn { width: var(--tap); height: var(--tap); }
+.cal-head .btn { min-height: var(--tap); padding: 0 22px; font-size: var(--fs-body); }
+.cal-head .seg { padding: 4px; }
+.cal-head .seg button { min-height: 56px; padding: 0 20px; font-size: var(--fs-body); }
 .cal-title { display: flex; align-items: baseline; gap: 12px; min-width: 300px; padding: 0 6px; }
 .cal-title .serif { font-size: 44px; line-height: 1; white-space: nowrap; }
 .cal-head [data-today] { margin-right: auto; }
@@ -20,7 +20,7 @@
 .cal-3 .lanes-head { grid-template-columns: 64px repeat(3, 1fr); }
 .lane-head { display: flex; align-items: center; gap: 10px; padding: 0 12px 10px; border-bottom: 5px solid var(--c); margin: 0 4px; }
 .lane-head b { font-family: var(--serif); font-size: var(--fs-m); font-weight: 400; }
-.lane-head small { margin-left: auto; font-size: var(--fs-min); color: var(--mute); font-weight: 700; }
+.lane-head small { margin-left: auto; font-size: var(--fs-min); color: var(--ink-2); font-weight: 700; }
 .day-head { display: flex; align-items: baseline; gap: 10px; padding: 0 14px 6px; margin: 0 4px; border-bottom: 5px solid var(--ink); }
 .day-head .num { font-size: var(--fs-l); line-height: .9; }
 .day-head b { font-family: var(--serif); font-size: var(--fs-m); font-weight: 400; }
@@ -78,7 +78,8 @@
 .ev.is-half.is-short .ev-title { max-width: 100%; flex: 1; min-width: 0; }
 .ev.is-half .ev-with { display: none; }
 .ev.is-half .ev-title { padding-right: 0; }
-.ev.is-past { box-shadow: inset 0 0 0 999px rgba(0, 0, 0, .3); }
+.ev.is-past { background: rgb(var(--ov) / .08); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); } /* ink-2: mute on this fill was 4.2:1 */
+.ev.is-past .ev-meta b { color: inherit; }
 .ev.is-now { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent); z-index: 2; }
 .ev.is-family { background: var(--raise); color: var(--ink); box-shadow: inset 0 0 0 1px var(--mod-line); }
 .ev-with { position: absolute; right: 8px; top: 9px; }

@@ -1,4 +1,5 @@
-// Kitchen: pocket calculator (left), conversions of the number on screen + countdown timers (right).
+// Kitchen: countdown timers (left, the thing read from across the room), calculator with recipe scaling and
+// conversions into metric (right).
 // Works offline: no fetches. Timers tick off App's 'second' event and live here, so they keep running
 // on other views; a finished one wakes the screen, jumps here and beeps every 5 s for a minute.
 import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
@@ -9,6 +10,9 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
   var S = CALC0;
   var T = [], tid = 0, MAX = 3;
   var PRESETS = [1, 3, 5, 10, 15];
+  // Shown on the frame: recipe scaling first, then conversions into metric (the household cooks metric; the
+  // metric-to-US ones stay in calc.js for the tests and are not offered here).
+  var SHOWN = ['x0.5', 'x1.5', 'x2', 'cup-ml', 'tbsp-ml', 'tsp-ml', 'oz-g', 'f-c'];
   var OPS = { '+': '+', '-': '−', '*': '×', '/': '÷' };
   var KEYS = [['C', 'C'], ['back', '⌫'], ['%', '%'], ['/', '÷'], ['7'], ['8'], ['9'], ['*', '×'],
     ['4'], ['5'], ['6'], ['-', '−'], ['1'], ['2'], ['3'], ['+', '+'], ['0'], ['.'], ['=', '=']];
@@ -18,6 +22,9 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
     V.el.querySelector('.k-display').textContent = S.display;
     V.el.querySelector('.k-line').textContent = S.op ? fmt(S.acc) + ' ' + OPS[S.op] : V.line;
     App.$$('[data-key]', V.el).forEach(function (b) { b.classList.toggle('is-op', S.fresh && S.op === b.dataset.key); });
+    // the "start a timer from the screen" chip says the minutes it would start
+    var sc = V.el.querySelector('[data-preset="screen"] span'), m = +S.display;
+    if (sc) sc.textContent = m > 0 && m <= 600 ? 'Timer · ' + S.display + ' min' : 'Timer · type minutes';
   }
   function conv(id) {
     var x = +S.display, c = CONV[id];
@@ -59,7 +66,7 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
   }
   function timerHTML(t) {
     if (t.done) return '<button class="k-timer is-done" data-tx="' + t.id + '">' + App.icon('bell', 34) + '<b class="k-t-time">Done</b><span class="label">' + label(t) + ' · tap to clear</span></button>';
-    return '<div class="k-timer" data-t="' + t.id + '"><b class="k-t-time num">' + mmss(t) + '</b><span class="label">' + label(t) + '</span>' +
+    return '<div class="k-timer" data-t="' + t.id + '"><b class="k-t-time num">' + mmss(t) + '</b><span class="label">' + label(t) + ' · rings ' + App.fmt.time(new Date(t.end)) + '</span>' +
       '<button class="btn" data-tplus="' + t.id + '">+1 min</button>' +
       '<button class="k-t-x" data-tx="' + t.id + '" aria-label="Cancel">' + App.icon('x', 26) + '</button></div>';
   }
@@ -74,7 +81,7 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
   document.getElementById('railTimer').addEventListener('click', function () { App.go('kitchen'); });
   function paintTimers() {
     var box = V.el && V.el.querySelector('.k-timers');
-    if (box) box.innerHTML = T.length ? T.map(timerHTML).join('') : '<div class="k-none">No timers running</div>';
+    if (box) box.innerHTML = T.length ? T.map(timerHTML).join('') : '<div class="k-none serif"><i>No timers running.</i><br>Tap a time above to start one.</div>';
     paintRail();
   }
   App.timers = function () { return T.filter(function (t) { return !t.done; }).map(function (t) { return { end: t.end }; }); };
@@ -107,20 +114,20 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
 
   function render() {
     V.el.innerHTML = '<div class="kitchen">' +
+      '<header class="k-head"><h1 class="serif">Kitchen</h1></header>' +
+      '<section class="k-side">' +
+      '  <div class="label">Timers</div>' +
+      '  <div class="k-presets">' + PRESETS.map(function (m) { return '<button class="k-chip" data-preset="' + m + '">' + m + ' min</button>'; }).join('') +
+      '    <button class="k-chip k-chip--screen" data-preset="screen">' + App.icon('clock', 20) + '<span></span></button></div>' +
+      '  <div class="k-timers"></div>' +
+      '</section>' +
       '<section class="k-calc">' +
       '  <div class="k-screen"><div class="k-line"></div><div class="k-display num"></div></div>' +
+      '  <div class="k-conv">' + SHOWN.map(function (id) { return '<button class="k-chip" data-conv="' + id + '">' + CONV[id][0] + '</button>'; }).join('') + '</div>' +
       '  <div class="k-keys">' + KEYS.map(function (k) {
         return '<button class="k-key' + (OPS[k[0]] || k[0] === 'C' || k[0] === 'back' || k[0] === '%' ? ' k-key--fn' : '') + (k[0] === '=' ? ' k-key--eq' : '') + (k[0] === '0' ? ' k-key--wide' : '') +
           '" data-key="' + k[0] + '"' + (k[0] === 'back' ? ' aria-label="Delete last digit"' : '') + '>' + (k[1] || k[0]) + '</button>';
       }).join('') + '</div>' +
-      '</section>' +
-      '<section class="k-side">' +
-      '  <div class="label">Convert the number on screen</div>' +
-      '  <div class="k-conv">' + Object.keys(CONV).map(function (id) { return '<button class="k-chip" data-conv="' + id + '">' + CONV[id][0] + '</button>'; }).join('') + '</div>' +
-      '  <div class="label">Timers</div>' +
-      '  <div class="k-presets">' + PRESETS.map(function (m) { return '<button class="k-chip" data-preset="' + m + '">' + m + ' min</button>'; }).join('') +
-      '    <button class="k-chip k-chip--screen" data-preset="screen">' + App.icon('clock', 20) + ' Screen min</button></div>' +
-      '  <div class="k-timers"></div>' +
       '</section></div>';
     paintCalc();
     paintTimers();

@@ -7,19 +7,17 @@
   var cid = 0;
 
   function open() { return D.chores.filter(function (c) { return !c.done; }); }
-  function sorted() {
-    return D.chores.slice().sort(function (a, b) {
-      return (a.done - b.done) || ((b.overdue ? 1 : 0) - (a.overdue ? 1 : 0)) || ((a.time ? 0 : 1) - (b.time ? 0 : 1));
-    });
-  }
+  function sorted() { return D.chores.slice().sort(App.choreSort); } // same order and states as the Home card
   function onList(title, who) {
     return open().filter(function (c) { return c.who === who && c.title.toLowerCase() === title.toLowerCase(); })[0];
   }
 
   function row(c) {
     var p = App.person(c.who);
+    var st = App.choreState(c);
     var meta = c.done ? (c.doneBy ? 'Done by ' + App.person(c.doneBy).name : 'Done')
-      : c.overdue ? '<span class="c-late">Overdue</span>' : c.time ? 'Today · ' + c.time : '';
+      : st === 'late' ? '<span class="c-late">' + App.esc(App.choreWhen(c)) + '</span>'
+      : st === 'soon' ? '<span class="c-soon">Today · ' + App.esc(c.time) + '</span>' : c.time ? 'Today · ' + App.esc(c.time) : '';
     return '<button class="c-row' + (c.done ? ' is-done' : '') + (V.pending[c.id] ? ' is-checking' : '') + '" data-ch="' + c.id + '" style="' + App.pstyle(p) + '">' +
       '<span class="c-box">' + App.icon('check', 22) + '</span>' +
       '<span class="c-name"><b>' + App.esc(c.title) + '</b>' + (meta ? '<small>' + meta + '</small>' : '') + '</span>' +
@@ -33,7 +31,7 @@
       return '<div class="c-empty serif">All done.<br><i>Nothing left today.</i></div>' +
         (all.length ? '<div class="c-rows">' + all.map(row).join('') + '</div>' : '');
     }
-    return '<div class="c-rows">' + all.map(row).join('') + '</div>';
+    return '<div class="c-rows' + (all.length <= 8 ? ' c-rows--one' : '') + '">' + all.map(row).join('') + '</div>';
   }
 
   function tile(title) {
@@ -89,10 +87,9 @@
       paintList();
       App.emit('data');
       var last = !open().length;
-      schedule(c, last ? 0 : 5000);
-      if (last) return App.toast('<b>All chores done!</b> Nice work.', { icon: 'star', ms: 5000 });
-      App.toast('<b>' + App.esc(c.title) + '</b> done', {
-        icon: 'check',
+      schedule(c, 5000); // after the Undo window, the last chore included (it has Undo now too)
+      App.toast(last ? '<b>All chores done.</b> ' + App.esc(c.title) + ' was the last one.' : '<b>' + App.esc(c.title) + '</b> done', {
+        icon: last ? 'star' : 'check',
         undo: function () { unschedule(c); c.done = false; delete c.doneAt; paintList(); App.emit('data'); }
       });
     }, 350);
@@ -131,6 +128,7 @@
   }
 
   App.register('tasks', {
+    minutely: true, // late / due-soon states follow the clock
     show: function (el) {
       if (!V.el) { V.el = el; el.addEventListener('click', onClick); }
       render();

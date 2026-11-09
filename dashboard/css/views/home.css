@@ -122,7 +122,7 @@
 .h-hero--empty .h-hero-meta { color: var(--ink-2); }
 .h-hero--next { justify-content: space-between; }
 .h-hero--next .label::before { box-shadow: none; }
-.h-hero--next .h-hero-count { color: var(--ink); }
+.h-hero--next .h-hero-count { color: var(--ink); font-size: var(--fs-xl); } /* tomorrow: smaller than a live countdown, the clock stays the anchor */
 .h-free--all { grid-column: 1 / -1; font-size: var(--fs-l); padding-top: 18px; }
 .h-hero--empty .label::before { background: var(--mute); }
 .h-hero--empty .h-hero-title { font-size: var(--fs-l); line-height: 1.05; -webkit-line-clamp: 3; }
@@ -217,8 +217,8 @@
 
 /* ---- photo */
 .h-photo { position: relative; display: block; width: 100%; border-radius: var(--r-card); overflow: hidden; box-shadow: inset 0 0 0 1px var(--mod-line);
-  background: url('/bg/grain.png') 0 0 / 160px 160px repeat, linear-gradient(160deg, #6B4A36 0%, #3B2A1F 55%, #2A1C14 100%); }
-.h-photo .slide { background: transparent; } /* the tile's walnut fallback shows until a photo has loaded */
+  background: url('/bg/grain.png') 0 0 / 160px 160px repeat, linear-gradient(160deg, #B98A64 0%, #8A5E40 50%, #5A3B27 100%); }
+.h-photo .slide, .h-photo .kb { background: transparent; } /* the tile's walnut fallback shows until a photo has loaded (.kb painted its own near-black gradient) */
 .h-photo-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 .h-photo-cap {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 16px 12px;
