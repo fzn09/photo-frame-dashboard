@@ -33,6 +33,10 @@
 .h-time { font-variant-numeric: tabular-nums; font-family: var(--serif); font-weight: 400; font-stretch: 100%; font-size: var(--fs-clock); line-height: .78; letter-spacing: -.025em; display: flex; align-items: flex-start; }
 .h-date { font-family: var(--serif); font-size: var(--fs-l); line-height: 1.08; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h-date b { display: block; font-weight: 400; font-style: italic; color: var(--ink); }
+/* Ambient switch: an abspos grid item pinned to the clock cell's bottom-right, beside the date. */
+.home { position: relative; }
+.h-amb { grid-area: clock; position: absolute; right: 0; bottom: 6px; padding: 0 16px; gap: 8px; color: var(--ink-2); }
+.h-amb[aria-pressed="false"] { color: var(--ink); border-color: var(--ink); }
 
 /* ---- weather: now + advice on top, 7 hours below */
 .h-wx-top { display: flex; align-items: center; gap: 16px; }

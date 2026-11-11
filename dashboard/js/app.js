@@ -350,13 +350,21 @@
 
   // ------------------------------------------------------------ idle
   App.idle = { home: 300, ambient: 600 };
+  // Today's "Ambient" switch: off keeps the dashboard up instead of fading to ambient/night when idle. Per frame.
+  App.ambientOn = true;
+  try { App.ambientOn = localStorage.getItem('hq-ambient') !== '0'; } catch (e) { /* default on */ }
+  App.setAmbient = function (on) {
+    App.ambientOn = on;
+    try { localStorage.setItem('hq-ambient', on ? '1' : '0'); } catch (e) { /* this session only */ }
+    App.emit('ambient', on);
+  };
   var idleSec = 0;
   function onIdleTick() {
     idleSec++;
     var blocked = $('#takeover').classList.contains('is-open');
     if (App.mode !== 'day' || blocked) return;
     if (idleSec === App.idle.home && App.current !== 'home') { App.closeSheet(); App.go('home'); }
-    if (idleSec >= App.idle.ambient) {
+    if (idleSec >= App.idle.ambient && App.ambientOn) {
       App.closeSheet();
       App.go('home');
       App.setMode(App.isNight() ? 'night' : 'ambient');

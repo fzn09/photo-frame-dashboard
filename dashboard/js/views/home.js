@@ -304,6 +304,7 @@ import { fridgeRows } from '../../calc.js';
         el.innerHTML = '<div class="home">' +
           // no aria-label: it would replace the time and date as the name, so a screen reader never said the time
           '<div class="h-clock" data-go="calendar" role="button" tabindex="0"></div>' +
+          '<button class="h-amb btn btn--ghost" data-amb></button>' +
           '<div class="h-weather card"></div>' +
           '<div class="h-transit card"></div>' +
           '<div class="h-hero-slot"></div>' +
@@ -323,9 +324,11 @@ import { fridgeRows } from '../../calc.js';
           if (m) { App.recipeSheet(m.dataset.meal); return; }
           var ev = e.target.closest('[data-ev]');
           if (ev) { App.eventSheet(App.findEvent(ev.dataset.ev)); return; }
+          if (e.target.closest('[data-amb]')) { App.setAmbient(!App.ambientOn); return; }
           var g = e.target.closest('[data-go]');
           if (g) App.go(g.dataset.go);
         });
+        amb();
         // w 640: the tile is ~257 px wide, ~540 px when the lists are empty (data-lean)
         V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { captions: false, interval: 12000, w: 640, onChange: photoCaption });
       }
@@ -342,6 +345,13 @@ import { fridgeRows } from '../../calc.js';
     if (App.current === 'home' && App.enabled('photos') && App.mode === 'day') V.slides.start(); else V.slides.stop();
   }
   App.on('mode', slides);
+  // Today's Ambient switch (App.setAmbient): off keeps this screen up when idle instead of the photo frame / night clock.
+  function amb() {
+    var b = V.el.querySelector('.h-amb');
+    b.setAttribute('aria-pressed', App.ambientOn);
+    b.innerHTML = App.icon(App.ambientOn ? 'photo' : 'moon', 22) + '<span>Ambient ' + (App.ambientOn ? 'on' : 'off') + '</span>';
+  }
+  App.on('ambient', function () { if (V.el && V.el.firstChild) amb(); });
   // Every minute: just the clock and next-up countdown (cheap, even while hidden). Weather on the hour.
   App.on('minute', function (n) {
     if (!V.el || !V.el.firstChild) return;
