@@ -350,7 +350,7 @@
 
   // ------------------------------------------------------------ idle
   App.idle = { home: 300, ambient: 600 };
-  // Today's "Ambient" switch: off keeps the dashboard up instead of fading to ambient/night when idle. Per frame.
+  // Today's "Ambient" switch: off keeps the dashboard up instead of the daytime ambient screen when idle (night still dims). Per frame.
   App.ambientOn = true;
   try { App.ambientOn = localStorage.getItem('hq-ambient') !== '0'; } catch (e) { /* default on */ }
   App.setAmbient = function (on) {
@@ -364,7 +364,8 @@
     var blocked = $('#takeover').classList.contains('is-open');
     if (App.mode !== 'day' || blocked) return;
     if (idleSec === App.idle.home && App.current !== 'home') { App.closeSheet(); App.go('home'); }
-    if (idleSec >= App.idle.ambient && App.ambientOn) {
+    // Ambient off skips only the daytime photo screen: night still dims the frame (backlight, a dark room).
+    if (idleSec >= App.idle.ambient && (App.ambientOn || App.isNight())) {
       App.closeSheet();
       App.go('home');
       App.setMode(App.isNight() ? 'night' : 'ambient');
@@ -373,7 +374,7 @@
   App.resetIdle = function () { idleSec = 0; };
   // Idle only ever enters night (above); nothing left it until a touch. Follow the clock both ways untouched.
   App.on('minute', function () {
-    if (App.mode === 'night' && !App.isNight()) App.setMode('ambient');
+    if (App.mode === 'night' && !App.isNight()) App.setMode(App.ambientOn ? 'ambient' : 'day');
     else if (App.mode === 'ambient' && App.isNight()) App.setMode('night');
   });
 

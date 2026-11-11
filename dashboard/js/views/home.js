@@ -345,13 +345,21 @@ import { fridgeRows } from '../../calc.js';
     if (App.current === 'home' && App.enabled('photos') && App.mode === 'day') V.slides.start(); else V.slides.stop();
   }
   App.on('mode', slides);
-  // Today's Ambient switch (App.setAmbient): off keeps this screen up when idle instead of the photo frame / night clock.
+  // Today's Ambient switch (App.setAmbient): off keeps this screen up when idle instead of the daytime photo frame.
   function amb() {
     var b = V.el.querySelector('.h-amb');
     b.setAttribute('aria-pressed', App.ambientOn);
     b.innerHTML = '<span>Ambient ' + (App.ambientOn ? 'on' : 'off') + '</span>';
   }
-  App.on('ambient', function () { if (V.el && V.el.firstChild) amb(); });
+  App.on('ambient', function () { if (V.el && V.el.firstChild) { amb(); drift(); } });
+  // With ambient off Today can sit untouched all day, so drift it and the rail up to 2 px each minute, as Ambient and
+  // Night do (image retention on the panel's static edges and labels). Too small to see from across the room.
+  function drift() {
+    var on = !App.ambientOn && App.mode === 'day', r = function () { return Math.round(Math.random() * 4 - 2); };
+    var t = on ? 'translate(' + r() + 'px,' + r() + 'px)' : '';
+    V.el.firstChild.style.transform = t;
+    App.$('#rail').style.transform = t;
+  }
   // Every minute: just the clock and next-up countdown (cheap, even while hidden). Weather on the hour.
   App.on('minute', function (n) {
     if (!V.el || !V.el.firstChild) return;
@@ -361,6 +369,7 @@ import { fridgeRows } from '../../calc.js';
     if (App.enabled('tasks')) name(V.el.querySelector('.h-chores'), chores()); // "18:00" becomes "Late · 18:00" on time
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
     ages();
+    drift();
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
   App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); paintFridge(V.el.querySelector('.h-fridge')); } });
