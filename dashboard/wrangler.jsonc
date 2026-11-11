@@ -27,7 +27,7 @@
 		// Minutes of travel assumed for a timed calendar event that has a location (0 or empty = off): drives "Leave in N min"
 		"TRAVEL_DEFAULT_MIN": "20",
 		// Unsplash search term for the photo stream; remove for the editorial feed. Secret: UNSPLASH_KEY
-		"PHOTO_QUERY": "aesthetic wallpapers",
+		"PHOTO_QUERY": "grainy gradient",
 		// Cookidoo country domain and language (week plan, cookidoo.js)
 		"COOKIDOO_HOST": "cookidoo.de",
 		"COOKIDOO_LANG": "de-DE"

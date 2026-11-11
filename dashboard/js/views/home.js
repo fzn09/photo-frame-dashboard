@@ -349,7 +349,7 @@ import { fridgeRows } from '../../calc.js';
   function amb() {
     var b = V.el.querySelector('.h-amb');
     b.setAttribute('aria-pressed', App.ambientOn);
-    b.innerHTML = App.icon(App.ambientOn ? 'photo' : 'moon', 22) + '<span>Ambient ' + (App.ambientOn ? 'on' : 'off') + '</span>';
+    b.innerHTML = '<span>Ambient ' + (App.ambientOn ? 'on' : 'off') + '</span>';
   }
   App.on('ambient', function () { if (V.el && V.el.firstChild) amb(); });
   // Every minute: just the clock and next-up countdown (cheap, even while hidden). Weather on the hour.
