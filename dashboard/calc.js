@@ -92,16 +92,20 @@ const FOODS = [
 ];
 const title = s => s.toLowerCase().replace(/(^|[\s.-])(\S)/g, (m, a, b) => a + b.toUpperCase());
 
+// Receipt name -> { label, section, days (estimated shelf life from the purchase date, null = keeps) }.
+// The Worker adds these fields to /api/fridge items, so the webOS TV app needs no copy of FOODS.
+export function shelf(name) {
+  const f = FOODS.find(x => x[0].test(name));
+  return { label: f && f[3] || title(name), section: f ? f[1] : 'Other', days: f ? f[2] : null };
+}
+
 // Receipt line + today -> { label, section, age (days since bought), left (estimated days to use, null = keeps) }
 export function fridgeItem(item, today) {
-  const f = FOODS.find(x => x[0].test(item.name));
+  const { label, section, days } = shelf(item.name);
   const [y, m, d] = item.date.split('-').map(Number);
   const t = new Date(today); t.setHours(0, 0, 0, 0);
   const age = Math.round((t - new Date(y, m - 1, d)) / 864e5);
-  return {
-    label: f && f[3] || title(item.name), section: f ? f[1] : 'Other', age,
-    left: f && f[2] !== null ? f[2] - age : null
-  };
+  return { label, section, age, left: days !== null ? days - age : null };
 }
 
 // Receipt lines -> one row per food and freshness, so a fresh pack never inherits an old pack's tag.

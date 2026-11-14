@@ -30,7 +30,10 @@
 		"PHOTO_QUERY": "grainy gradient",
 		// Cookidoo country domain and language (week plan, cookidoo.js)
 		"COOKIDOO_HOST": "cookidoo.de",
-		"COOKIDOO_LANG": "de-DE"
+		"COOKIDOO_LANG": "de-DE",
+		// Origins allowed to read /api/* with the TV_TOKEN secret (webOS TV app). "null" is a packaged app on file://.
+		// Space-separated; add http://localhost:8080 to test the TV app from its dev server.
+		"TV_ORIGINS": "null"
 	},
 	// Cookidoo token store. Wrangler creates the namespace on first deploy; seed the refresh token (SETUP.md).
 	"kv_namespaces": [
@@ -53,4 +56,6 @@
 	// Required for the Fridge feed: INGEST_KEY (bearer the REWE job sends to POST /api/ingest, PLAN-rewe-fridge.md)
 	// Optional: BRING_LIST var (default "home")
 	// Optional: TICKTICK_TOKEN (Chores view, see SETUP.md), TICKTICK_PROJECT var (default "Chores")
+	// Optional: TV_TOKEN (read-only GET /api/* for the webOS TV app via the X-TV-Token header, CORS for TV_ORIGINS).
+	//   Unset = route off. Use a different value from DASH_TOKEN.
 }

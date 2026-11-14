@@ -1,6 +1,6 @@
 // Run: node test/calc.test.mjs   (from dashboard/). Throws on the first failed assertion.
 import assert from 'node:assert/strict';
-import { CALC0, press, fmt, convert, fridgeItem, fridgeRows } from '../calc.js';
+import { CALC0, press, fmt, convert, fridgeItem, fridgeRows, shelf } from '../calc.js';
 
 const run = keys => keys.split(' ').reduce(press, CALC0).display;
 
@@ -27,6 +27,8 @@ assert.equal(convert('x0.5', 250), 125);
 
 // fridge estimates, counted from the purchase date
 const nov6 = new Date(2026, 10, 6, 12);
+assert.deepEqual(shelf('BROCCOLI BIO'), { label: 'Broccoli', section: 'Fruit & veg', days: 5 }, 'shelf: the fields /api/fridge adds');
+assert.deepEqual(shelf('NUTELLA 450G').days, null, 'shelf: keeps');
 assert.deepEqual(fridgeItem({ name: 'BROCCOLI BIO', date: '2026-11-04' }, nov6), { label: 'Broccoli', section: 'Fruit & veg', age: 2, left: 3 });
 assert.equal(fridgeItem({ name: 'LACHSFORELLENFI.', date: '2026-10-26' }, nov6).left, -9, 'past the estimate');
 assert.equal(fridgeItem({ name: 'NUTELLA 450G', date: '2026-10-26' }, nov6).left, null, 'keeps: no estimate');

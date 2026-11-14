@@ -208,6 +208,7 @@ The full table, with poll intervals, is in [SETUP.md](dashboard/SETUP.md#api-rou
 |---|---|---|
 | Config | `/api/config` | `worker.js`, using `views.js` |
 | Read-only feeds | `/api/weather`, `/api/calendar`, `/api/transit`, `/api/photos` | `worker.js` |
+| TV read access | `GET /api/*` with `X-TV-Token`, CORS for `TV_ORIGINS` (the webOS TV app) | `worker.js` |
 | Read and write | `/api/shopping`, `/api/fridge`, `/api/chores` | `worker.js` |
 | Job push | `/api/ingest` | `worker.js`, using `rewe-map.js` |
 | Meals | `/api/meals`, `/api/meals/recipe`, `/api/meals/img` | `cookidoo.js` |

@@ -8,6 +8,7 @@
 import { parseViews } from './views.js';
 import { handleMeals, handleMealRecipe, handleMealImage } from './cookidoo.js';
 import { mapIngest, applyUsed } from './rewe-map.js';
+import { shelf } from './calc.js';
 
 // Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
 const JSON_CORS = { 'Content-Type': 'application/json' };
@@ -32,35 +33,75 @@ function gate(request, env, url) {
   return new Response('Open this dashboard with its key link.', { status: 401 });
 }
 
+// webOS TV app (Apartment Twin: a packaged app on file://, so no cookies). It sends X-TV-Token instead.
+// Read-only: GET only. CORS answers only the origins in TV_ORIGINS ("null" is file://). TV_TOKEN unset = route off.
+function tvOrigin(request, env) {
+  const o = request.headers.get('Origin');
+  return o !== null && (env.TV_ORIGINS || 'null').split(/\s+/).includes(o) ? o : null;
+}
+function withCors(res, origin) {
+  if (!origin) return res;
+  const out = new Response(res.body, res);
+  out.headers.set('Access-Control-Allow-Origin', origin);
+  out.headers.append('Vary', 'Origin');
+  return out;
+}
+async function tvRequest(request, env, url) {
+  const origin = tvOrigin(request, env);
+  if (request.method === 'OPTIONS') {
+    if (!origin) return new Response(null, { status: 403 });
+    return new Response(null, { status: 204, headers: {
+      'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'X-TV-Token', 'Access-Control-Max-Age': '86400', Vary: 'Origin'
+    } });
+  }
+  const ok = request.method === 'GET' && await sameSecret(request.headers.get('X-TV-Token'), env.TV_TOKEN);
+  if (!ok) return withCors(jsonError('bad token', 401), origin);
+  return withCors(await route(request, env, url), origin);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const { pathname } = url;
-    try {
-      // Before the gate: the REWE job has no cookie. Its bearer check is the only control on this route.
-      if (pathname === '/api/ingest' && request.method === 'POST') return await handleIngest(request, env);
-      const denied = gate(request, env, url);
-      if (denied) return denied;
-      // await: the handlers are async, and only an awaited rejection reaches the catch below
-      if (pathname === '/api/weather')  return await handleWeather(env);
-      if (pathname === '/api/calendar') return await handleCalendar(env);
-      if (pathname === '/api/shopping') return await (request.method === 'POST' ? bringWrite(request, env) : bringRead(env));
-      if (pathname === '/api/fridge')   return await (request.method === 'POST' ? fridgeWrite(request, env) : fridgeRead(env));
-      if (pathname === '/api/chores')   return await (request.method === 'POST' ? choresWrite(request, env) : choresRead(env));
-      if (pathname === '/api/config')   return handleConfig(env);
-      if (pathname === '/api/transit')  return await handleTransit(env);
-      if (pathname === '/api/photos')   return await handlePhotos(env);
-      if (pathname === '/api/meals')    return await handleMeals(env);
-      if (pathname === '/api/meals/recipe') return await handleMealRecipe(env, url);
-      if (pathname === '/api/meals/img') return await handleMealImage(url);
-    } catch (err) {
-      console.error(pathname, err); // details stay in the Worker logs (wrangler tail), not in the response
-      return new Response('{"error":"upstream failed"}', { status: 502, headers: JSON_CORS });
+    // Before the gate: the REWE job has no cookie. Its bearer check is the only control on this route.
+    if (pathname === '/api/ingest' && request.method === 'POST') {
+      try { return await handleIngest(request, env); } catch (err) {
+        console.error(pathname, err);
+        return new Response('{"error":"upstream failed"}', { status: 502, headers: JSON_CORS });
+      }
     }
-    if (pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
-    return env.ASSETS.fetch(request);
+    if (env.TV_TOKEN && pathname.startsWith('/api/') && (request.method === 'OPTIONS' || request.headers.has('X-TV-Token'))) {
+      return tvRequest(request, env, url);
+    }
+    const denied = gate(request, env, url);
+    if (denied) return denied;
+    if (!pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+    return route(request, env, url);
   }
 };
+
+async function route(request, env, url) {
+  const { pathname } = url;
+  try {
+    // await: the handlers are async, and only an awaited rejection reaches the catch below
+    if (pathname === '/api/weather')  return await handleWeather(env);
+    if (pathname === '/api/calendar') return await handleCalendar(env);
+    if (pathname === '/api/shopping') return await (request.method === 'POST' ? bringWrite(request, env) : bringRead(env));
+    if (pathname === '/api/fridge')   return await (request.method === 'POST' ? fridgeWrite(request, env) : fridgeRead(env));
+    if (pathname === '/api/chores')   return await (request.method === 'POST' ? choresWrite(request, env) : choresRead(env));
+    if (pathname === '/api/config')   return handleConfig(env);
+    if (pathname === '/api/transit')  return await handleTransit(env);
+    if (pathname === '/api/photos')   return await handlePhotos(env);
+    if (pathname === '/api/meals')    return await handleMeals(env);
+    if (pathname === '/api/meals/recipe') return await handleMealRecipe(env, url);
+    if (pathname === '/api/meals/img') return await handleMealImage(url);
+  } catch (err) {
+    console.error(pathname, err); // details stay in the Worker logs (wrangler tail), not in the response
+    return new Response('{"error":"upstream failed"}', { status: 502, headers: JSON_CORS });
+  }
+  return new Response('Not found', { status: 404 });
+}
 
 // ---- Which views the frame shows (VIEWS var in wrangler.jsonc; no secrets in this response) ---------
 
@@ -305,7 +346,7 @@ const jsonError = (msg, status) => new Response(JSON.stringify({ error: msg }), 
 
 async function sameSecret(a, b) {
   const enc = new TextEncoder();
-  const [x, y] = await Promise.all([crypto.subtle.digest('SHA-256', enc.encode(a)), crypto.subtle.digest('SHA-256', enc.encode(b))]);
+  const [x, y] = await Promise.all([crypto.subtle.digest('SHA-256', enc.encode(a || '')), crypto.subtle.digest('SHA-256', enc.encode(b))]);
   return crypto.subtle.timingSafeEqual(x, y);
 }
 
@@ -338,7 +379,9 @@ async function fridgeRead(env) {
   const latest = env.FRIDGE_KV && await env.FRIDGE_KV.get('rewe:latest', 'json');
   if (!latest) return new Response('', { status: 503 });
   const used = (await env.FRIDGE_KV.get('rewe:used', 'json')) || [];
-  return new Response(JSON.stringify({ ...latest, items: applyUsed(latest.items, used) }), {
+  // label, section, days: the shelf-life estimate from calc.js, for clients without that table (the TV app)
+  const items = applyUsed(latest.items, used).map(i => ({ ...i, ...shelf(i.name) }));
+  return new Response(JSON.stringify({ ...latest, items }), {
     headers: { ...JSON_CORS, 'Cache-Control': 'no-store' }
   });
 }

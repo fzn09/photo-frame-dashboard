@@ -271,6 +271,20 @@ cams ship, refresh every 60 s and are credited on screen. One feed runs at a tim
 Before you add a feed, check that it uses https, returns the image without a referer check, and that its site's
 terms allow it.
 
+### webOS TV (Apartment Twin)
+
+**Needs:** a `TV_TOKEN` secret. The TV app (repository `webOS-dashboard-DT`) is a packaged app on `file://`, so it
+cannot hold the access cookie. It sends `X-TV-Token: <TV_TOKEN>` instead. That header opens `GET /api/*` only: no
+page, no assets, no writes. The Worker answers CORS only for the origins in the `TV_ORIGINS` var (default `null`,
+the origin of `file://`).
+
+1. Create a value that differs from `DASH_TOKEN`, as in [Step 2](#step-2-create-the-access-token).
+2. `npx wrangler secret put TV_TOKEN`.
+3. In the TV repository: `DASH_API=https://<worker>.workers.dev TV_TOKEN=<value> npm run pair`.
+
+To revoke the TV, delete or change the secret. `/api/fridge` items carry `label`, `section` and `days` (the shelf-life
+estimate from `calc.js`) for the TV; the page ignores them.
+
 ---
 
 ## Part 3: Test and deploy
@@ -399,6 +413,7 @@ weather.
 | `TICKTICK_PROJECT` | No | Chores list name, default `Chores` |
 | `COOKIDOO_HOST` | No | Cookidoo domain, default `cookidoo.de` |
 | `COOKIDOO_LANG` | No | Cookidoo language, default `de-DE` |
+| `TV_ORIGINS` | No | Space-separated origins the TV route answers CORS for, default `null` (`file://`) |
 
 **Secrets, set with `wrangler secret put`**
 
@@ -413,6 +428,7 @@ weather.
 | `INGEST_KEY` | For the fridge | Bearer key the REWE job sends to `/api/ingest` |
 | `TICKTICK_TOKEN` | For chores | TickTick Open API token |
 | `UNSPLASH_KEY` | For stock photos | Unsplash access key |
+| `TV_TOKEN` | For the webOS TV | Read-only `GET /api/*` with the `X-TV-Token` header ([webOS TV](#webos-tv-apartment-twin)) |
 
 **Other**
 
@@ -437,8 +453,8 @@ weather.
 
 ### API routes
 
-Every route needs the access cookie, except that the manifest and icons are public and `POST /api/ingest` has its own
-bearer key. Reads are polled by the page, and
+Every route needs the access cookie, except that the manifest and icons are public, `POST /api/ingest` has its own
+bearer key, and `GET /api/*` also accepts `X-TV-Token` when `TV_TOKEN` is set. Reads are polled by the page, and
 a failed poll keeps the last good data.
 
 | Route | Source | Page polls | Notes |
