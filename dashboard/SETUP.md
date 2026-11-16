@@ -195,6 +195,9 @@ copying, since the layout can differ between versions. Without
 
 A REWE receipt that also arrives as eBon would count twice. The page warns when it detects REWE.
 
+**When lines are missing**, open **OCR text** under the status line. It shows what Tesseract read. Lines without a
+price at the end are not items. Send a redacted copy (no card or address lines) to add it as a parser test fixture.
+
 ### TickTick chores
 
 **Needs:** a TickTick Open API token in `TICKTICK_TOKEN`. Without it, the Chores view shows sample chores.

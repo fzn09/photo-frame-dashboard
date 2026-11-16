@@ -40,3 +40,5 @@ h1 { font-size: 24px; margin: 0 0 6px; }
 .up-table td:nth-child(3) { width: 78px; }
 .up-table td:nth-child(4) { width: 36px; }
 .up-del { border: 0; background: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.up-raw { margin: 0 0 16px; color: var(--muted); }
+.up-raw pre { white-space: pre-wrap; word-break: break-word; font-size: 13px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; max-height: 50vh; overflow: auto; }

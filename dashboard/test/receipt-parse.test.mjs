@@ -29,6 +29,19 @@ assert.equal(noisy.store, 'EDEKA');
 assert.deepEqual(noisy.items, [{ name: 'KAESE', qty: 1, total_price: 3.49 }], 'needs a name with letters; stray symbols are dropped');
 assert.equal(noisy.purchase_date, '', 'an impossible date is not a date');
 
+// formats Tesseract produces
+const v = parseReceipt([
+  'HAFERMILCH 1,49 €', 'KAFFEE 6,99 EUR', 'TOMATEN1,53B', 'BUTTER 1,9O A', 'GOUDA l,29 B', 'LAUCH 0 79 B',
+  'Tel. 030 1234 56', 'Uhrzeit 18 02 11 Uhr', 'SOS'
+].join('\n'));
+assert.deepEqual(v.items.map(i => [i.name, i.total_price]), [
+  ['HAFERMILCH', 1.49], ['KAFFEE', 6.99], ['TOMATEN', 1.53], ['BUTTER', 1.9], ['GOUDA', 1.29], ['LAUCH', 0.79]
+], 'euro sign, no space, O and l for digits, lost comma; phone and time lines are not items');
+
+// PSM auto split the receipt into a name block and a price block
+const split = parseReceipt('REWE\nMusterstr. 1\nBIO BANANE\nMILCH 3,5%\nGOUDA JUNG\n1,49 B\n1,19 B\n2,29 B\nSUMME 4,97');
+assert.deepEqual(split.items.map(i => [i.name, i.total_price]), [['BIO BANANE', 1.49], ['MILCH 3,5%', 1.19], ['GOUDA JUNG', 2.29]], 'pairs names and prices in order');
+
 for (const bad of [undefined, null, '', 42]) {
   assert.deepEqual(parseReceipt(bad), { store: '', purchase_date: '', items: [] });
 }
