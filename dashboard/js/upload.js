@@ -5,8 +5,46 @@ import { parseReceipt } from '../receipt-parse.js';
 
 const TOKEN = import.meta.env.VITE_DASH_TOKEN || '';
 const OCR = '/ocr/';
+const DRAFT = 'receipt-draft';
+const EMPTY = { store: '', purchase_date: '', items: [] };
 const $ = id => document.getElementById(id);
-const status = t => { $('status').textContent = t; };
+
+// ---- Messages -------------------------------------------------------------------------------------------
+
+// kind: info (default), ok, warn, error. The review bar has its own box so a message is visible next to Confirm.
+function status(text, kind = 'info') {
+  const el = $('status');
+  el.textContent = text;
+  el.dataset.kind = kind;
+  el.hidden = !text;
+}
+function sendmsg(text, kind = 'info') {
+  $('sendtxt').textContent = text;
+  $('sendbox').dataset.kind = kind;
+  $('sendbox').hidden = !text;
+  $('undo').hidden = !removed;
+}
+
+let busy = false, sending = false, removed = null, armed = { key: '', until: 0 };
+
+function setBusy(b) {
+  busy = b;
+  for (const id of ['take', 'choose', 'manual']) $(id).disabled = b;
+  $('prog').hidden = !b;
+  $('prog').removeAttribute('value');
+}
+
+// A second tap within 5 s confirms an action that would replace lines the user typed. No confirm() dialog.
+function guard(key, go) {
+  if (dirty() && !(armed.key === key && Date.now() < armed.until)) {
+    armed = { key, until: Date.now() + 5000 };
+    removed = null;
+    sendmsg('This replaces the lines below. Tap again to continue.', 'warn');
+    return;
+  }
+  armed = { key: '', until: 0 };
+  go();
+}
 
 // ---- OCR ------------------------------------------------------------------------------------------------
 
@@ -66,18 +104,27 @@ function otsu(hist, total) {
   return cut;
 }
 
+// Tesseract reports its own stage names; show the ones a person can follow. The first scan downloads the reader
+// and the German language data, which takes a while on mobile data.
+function onOcrLog(m) {
+  if (typeof m.progress === 'number') $('prog').value = m.progress;
+  if (m.status === 'recognizing text') status('Reading… ' + Math.round(m.progress * 100) + ' %');
+  else if (/language/.test(m.status)) status('Loading German language data (first scan only)…');
+  else if (/core/.test(m.status)) status('Loading the reader (first scan only)…');
+  else if (/initiali/.test(m.status)) status('Getting ready…');
+}
+
 async function readPhoto(file) {
-  status('Reading the receipt on this phone…');
+  status('Getting ready…');
   let T;
   try { T = await loadOcr(); } catch {
-    status('OCR is not installed on this server. Enter the lines by hand.');
-    showReview({ store: '', purchase_date: '', items: [] });
+    status('Scanning is not installed on this server. Enter the lines by hand.', 'error');
+    showReview(EMPTY);
     return;
   }
   const canvas = await prepare(file);
   const worker = await T.createWorker('deu', 1, {
-    workerPath: OCR + 'worker.min.js', corePath: OCR + 'core', langPath: OCR + 'lang',
-    logger: m => { if (m.status === 'recognizing text') status('Reading… ' + Math.round(m.progress * 100) + ' %'); }
+    workerPath: OCR + 'worker.min.js', corePath: OCR + 'core', langPath: OCR + 'lang', logger: onOcrLog
   });
   try {
     // PSM 4: one column of lines of different sizes. Keeps name and price on one line; the default (auto)
@@ -86,14 +133,14 @@ async function readPhoto(file) {
     const { data } = await worker.recognize(canvas);
     showRaw(data.text);
     const draft = parseReceipt(data.text);
-    status(draft.items.length ? draft.items.length + ' lines found. Check names, quantities and prices.' : 'No lines found. Try a sharper photo or enter by hand.');
-    showReview(draft);
+    status(draft.items.length ? draft.items.length + ' lines found. Check names, quantities and prices.' : 'No lines found. Try a sharper photo or enter by hand.', draft.items.length ? 'info' : 'warn');
+    showReview(draft, true);
   } finally {
     await worker.terminate();
   }
 }
 
-// Raw OCR output, collapsed, so a bad scan can be diagnosed and turned into a parser test
+// Scanned text, collapsed, so a bad scan can be diagnosed and turned into a parser test
 function showRaw(text) {
   $('raw').querySelector('pre').textContent = text || '(empty)';
   $('raw').hidden = false;
@@ -106,63 +153,176 @@ const today = () => {
   return t.getFullYear() + '-' + p(t.getMonth() + 1) + '-' + p(t.getDate());
 };
 
+const X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+// Name on its own full-width line so a long receipt name stays readable; qty, total and delete below it
 function row(item) {
-  const tr = document.createElement('tr');
-  tr.innerHTML =
-    '<td><input name="name" required maxlength="80"></td>' +
-    '<td><input name="qty" type="number" inputmode="decimal" min="0.01" step="any" value="1"></td>' +
-    '<td><input name="price" type="number" inputmode="decimal" min="0" step="0.01"></td>' +
-    '<td><button type="button" class="up-del" aria-label="Delete line">×</button></td>';
-  tr.querySelector('[name=name]').value = item.name || '';
-  tr.querySelector('[name=qty]').value = item.qty || 1;
-  if (item.total_price != null) tr.querySelector('[name=price]').value = item.total_price.toFixed(2);
-  tr.querySelector('.up-del').onclick = () => tr.remove();
-  return tr;
+  const li = document.createElement('li');
+  li.className = 'up-row';
+  li.innerHTML =
+    '<input class="up-name" name="name" required maxlength="80" autocomplete="off" enterkeyhint="next">' +
+    '<label class="up-f">Qty<input name="qty" type="number" inputmode="decimal" min="0.01" step="any" enterkeyhint="next"></label>' +
+    '<label class="up-f">Total, EUR<input name="price" type="number" inputmode="decimal" min="0" step="0.01" enterkeyhint="next"></label>' +
+    '<button type="button" class="up-del">' + X + '</button>';
+  li.querySelector('[name=name]').value = item.name || '';
+  li.querySelector('[name=qty]').value = item.qty || 1;
+  if (item.total_price != null) li.querySelector('[name=price]').value = Number(item.total_price).toFixed(2);
+  li.querySelector('.up-del').onclick = () => removeRow(li);
+  return li;
 }
 
-function showReview(draft) {
+// Row numbers in the accessible names, the confirm count, and the confirm enabled state
+function renumber() {
+  const rows = [...$('rows').children];
+  rows.forEach((li, i) => {
+    const n = i + 1;
+    li.querySelector('[name=name]').setAttribute('aria-label', 'Item, line ' + n);
+    li.querySelector('[name=qty]').setAttribute('aria-label', 'Qty, line ' + n);
+    li.querySelector('[name=price]').setAttribute('aria-label', 'Total EUR, line ' + n);
+    li.querySelector('.up-del').setAttribute('aria-label', 'Delete line ' + n);
+  });
+  const n = rows.length;
+  $('confirm').textContent = n ? 'Confirm ' + n + (n === 1 ? ' line' : ' lines') + ' to fridge' : 'Confirm to fridge';
+  $('confirm').disabled = sending || !n;
+}
+
+function removeRow(li) {
+  const next = li.nextElementSibling, prev = li.previousElementSibling;
+  removed = { li, next };
+  li.remove();
+  renumber();
+  sendmsg('Line removed.');
+  ((next || prev)?.querySelector('[name=name]') || $('add')).focus();
+  saveDraft();
+}
+
+function lines() {
+  return [...$('rows').children].map(tr => {
+    const v = n => tr.querySelector('[name=' + n + ']').value.trim();
+    return { name: v('name'), qty: Number(v('qty')) || 1, total_price: v('price') === '' ? null : Number(v('price')) };
+  });
+}
+
+// True when the review holds something the user typed or scanned, so replacing it needs a second tap
+const dirty = () => !$('review').hidden && lines().some(i => i.name || i.total_price != null);
+
+function showReview(draft, scroll) {
   const rows = $('rows');
   rows.textContent = '';
+  removed = null;
+  sendmsg('');
   (draft.items.length ? draft.items : [{}]).forEach(i => rows.appendChild(row(i)));
+  renumber();
   $('date').value = draft.purchase_date || today();
   const warn = $('warn');
   warn.hidden = draft.store !== 'REWE';
-  warn.textContent = 'This looks like a REWE receipt. If it also arrives as eBon by mail, the job already adds it, and confirming here counts it twice.';
+  warn.textContent = 'This looks like a REWE receipt. If it also arrives as eBon by mail, the job already adds it, and confirming here counts it twice. Discard this one if the eBon is coming.';
   $('review').hidden = false;
+  saveDraft();
+  // Bring the result and the lines into view; the entry buttons are no longer needed
+  if (scroll || !$('status').hidden) $('status').scrollIntoView({ block: 'start' });
 }
+
+function closeReview() {
+  $('review').hidden = true;
+  $('warn').hidden = true;
+  removed = null;
+  clearDraft();
+}
+
+// ---- Draft: a camera app or a task switch can reload the tab, so keep unsent lines for a day -------------
+
+function saveDraft() {
+  try {
+    if ($('review').hidden) return;
+    localStorage.setItem(DRAFT, JSON.stringify({ at: Date.now(), date: $('date').value, items: lines() }));
+  } catch { /* storage blocked: the page still works, it just cannot restore */ }
+}
+function clearDraft() { try { localStorage.removeItem(DRAFT); } catch { /* ignore */ } }
+function restoreDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT) || 'null');
+    if (!d || Date.now() - d.at > 864e5 || !d.items.some(i => i.name)) return;
+    showReview({ store: '', purchase_date: d.date, items: d.items });
+    status('Restored the lines you had not sent yet.');
+  } catch { /* corrupt draft: ignore */ }
+}
+
+// ---- Send -----------------------------------------------------------------------------------------------
 
 async function commit(e) {
   e.preventDefault();
-  const items = [...$('rows').children].map(tr => {
-    const v = n => tr.querySelector('[name=' + n + ']').value.trim();
-    return { name: v('name'), qty: Number(v('qty')) || 1, total_price: v('price') === '' ? null : Number(v('price')) };
-  }).filter(i => i.name);
-  if (!items.length) { status('No lines to send.'); return; }
-  status('Sending…');
+  if (sending) return;
+  const items = lines().filter(i => i.name);
+  if (!items.length) { sendmsg('Add at least one line with a name.', 'error'); return; }
+  sending = true;
+  renumber();
+  sendmsg('Sending…');
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 20000);
   try {
     const res = await fetch('/api/receipt/commit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Dash-Token': TOKEN },
-      body: JSON.stringify({ purchase_date: $('date').value, items })
+      body: JSON.stringify({ purchase_date: $('date').value, items }),
+      signal: ctl.signal
     });
-    if (res.status === 401) { status('Not signed in. Open the dashboard key link on this phone once, then try again.'); return; }
-    if (!res.ok) { status('Not saved (' + res.status + '). Your lines are still here, try again.'); return; }
+    if (res.status === 401) { sendmsg('This phone is not signed in. Open the dashboard key link on it once, then try again.', 'error'); return; }
+    if (!res.ok) { sendmsg('Not saved (' + res.status + '). Your lines are still here, try again.', 'error'); return; }
     const out = await res.json();
-    status(out.added + ' lines are in the fridge. The frame shows them within 5 minutes.');
-    $('review').hidden = true;
-    $('warn').hidden = true;
+    closeReview();
+    status(out.added + (out.added === 1 ? ' line is' : ' lines are') + ' in the fridge. The frame shows them within 5 minutes.', 'ok');
+    $('status').scrollIntoView({ block: 'start' });
   } catch {
-    status('No connection. Your lines are still here, try again.');
+    sendmsg('No connection or no answer. Your lines are still here, try again.', 'error');
+  } finally {
+    clearTimeout(timer);
+    sending = false;
+    renumber();
   }
 }
 
-// Camera, gallery and file picker all feed the same OCR flow
+// ---- Wiring ---------------------------------------------------------------------------------------------
+
+// Camera and image picker feed the same OCR flow
 const onPick = e => {
   const f = e.target.files && e.target.files[0];
   e.target.value = '';
-  if (f) readPhoto(f).catch(() => { status('Reading failed. Enter the lines by hand.'); showReview({ store: '', purchase_date: '', items: [] }); });
+  if (!f) return;
+  setBusy(true);
+  readPhoto(f)
+    .catch(() => { status('Could not read that image. Try a JPEG or PNG photo, or enter the lines by hand.', 'error'); showReview(EMPTY); })
+    .finally(() => setBusy(false));
 };
-$('photo').onchange = $('gallery').onchange = $('file').onchange = onPick;
-$('manual').onclick = () => { status(''); showReview({ store: '', purchase_date: '', items: [] }); };
-$('add').onclick = () => $('rows').appendChild(row({}));
+$('photo').onchange = $('pick').onchange = onPick;
+$('take').onclick = () => guard('take', () => $('photo').click());
+$('choose').onclick = () => guard('choose', () => $('pick').click());
+$('manual').onclick = () => guard('manual', () => { status(''); showReview(EMPTY); });
+$('discard').onclick = () => guard('discard', () => { closeReview(); status(''); });
+$('add').onclick = () => {
+  const li = row({});
+  $('rows').appendChild(li);
+  removed = null;
+  sendmsg('');
+  renumber();
+  li.querySelector('[name=name]').focus();
+  saveDraft();
+};
+$('undo').onclick = () => {
+  if (!removed) return;
+  $('rows').insertBefore(removed.li, removed.next);
+  removed = null;
+  renumber();
+  sendmsg('');
+  saveDraft();
+};
 $('review').onsubmit = commit;
+$('review').addEventListener('input', saveDraft);
+// The phone keyboard's Go key would send the receipt from a text field. Move to the next field instead.
+$('review').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const all = [...$('review').querySelectorAll('input')], i = all.indexOf(e.target);
+  (all[i + 1] || $('add')).focus();
+});
+
+restoreDraft();

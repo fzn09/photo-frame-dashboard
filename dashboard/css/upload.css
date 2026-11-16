@@ -1,5 +1,6 @@
 /* Phone upload page (upload.html). Runs on phones, not on the frame, so the frame CSS limits do not apply. */
 :root {
+  color-scheme: light dark;
   --bg: rgb(242, 238, 230);
   --card: rgb(255, 255, 255);
   --ink: rgb(30, 30, 28);
@@ -7,6 +8,7 @@
   --line: rgba(30, 30, 28, 0.12);
   --accent: rgb(38, 96, 74);
   --warn: rgb(150, 70, 20);
+  --bad: rgb(170, 40, 40);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -17,28 +19,60 @@
     --line: rgba(236, 234, 228, 0.14);
     --accent: rgb(110, 190, 150);
     --warn: rgb(240, 160, 100);
+    --bad: rgb(255, 140, 130);
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; }
-.up { max-width: 560px; margin: 0 auto; padding: 20px 16px 48px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; caret-color: var(--accent); }
+::selection { background: var(--accent); color: var(--bg); }
+.up {
+  max-width: 560px; margin: 0 auto;
+  padding: 20px max(16px, env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
 h1 { font-size: 24px; margin: 0 0 6px; }
-.up-hint, .up-status { color: var(--muted); margin: 0 0 16px; }
-.up-warn { color: var(--warn); margin: 0 0 16px; }
+h2 { font-size: 18px; margin: 20px 0 8px; }
+.up-hint { color: var(--muted); margin: 0 0 16px; }
+
+/* Buttons */
 .up-btn {
-  display: block; width: 100%; margin: 0 0 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px;
+  display: block; width: 100%; min-height: 48px; margin: 0 0 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
   background: var(--card); color: var(--ink); font: inherit; font-weight: 600; text-align: center; cursor: pointer;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
 .up-btn--main { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.up-btn:active { opacity: 0.7; }
+.up-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.up-btn:focus-visible, .up-link:focus-visible, .up-del:focus-visible, .up-raw summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.up input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+/* Messages: info is quiet, ok and problems get a box and weight so colour is not the only signal */
+.up-msg { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--muted); }
+.up-msg[data-kind="ok"] { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.up-msg[data-kind="warn"] { color: var(--warn); border-color: var(--warn); }
+.up-msg[data-kind="error"] { color: var(--bad); border-color: var(--bad); font-weight: 600; }
+.up-link { margin-left: 8px; padding: 6px 4px; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.up-prog[hidden] { display: none; }
+.up-prog { display: block; width: 100%; height: 6px; margin: 0 0 16px; accent-color: var(--accent); }
+
+/* Review */
 .up-date { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 8px 0 12px; }
-.up-table { width: 100%; border-collapse: collapse; margin: 0 0 12px; }
-.up-table th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 500; padding: 4px 2px; }
-.up-table td { padding: 3px 2px; border-top: 1px solid var(--line); }
-.up input { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); font: inherit; }
+.up input { width: 100%; min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); font: inherit; }
 .up-date input { width: auto; }
-.up-table td:nth-child(2) { width: 56px; }
-.up-table td:nth-child(3) { width: 78px; }
-.up-table td:nth-child(4) { width: 36px; }
-.up-del { border: 0; background: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.up-rows { list-style: none; margin: 0 0 12px; padding: 0; }
+.up-row { display: grid; grid-template-columns: 5rem 1fr 44px; gap: 8px; align-items: end; padding: 12px 0; border-top: 1px solid var(--line); }
+.up-name { grid-column: 1 / -1; }
+.up-f { display: grid; gap: 2px; font-size: 14px; color: var(--muted); }
+.up-f input { font-variant-numeric: tabular-nums; text-align: right; }
+.up-del { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: none; color: var(--muted); cursor: pointer; touch-action: manipulation; }
+.up-del svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.up-del:active { opacity: 0.6; }
+
+/* Confirm bar stays in reach on a long list */
+.up-bar { position: sticky; bottom: 0; margin: 12px -16px 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line); }
+.up-bar .up-msg { margin-bottom: 10px; }
+.up-bar-row { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.up-bar-row .up-btn { margin: 0; }
+
 .up-raw { margin: 0 0 16px; color: var(--muted); }
+.up-raw summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
 .up-raw pre { white-space: pre-wrap; word-break: break-word; font-size: 13px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; max-height: 50vh; overflow: auto; }

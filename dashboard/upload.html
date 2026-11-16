@@ -1,9 +1,11 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#F2EEE6">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F2EEE6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#181816" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Receipt upload</title>
   <link rel="manifest" href="/upload.webmanifest">
@@ -16,35 +18,37 @@
     <h1>Receipt to fridge</h1>
     <p class="up-hint">Photograph the receipt flat and well lit. Check every line before you confirm.</p>
 
-    <label class="up-btn up-btn--main">
-      <input id="photo" type="file" accept="image/*" capture="environment" hidden>
-      Take photo
-    </label>
-    <label class="up-btn">
-      <input id="gallery" type="file" accept="image/*" hidden>
-      From gallery
-    </label>
-    <label class="up-btn">
-      <input id="file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/*" hidden>
-      From file
-    </label>
-    <button id="manual" class="up-btn" type="button">Enter by hand</button>
+    <div class="up-entry">
+      <button id="take" class="up-btn up-btn--main" type="button">Take photo</button>
+      <button id="choose" class="up-btn" type="button">Choose image</button>
+      <button id="manual" class="up-btn" type="button">Enter by hand</button>
+    </div>
+    <input id="photo" type="file" accept="image/*" capture="environment" hidden>
+    <input id="pick" type="file" accept="image/*" hidden>
 
-    <p id="status" class="up-status" role="status"></p>
-    <p id="warn" class="up-warn" hidden></p>
+    <progress id="prog" class="up-prog" max="1" hidden aria-label="Reading progress"></progress>
+    <p id="status" class="up-msg" role="status" hidden></p>
+    <p id="warn" class="up-msg" data-kind="warn" hidden></p>
     <details id="raw" class="up-raw" hidden>
-      <summary>OCR text</summary>
+      <summary>Scanned text</summary>
       <pre></pre>
     </details>
 
     <form id="review" hidden>
-      <label class="up-date">Purchase date <input id="date" type="date" required></label>
-      <table class="up-table">
-        <thead><tr><th>Item</th><th>Qty</th><th>EUR</th><th></th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
+      <h2>Check the lines</h2>
+      <label class="up-date">Purchase date <input id="date" type="date" required enterkeyhint="next"></label>
+      <ul id="rows" class="up-rows"></ul>
       <button id="add" class="up-btn" type="button">Add line</button>
-      <button class="up-btn up-btn--main" type="submit">Confirm to fridge</button>
+      <div class="up-bar">
+        <div id="sendbox" class="up-msg" role="status" hidden>
+          <span id="sendtxt"></span>
+          <button id="undo" class="up-link" type="button" hidden>Undo</button>
+        </div>
+        <div class="up-bar-row">
+          <button id="discard" class="up-btn" type="button">Discard</button>
+          <button id="confirm" class="up-btn up-btn--main" type="submit">Confirm to fridge</button>
+        </div>
+      </div>
     </form>
   </main>
   <script type="module" src="js/upload.js"></script>
