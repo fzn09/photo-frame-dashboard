@@ -23,6 +23,22 @@ assert.deepEqual(lidl.items.map(i => [i.name, i.total_price]), [
   ['Frische Vollmilch', 1.19], ['Bananen', 1.49], ['Butter', 1.99], ['Lauchzwiebeln', 0.79]
 ], 'dot or comma decimals, stops at "zu zahlen"');
 
+// small-shop layout: name line(s) with an article code, then "1 st x 3,99   3,99 (A)" or a weight line
+const asia = parseReceipt(fx('receipt-asia-clean.txt'));
+assert.equal(asia.purchase_date, '2026-11-16');
+assert.equal(asia.items.length, 15, 'every product, no Einweg deposit');
+assert.equal(asia.items.reduce((s, i) => s + i.total_price, 0).toFixed(2), '56.26', 'receipt total 56,76 minus 2 x 0,25 Einweg');
+assert.deepEqual(asia.items[1], { name: 'Erdnusspaste PCD 500g', qty: 1, total_price: 3.99 }, 'article code removed');
+assert.deepEqual(asia.items[4], { name: 'Gelbe Kochbananen from Klumbien', qty: 1, total_price: 1 }, 'wrapped name, weight line, €/kg removed');
+assert.deepEqual(asia.items[10], { name: 'Soto Ayam BAMBOE 40g', qty: 2, total_price: 2.5 });
+
+// the same receipt as Tesseract read it from a phone photo (header redacted)
+const asiaOcr = parseReceipt(fx('receipt-asia-ocr.txt'));
+assert.deepEqual(asiaOcr.items.map(i => i.total_price), asia.items.map(i => i.total_price), 'same prices despite moved and garbled totals');
+assert.equal(asiaOcr.items[6].name, 'La/Rote Süß Koffeln', 'a name fragment before its echoed price joins the item');
+assert.equal(asiaOcr.items[11].name, 'Sushi Ebi SEACON 180g', 'a total that arrives lines later fills the open item');
+assert.ok(!asiaOcr.items.some(i => /INWEG|52,41|EEE/i.test(i.name)), 'no deposit, no tax table');
+
 // OCR noise
 const noisy = parseReceipt('EDEKA\n|| KAESE ~ 3, 49 B\n12 34\n.. 0,99\nX 1,00\n31.02.2026');
 assert.equal(noisy.store, 'EDEKA');
