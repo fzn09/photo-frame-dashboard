@@ -156,11 +156,13 @@ async function commit(e) {
   }
 }
 
-$('photo').onchange = e => {
+// Camera, gallery and file picker all feed the same OCR flow
+const onPick = e => {
   const f = e.target.files && e.target.files[0];
   e.target.value = '';
   if (f) readPhoto(f).catch(() => { status('Reading failed. Enter the lines by hand.'); showReview({ store: '', purchase_date: '', items: [] }); });
 };
+$('photo').onchange = $('gallery').onchange = $('file').onchange = onPick;
 $('manual').onclick = () => { status(''); showReview({ store: '', purchase_date: '', items: [] }); };
 $('add').onclick = () => $('rows').appendChild(row({}));
 $('review').onsubmit = commit;
