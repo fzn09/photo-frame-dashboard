@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F2EEE6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Receipt upload</title>
+  <link rel="manifest" href="/upload.webmanifest">
+  <link rel="icon" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="stylesheet" href="css/upload.css">
+</head>
+<body>
+  <main class="up">
+    <h1>Receipt to fridge</h1>
+    <p class="up-hint">Photograph the receipt flat and well lit. Check every line before you confirm.</p>
+
+    <label class="up-btn up-btn--main">
+      <input id="photo" type="file" accept="image/*" capture="environment" hidden>
+      Take photo
+    </label>
+    <button id="manual" class="up-btn" type="button">Enter by hand</button>
+
+    <p id="status" class="up-status" role="status"></p>
+    <p id="warn" class="up-warn" hidden></p>
+    <details id="raw" class="up-raw" hidden>
+      <summary>OCR text</summary>
+      <pre></pre>
+    </details>
+
+    <form id="review" hidden>
+      <label class="up-date">Purchase date <input id="date" type="date" required></label>
+      <table class="up-table">
+        <thead><tr><th>Item</th><th>Qty</th><th>EUR</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <button id="add" class="up-btn" type="button">Add line</button>
+      <button class="up-btn up-btn--main" type="submit">Confirm to fridge</button>
+    </form>
+  </main>
+  <script type="module" src="js/upload.js"></script>
+</body>
+</html>

@@ -17,6 +17,8 @@ export default defineConfig({
   build: {
     target: 'chrome106',
     cssTarget: 'chrome61',
+    // upload.html is the phone receipt page. A separate entry, so nothing of it lands in the frame bundle.
+    rollupOptions: { input: { main: 'index.html', upload: 'upload.html' } },
   },
   server: { host: true },
 });

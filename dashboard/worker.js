@@ -1,5 +1,5 @@
 // Cloudflare Worker — API proxy for home dashboard
-// Routes: /api/weather, /api/calendar, /api/shopping (Bring!: GET list, POST write), /api/fridge (REWE receipts in KV: GET list, POST used up), /api/ingest (the REWE job pushes here: bearer key, no cookie), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/recipe + /api/meals/img (Cookidoo week plan, cookidoo.js)// All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
+// Routes: /api/weather, /api/calendar, /api/shopping (Bring!: GET list, POST write), /api/fridge (REWE receipts in KV: GET list, POST used up), /api/ingest (the REWE job pushes here: bearer key, no cookie), /api/receipt/commit (phone upload page: reviewed receipt lines into KV), /api/chores (TickTick), /api/config (visible views), /api/transit, /api/photos (Unsplash stock stream), /api/meals + /api/meals/recipe + /api/meals/img (Cookidoo week plan, cookidoo.js)// All other paths go to Cloudflare Assets (run_worker_first in wrangler.jsonc, so the gate below covers them).
 //
 // Access gate: the whole site (page, assets and /api/*) needs the `hq` cookie, which holds DASH_TOKEN.
 // Open https://<worker>/?key=<DASH_TOKEN> once on the frame to set it (one year). The page JS carries the
@@ -7,7 +7,7 @@
 
 import { parseViews } from './views.js';
 import { handleMeals, handleMealRecipe, handleMealImage } from './cookidoo.js';
-import { mapIngest, applyUsed } from './rewe-map.js';
+import { mapIngest, applyUsed, mapManual, mergeManual } from './rewe-map.js';
 import { shelf } from './calc.js';
 
 // Same-origin only: no Access-Control-Allow-Origin, so other sites can't read the family's data.
@@ -15,7 +15,7 @@ const JSON_CORS = { 'Content-Type': 'application/json' };
 const COOKIE_AGE = 365 * 24 * 3600;
 // Browsers fetch the web-app manifest without cookies, so these must pass the gate or Firefox can't
 // install the dashboard as a full-screen app. They hold only the app name and icons, no family data.
-const PUBLIC = new Set(['/manifest.webmanifest', '/icon-192.png', '/icon-512.png']);
+const PUBLIC = new Set(['/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/upload.webmanifest']);
 
 function gate(request, env, url) {
   if (!env.DASH_TOKEN) return new Response('DASH_TOKEN is not set', { status: 503 });
@@ -89,6 +89,7 @@ async function route(request, env, url) {
     if (pathname === '/api/calendar') return await handleCalendar(env);
     if (pathname === '/api/shopping') return await (request.method === 'POST' ? bringWrite(request, env) : bringRead(env));
     if (pathname === '/api/fridge')   return await (request.method === 'POST' ? fridgeWrite(request, env) : fridgeRead(env));
+    if (pathname === '/api/receipt/commit' && request.method === 'POST') return await receiptCommit(request, env);
     if (pathname === '/api/chores')   return await (request.method === 'POST' ? choresWrite(request, env) : choresRead(env));
     if (pathname === '/api/config')   return handleConfig(env);
     if (pathname === '/api/transit')  return await handleTransit(env);
@@ -367,23 +368,47 @@ async function handleIngest(request, env) {
     return new Response('{"ok":true}', { headers: JSON_CORS });
   }
   await kv.put('rewe:latest', JSON.stringify(feed));
-  const ids = new Set(feed.items.map(i => i.id));
+  // Used-up flags of phone uploads share rewe:used, so their ids must survive the prune too
+  const manual = (await kv.get('manual:items', 'json')) || [];
+  const ids = new Set([...feed.items, ...manual].map(i => i.id));
   const used = (await kv.get('rewe:used', 'json')) || [];
   const kept = used.filter(id => ids.has(id));
   if (kept.length !== used.length) await kv.put('rewe:used', JSON.stringify(kept));
   return new Response('{"ok":true}', { headers: JSON_CORS });
 }
 
-// 503 until the first ingest, so the page keeps its sample data.
+// Job items (rewe:latest) plus phone uploads (manual:items). 503 while both are empty, so the page keeps its
+// sample data. updatedAt and status stay the job's: the view's "overdue" hint is about the job.
 async function fridgeRead(env) {
-  const latest = env.FRIDGE_KV && await env.FRIDGE_KV.get('rewe:latest', 'json');
-  if (!latest) return new Response('', { status: 503 });
-  const used = (await env.FRIDGE_KV.get('rewe:used', 'json')) || [];
+  const kv = env.FRIDGE_KV;
+  if (!kv) return new Response('', { status: 503 });
+  const [latest, manual] = await Promise.all([kv.get('rewe:latest', 'json'), kv.get('manual:items', 'json')]);
+  if (!latest && !(manual && manual.length)) return new Response('', { status: 503 });
+  const used = (await kv.get('rewe:used', 'json')) || [];
+  const base = latest || { status: 'ok', message: '', updatedAt: null, items: [] };
   // label, section, days: the shelf-life estimate from calc.js, for clients without that table (the TV app)
-  const items = applyUsed(latest.items, used).map(i => ({ ...i, ...shelf(i.name) }));
-  return new Response(JSON.stringify({ ...latest, items }), {
+  const items = applyUsed([...base.items, ...(manual || [])], used).map(i => ({ ...i, ...shelf(i.name) }));
+  return new Response(JSON.stringify({ ...base, items }), {
     headers: { ...JSON_CORS, 'Cache-Control': 'no-store' }
   });
+}
+
+// POST {purchase_date, items:[{name, qty, total_price}]} from upload.html, after the user reviewed the OCR draft.
+// Not touched by the job's ingest, which replaces rewe:latest on every run.
+const MAX_RECEIPT = 64 * 1024;
+async function receiptCommit(request, env) {
+  const denied = guard(request, env);
+  if (denied) return denied;
+  if (!env.FRIDGE_KV) return jsonError('fridge not configured', 503);
+  const raw = await request.arrayBuffer();
+  if (raw.byteLength > MAX_RECEIPT) return jsonError('too large', 413);
+  let items;
+  try { items = mapManual(JSON.parse(new TextDecoder().decode(raw))); } catch { items = null; }
+  if (!items) return jsonError('bad payload', 400);
+  const kv = env.FRIDGE_KV;
+  const merged = mergeManual(await kv.get('manual:items', 'json'), items, Date.now());
+  await kv.put('manual:items', JSON.stringify(merged));
+  return new Response(JSON.stringify({ ok: true, added: items.length }), { headers: JSON_CORS });
 }
 
 // POST {op:'use'|'unuse', ids:[...]}. Several ids in one write: a view row can hold several purchases, and KV

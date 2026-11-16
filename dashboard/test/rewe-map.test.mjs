@@ -1,6 +1,6 @@
 // Run: node test/rewe-map.test.mjs   (from dashboard/). Throws on the first failed assertion.
 import assert from 'node:assert/strict';
-import { mapIngest, applyUsed } from '../rewe-map.js';
+import { mapIngest, applyUsed, mapManual, mergeManual } from '../rewe-map.js';
 
 const line = (name, date = '2026-11-02', extra = {}) => ({ name, qty: 2.0, total_price: 3.18, purchase_date: date, ...extra });
 const ok = items => ({ status: 'ok', message: '', updated_at: '2026-11-02T11:30:00+00:00', items });
@@ -42,4 +42,26 @@ assert.deepEqual([odd.updatedAt, odd.message], [null, '']);
 
 const [x, y] = applyUsed([{ id: 'a' }, { id: 'b' }], ['b', 'gone']);
 assert.deepEqual([x.used, y.used], [false, true]);
+// phone uploads
+const up = (items, date = '2026-11-14') => ({ purchase_date: date, items });
+const m = mapManual(up([{ name: 'Bananen', qty: 2, total_price: 1.49 }, { name: ' ', qty: 1 }, { name: 'Milch', qty: -1, total_price: 'x' }]));
+assert.equal(m.length, 2, 'a line without a name is dropped');
+assert.deepEqual(Object.keys(m[0]), ['id', 'name', 'date', 'qty', 'total', 'src']);
+assert.deepEqual([m[0].name, m[0].qty, m[0].total, m[0].src], ['BANANEN', 2, 1.49, 'manual'], 'upper-cased for calc.js');
+assert.deepEqual([m[1].qty, m[1].total], [1, null], 'bad qty and price fall back');
+assert.match(m[0].id, /^m\w{1,15}$/, 'prefixed, and fridgeWrite accepts it');
+assert.deepEqual(mapManual(up([{ name: 'Bananen', qty: 2 }])).map(i => i.id), [m[0].id], 'the same upload maps to the same id');
+assert.equal(new Set(mapManual(up([{ name: 'X' }, { name: 'X' }])).map(i => i.id)).size, 2, 'two packs on one receipt stay apart');
+for (const bad of [null, 'x', {}, up([]), up('x'), up([{ name: 'A' }], '14.11.2026'), up([{ name: '' }])]) {
+  assert.equal(mapManual(bad), null, 'rejects ' + JSON.stringify(bad));
+}
+assert.equal(mapManual(up(Array.from({ length: 500 }, (_, i) => ({ name: 'I' + i })))).length, 200, 'item cap');
+
+const today = new Date(2026, 10, 16);
+const old = mapManual(up([{ name: 'ALT' }], '2026-10-01'));
+const merged = mergeManual([...old, ...m], mapManual(up([{ name: 'Bananen', qty: 3 }, { name: 'Brot' }], '2026-11-15')), today);
+assert.deepEqual(merged.map(i => i.name), ['BANANEN', 'BROT', 'BANANEN', 'MILCH'], 'newest first, older than 30 days dropped');
+assert.equal(mergeManual(m, m, today).length, 2, 'a double tap stores nothing new');
+assert.deepEqual(mergeManual(null, m, today).length, 2, 'first upload');
+
 console.log('rewe-map ok');

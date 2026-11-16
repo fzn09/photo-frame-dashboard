@@ -131,7 +131,7 @@ meals, kitchen tools and photos. See [PRODUCT.md](PRODUCT.md) for who it serves.
 | Runtime | Vanilla JS, no runtime packages. Each module is an IIFE attaching to `window.App`, `window.DATA` or `window.ICONS` |
 | Bundler | Vite, targeting Chrome 106 for JS and Chrome 61 for CSS |
 | Server | One Cloudflare Worker with no dependencies: gate, `/api/*` proxy and static assets |
-| Storage | Workers KV for the Cookidoo token pair and the REWE fridge feed; everything else lives in its upstream service |
+| Storage | Workers KV for the Cookidoo token pair, the REWE fridge feed and phone receipt uploads; everything else lives in its upstream service |
 | CSS | Design tokens (`tokens.css`), `base.css` and one stylesheet per view |
 | Icons | Inline SVG registry in `icons.js`, drawn with `App.icon()` |
 | Secrets | `wrangler secret put` in production, `.dev.vars` locally |
@@ -141,11 +141,13 @@ meals, kitchen tools and photos. See [PRODUCT.md](PRODUCT.md) for who it serves.
 ```text
 dashboard/
 ├── index.html          ← shell: nav rail + one <section> per view
+├── upload.html         ← phone receipt page (second Vite entry, not loaded by the frame)
 ├── worker.js           ← Worker: access gate, /api/* routes, static assets
 ├── cookidoo.js         ← Worker module: Cookidoo token refresh, week, recipes, image proxy
 ├── views.js            ← which views exist; shared by the Worker and the page
 ├── calc.js             ← pure helpers: calculator, conversions, fridge shelf-life estimates
-├── rewe-map.js         ← pure helpers: REWE job payload to stored items, used-up flags
+├── rewe-map.js         ← pure helpers: REWE job payload and phone uploads to stored items, used-up flags
+├── receipt-parse.js    ← pure helpers: OCR text of a receipt to draft lines (upload page)
 ├── glance.js           ← pure helpers: ranked chips for the ambient screen
 ├── SETUP.md            ← live-data setup, configuration and API reference
 ├── vite.config.js, wrangler.jsonc, package.json
@@ -158,7 +160,8 @@ dashboard/
 │   ├── slideshow.js    ← slideshow used by Photos, ambient mode and the Today tile
 │   ├── views/          ← home, calendar, tasks, shopping, fridge, meals, kitchen, photos, ambient
 │   ├── diag.js         ← on-device diagnostics overlay (?diag)
-│   └── fetch.js        ← polls /api/*, merges into window.DATA, fires App.emit('data')
+│   ├── fetch.js        ← polls /api/*, merges into window.DATA, fires App.emit('data')
+│   └── upload.js       ← upload page: photo, Tesseract OCR from /ocr/, review, commit
 ├── css/                ← tokens.css, base.css, views/*.css
 ├── public/             ← fonts, PWA manifest and icons
 ├── test/               ← plain node:assert checks
@@ -178,7 +181,9 @@ dashboard/
  writes (POST)   ── + token ───▶ gate ──▶ write guard ──▶ handlers ──▶ Bring!, BVG, TickTick,
  images          ──── cookie ──▶ gate ──▶ /api/meals/img ───────────▶  Unsplash, Cookidoo
 
- REWE job (EC2)  ──── bearer ──────────▶ POST /api/ingest ──────────▶  KV (read by GET /api/fridge)
+ REWE job (EC2)  ──── bearer ──────────▶ POST /api/ingest ──────────▶  KV rewe:latest
+ Phone upload    ── cookie + token ────▶ POST /api/receipt/commit ──▶  KV manual:items
+ (OCR on phone)                          GET /api/fridge reads both keys
 ```
 
 API keys stay in the Worker. The frame only talks to the Worker, because Android 6 lacks the Let's Encrypt root and
@@ -211,6 +216,7 @@ The full table, with poll intervals, is in [SETUP.md](dashboard/SETUP.md#api-rou
 | TV read access | `GET /api/*` with `X-TV-Token`, CORS for `TV_ORIGINS` (the webOS TV app) | `worker.js` |
 | Read and write | `/api/shopping`, `/api/fridge`, `/api/chores` | `worker.js` |
 | Job push | `/api/ingest` | `worker.js`, using `rewe-map.js` |
+| Phone push | `/api/receipt/commit` | `worker.js`, using `rewe-map.js` (`mapManual`, `mergeManual`) |
 | Meals | `/api/meals`, `/api/meals/recipe`, `/api/meals/img` | `cookidoo.js` |
 
 A handler answers 503 when its credentials are missing, and a thrown error becomes a generic 502 with details in the
@@ -316,8 +322,9 @@ Run from `dashboard/` with `node test/<name>.test.mjs`. They use plain `node:ass
 | `cookidoo.test.mjs` | Token refresh, week and recipe mapping, routes, image proxy |
 | `calc.test.mjs` | Calculator, conversions, fridge estimates |
 | `glance.test.mjs` | Ambient chip ranking and limits |
-| `rewe-map.test.mjs` | Job payload mapping, stable ids, caps, bad types |
-| `ingest.test.mjs` | Ingest auth and limits, ok and error runs, used-up flags, pruning |
+| `rewe-map.test.mjs` | Job payload and upload mapping, stable ids, caps, bad types, 30-day pruning |
+| `ingest.test.mjs` | Ingest auth and limits, ok and error runs, used-up flags, pruning, receipt commit and the merged read |
+| `receipt-parse.test.mjs` | OCR text to draft lines: prices, quantity lines, skipped lines, date, store |
 | `type-floor.test.mjs` | No text under the 16 px floor |
 
 ---

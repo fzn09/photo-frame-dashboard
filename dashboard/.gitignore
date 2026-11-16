@@ -4,3 +4,6 @@ dist
 kiosk/build
 .dev.vars
 .env
+
+# Tesseract OCR files for upload.html, copied from node_modules (SETUP.md, Receipt upload)
+public/ocr
