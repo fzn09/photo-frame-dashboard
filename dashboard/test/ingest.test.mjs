@@ -92,6 +92,38 @@ for (const bad of [{ op: 'eat', ids: [c] }, { op: 'use' }, { op: 'use', ids: [] 
 }
 assert.equal((await write({ ...env, FRIDGE_KV: undefined }, { op: 'use', ids: [c] })).status, 503, 'mock mode stays silent');
 
+// phone uploads: own key, merged into the read, kept across job runs
+const receipt = (env, body, token = TOKEN) => call(env, '/api/receipt/commit', {
+  method: 'POST', headers: { Cookie: COOKIE, 'X-Dash-Token': token }, body: typeof body === 'string' ? body : JSON.stringify(body)
+});
+const upload = { purchase_date: '2026-11-14', items: [{ name: 'Gouda', qty: 1, total_price: 2.29 }, { name: 'Lauch', qty: 2 }] };
+const pe = fresh();
+assert.equal((await receipt(pe, upload, 'wrong')).status, 401, 'needs the token');
+assert.equal((await call(pe, '/api/receipt/commit', { method: 'POST', headers: { 'X-Dash-Token': TOKEN }, body: '{}' })).status, 401, 'needs the cookie');
+assert.equal((await receipt(pe, 'x'.repeat(64 * 1024 + 1))).status, 413, 'too large');
+for (const bad of ['{nope', {}, { purchase_date: '2026-11-14', items: [] }, { items: upload.items }]) {
+  assert.equal((await receipt(pe, bad)).status, 400, 'rejects ' + JSON.stringify(bad));
+}
+assert.equal((await receipt({ ...pe, FRIDGE_KV: undefined }, upload)).status, 503, 'no KV');
+assert.equal(pe.FRIDGE_KV.writes.length, 0, 'nothing stored by a rejected call');
+
+const r = await receipt(pe, upload);
+assert.equal(r.status, 200);
+assert.deepEqual(await r.json(), { ok: true, added: 2 });
+got = await fridge(pe);
+assert.deepEqual(got.items.map(i => i.name), ['GOUDA', 'LAUCH'], 'served before any job run');
+assert.equal(got.updatedAt, null, 'no job age to show');
+await receipt(pe, upload);
+assert.equal((await fridge(pe)).items.length, 2, 'a double tap adds nothing');
+
+const gouda = got.items[0].id;
+assert.equal((await write(pe, { op: 'use', ids: [gouda] })).status, 200, 'used up works on uploads');
+await ingest(pe, payload);
+got = await fridge(pe);
+assert.equal(got.items.length, payload.items.length + 2, 'a job run replaces only its own items');
+assert.equal(got.items.find(i => i.id === gouda).used, true, 'and keeps the upload used up');
+assert.equal(got.updatedAt, payload.updated_at, 'age comes from the job');
+
 // KV down: a generic 502, no detail
 console.error = () => {};
 const down = { ...fresh(), FRIDGE_KV: { get() { throw new Error('secret kv detail'); } } };

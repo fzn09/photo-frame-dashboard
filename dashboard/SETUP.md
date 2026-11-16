@@ -16,6 +16,7 @@ order and skip the ones you don't need. A feed with no credentials keeps its sam
   - [Google Calendar](#google-calendar)
   - [Bring! shopping](#bring-shopping)
   - [REWE fridge](#rewe-fridge)
+  - [Receipt upload from the phone](#receipt-upload-from-the-phone)
   - [TickTick chores](#ticktick-chores)
   - [Cookidoo meals](#cookidoo-meals)
   - [Unsplash photos](#unsplash-photos)
@@ -162,6 +163,37 @@ The job pushes the receipt lines to `POST /api/ingest`, and the Worker keeps the
 good items and shows the reason in the view. Receipts carry no use-by date, so the view's tags are estimates from the
 purchase date (`calc.js`). Tapping a row marks it used up. That flag stays in KV, not on the receipt, and survives
 later runs.
+
+### Receipt upload from the phone
+
+**Needs:** the `FRIDGE_KV` binding and `DASH_TOKEN`, both already used by the fridge. No paid service and no new secret.
+
+`/upload.html` is a phone page for paper receipts from any shop. It reads the photo on the phone with Tesseract.js
+(German model), turns the text into draft lines (`receipt-parse.js`), and shows them for correction. Confirm sends
+the reviewed lines to `POST /api/receipt/commit`. The photo never leaves the phone. The Worker keeps the lines in KV
+`manual:items` for 30 days, apart from the job's `rewe:latest`, so a job run does not delete them. The Fridge view shows
+both. Tapping "Used" works the same on both.
+
+1. Sign in once on each phone: open `https://<worker>/?key=<DASH_TOKEN>`, then `https://<worker>/upload.html`.
+2. Add it to the home screen: Safari, Share, **Add to Home Screen** (iPhone), or Chrome menu, **Add to Home screen**
+   (Android).
+
+**OCR files.** The page loads Tesseract from `public/ocr/` on your own Worker, never from a CDN. The folder is
+git-ignored. Fill it once before `npm run build`, from `dashboard/`:
+
+```sh
+npm install --no-save tesseract.js@7.0.0 @tesseract.js-data/deu@1.0.0
+mkdir -p public/ocr/core public/ocr/lang
+cp node_modules/tesseract.js/dist/tesseract.min.js node_modules/tesseract.js/dist/worker.min.js public/ocr/
+cp node_modules/tesseract.js-core/tesseract-core*.js node_modules/tesseract.js-core/tesseract-core*.wasm public/ocr/core/
+cp "$(find node_modules/@tesseract.js-data/deu -name deu.traineddata.gz | head -1)" public/ocr/lang/
+```
+
+These paths are not yet verified against the installed packages. Check the file names in `node_modules` before
+copying, since the layout can differ between versions. Without
+`public/ocr/`, the page says so and offers "Enter by hand".
+
+A REWE receipt that also arrives as eBon would count twice. The page warns when it detects REWE.
 
 ### TickTick chores
 
@@ -437,7 +469,7 @@ weather.
 
 ### API routes
 
-Every route needs the access cookie, except that the manifest and icons are public and `POST /api/ingest` has its own
+Every route needs the access cookie, except that the manifests and icons are public and `POST /api/ingest` has its own
 bearer key. Reads are polled by the page, and
 a failed poll keeps the last good data.
 
@@ -448,7 +480,8 @@ a failed poll keeps the last good data.
 | `GET /api/calendar` | Google Calendar | 5 min | Both people's events |
 | `GET /api/transit` | BVG transport.rest | 1 min | Departures from your stop |
 | `GET`, `POST /api/shopping` | Bring! | 2 min | `POST` ops: `add`, `done`, `remove` |
-| `GET`, `POST /api/fridge` | KV | 5 min | `POST` body `{ op, ids }`, ops `use`, `unuse`. `GET` answers 503 until the first ingest |
+| `GET`, `POST /api/fridge` | KV | 5 min | `POST` body `{ op, ids }`, ops `use`, `unuse`. `GET` merges job items and phone uploads, and answers 503 while both are empty |
+| `POST /api/receipt/commit` | Upload page | Never, the phone pushes | Needs `X-Dash-Token`. Body `{ purchase_date, items: [{ name, qty, total_price }] }`, max 64 KB. Stored in `manual:items` |
 | `POST /api/ingest` | REWE job | Never, the job pushes | Bearer `INGEST_KEY`. `status: "ok"` replaces the items, `"error"` keeps them |
 | `GET`, `POST /api/chores` | TickTick | 5 min | `POST` completes a task, or adds one with `op: 'add'` |
 | `GET /api/photos` | Unsplash | When the slideshow needs more | Stock photo set |
