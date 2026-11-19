@@ -68,7 +68,7 @@ export function convert(id, x) { return r2(CONV[id][1](x)); }
 // ---- fridge sections + estimated shelf life. Receipts carry no expiry date, so `days` is a guess from the
 // item type, counted from the purchase date: the view labels it as an estimate. null = keeps, no tag.
 // First match wins. [receipt pattern, section, days, readable name (default: title-cased receipt name)]
-export const SECTIONS = ['Fruit & veg', 'Meat & fish', 'Dairy & eggs', 'Bread', 'Frozen', 'Pantry', 'Snacks', 'Other'];
+export const SECTIONS = ['Fruit & veg', 'Meat & fish', 'Dairy & eggs', 'Bread', 'Frozen', 'Pantry', 'Snacks', 'Drinks', 'Household', 'Other'];
 const VEG = 'Fruit & veg', MEAT = 'Meat & fish', DAIRY = 'Dairy & eggs', PANTRY = 'Pantry', SNACK = 'Snacks';
 const FOODS = [
   [/^MANGO/, VEG, 6, 'Mango'], [/^KAKI/, VEG, 7, 'Kaki'], [/^BANANE/, VEG, 5, 'Bananen'],
@@ -78,7 +78,7 @@ const FOODS = [
   [/^KUERBIS/, VEG, 30, 'Hokkaido-Kürbis'], [/^BASILIKUM/, VEG, 5, 'Basilikum'], [/^ZWIEB\.GEMUESE/, VEG, 14, 'Zwiebelgemüse'],
   [/^GEFL\.WUERSTCHEN/, MEAT, 14, 'Geflügelwürstchen'], [/^SCHINKEN NUGGETZ/, MEAT, 14, 'Schinken Nuggetz'],
   [/^JB-GULASCH/, MEAT, 2, 'Gulasch'], [/^HA-UNTERSCHENKEL/, MEAT, 2, 'Hähnchenschenkel'], [/^LACHSFORELLEN/, MEAT, 2, 'Lachsforellenfilet'],
-  [/^EIER /, DAIRY, 28, 'Eier'], [/BUTTER$/, DAIRY, 60, 'Butter'], [/^EMMENTALER/, DAIRY, 30, 'Emmentaler gerieben'],
+  [/^EIER\b/, DAIRY, 28, 'Eier'], [/BUTTER$/, DAIRY, 60, 'Butter'], [/^EMMENTALER/, DAIRY, 30, 'Emmentaler gerieben'],
   [/^GOUDA GERIEBEN/, DAIRY, 30, 'Gouda gerieben'], [/^PARMIGIANO/, DAIRY, 60, 'Parmigiano Reggiano'], [/^RICOTTA/, DAIRY, 7, 'Ricotta'],
   [/SCHLAGSAHNE/, DAIRY, 7, 'Schlagsahne'],
   [/^KOERNER BALANCE/, 'Bread', 5, 'Körner Balance'],
@@ -87,14 +87,27 @@ const FOODS = [
   [/^BEANZ/, PANTRY, null, 'Beanz Classic'], [/^ORZO/, PANTRY, null, 'Orzo'], [/^WEIZEN TYPE/, PANTRY, null, 'Weizenmehl Type 55'],
   [/^INSTANTMEHL/, PANTRY, null, 'Instantmehl'], [/MAYONNAISE/, PANTRY, null, 'Mayonnaise'], [/^MIRACEL WHIP/, PANTRY, null, 'Miracel Whip'],
   [/^KONDENSMILCH/, PANTRY, null, 'Kondensmilch'], [/^GEMUESE FOND/, PANTRY, null, 'Gemüsefond'], [/^GEFLUEGEL FOND/, PANTRY, null, 'Geflügelfond'], [/^FRITTIEROEL/, PANTRY, null, 'Frittieröl'],
-  [/^NUTELLA/, PANTRY, null, 'Nutella'], [/^BROTAUFSTRICH/, PANTRY, null, 'Brotaufstrich'],
-  [/BUENO|JELLY|MALTESERS|MELODY POP|PRETZEL|SNACK/, SNACK, null]
+  [/^NUTELLA/, PANTRY, null, 'Nutella'], [/BROTAUFSTRICH/, PANTRY, null, 'Brotaufstrich'],
+  [/BUENO|JELLY|MALTESERS|MELODY POP|PRETZEL|SNACK/, SNACK, null],
+  // Keyword rows for products not listed above. Order matters: GARNELEN CHIPS before GARNELEN, ROESTZWIEBELN before ZWIEBEL.
+  [/MINERALWASSER|HAFERDRINK/, 'Drinks', null],
+  [/ZEWA|TOILETTENPAPIER|K(UE|Ü)CHENT(UE|Ü)CHER/, 'Household', null],
+  [/GARNELEN CHIPS|CRUNCHIPS|GEBAECKSTANGEN|KEKSE|SPEKULATIUS|MADS FRUITS/, SNACK, null],
+  [/AUBERGINE|ZUCCHINI|RISPENTOMATE|STAUDENSEL|GRUENE BOHNEN|KOCHBANANEN/, VEG, 7],
+  [/SALAT/, VEG, 3], [/APFEL|KNOBLAUCH|SKARTOFFELN|^ZWIEBEL/, VEG, 30], [/INGWER/, VEG, 14],
+  [/LACHSFILET|GESCHNETZELTE|HAEHNCHENFLUEGEL/, MEAT, 2], [/HACKFLEISCH|SUSHI/, MEAT, 1],
+  [/CHICKEN NUGGETS|CRISPY CHICK|GARNELEN|SCHLEFI/, 'Frozen', null],
+  [/PHILADELPHIA|SPRUEHSAHNE/, DAIRY, 14], [/JOGH/, DAIRY, 10],
+  [/SANDWICH/, 'Bread', 3], [/KLOSSTEIG/, 'Bread', 5],
+  [/MAFALDINE|SPAGHETTINI|PASTA|SARDINE|ERDNUSS|BACKKAKAO|MANDELN|PFEFFER|VANILLE|ROESTZWIEBELN|SOTO AYAM|PANDAN|TRIX|OSTMANN|GARTEN ERBSEN|MOEHRCH/, PANTRY, null]
 ];
 const title = s => s.toLowerCase().replace(/(^|[\s.-])(\S)/g, (m, a, b) => a + b.toUpperCase());
 
 // Receipt name -> { label, section, days (estimated shelf life from the purchase date, null = keeps) }.
 // The Worker adds these fields to /api/fridge items, so the webOS TV app needs no copy of FOODS.
 export function shelf(name) {
+  // Phone-upload OCR lines carry the pack size and price: "DE CECCO MAFALDINE 500G 1 B 2,69". Drop that tail.
+  name = name.replace(/\s+(\d+[.,]?\d*\s?(G|KG|ML|L)|\d+X\d)\b.*$/i, '').trim();
   const f = FOODS.find(x => x[0].test(name));
   return { label: f && f[3] || title(name), section: f ? f[1] : 'Other', days: f ? f[2] : null };
 }

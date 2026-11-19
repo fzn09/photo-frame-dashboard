@@ -33,7 +33,16 @@ assert.deepEqual(fridgeItem({ name: 'BROCCOLI BIO', date: '2026-11-04' }, nov6),
 assert.equal(fridgeItem({ name: 'LACHSFORELLENFI.', date: '2026-10-26' }, nov6).left, -9, 'past the estimate');
 assert.equal(fridgeItem({ name: 'NUTELLA 450G', date: '2026-10-26' }, nov6).left, null, 'keeps: no estimate');
 assert.equal(fridgeItem({ name: 'WEIHENST. BUTTER', date: '2026-10-21' }, nov6).section, 'Dairy & eggs');
-assert.deepEqual(fridgeItem({ name: 'MADS FRUITS', date: '2026-11-06' }, nov6), { label: 'Mads Fruits', section: 'Other', age: 0, left: null }, 'unknown item: title case, no guess');
+assert.deepEqual(fridgeItem({ name: 'XYZ UNBEKANNT', date: '2026-11-06' }, nov6), { label: 'Xyz Unbekannt', section: 'Other', age: 0, left: null }, 'unknown item: title case, no guess');
+const sec = n => shelf(n).section;
+assert.deepEqual(shelf('DE CECCO MAFALDINE 500G 1 B 2,69'), { label: 'De Cecco Mafaldine', section: 'Pantry', days: null }, 'OCR tail (size, price) is stripped');
+assert.equal(sec('SARDINES IN TOMATEN SAUCE MEGA SG 155G VA'), 'Pantry');
+assert.deepEqual([shelf('SB-LACHSFILET').section, shelf('SB-LACHSFILET').days], ['Meat & fish', 2]);
+assert.equal(sec('MGLIK HAFERDRINK BARISTA 1L 8 A 1,99'), 'Drinks');
+assert.equal(sec('ZEWA PREMIUM TOILETTENPAPIER 5-LAGIG 6X110 BLATT 2 A 4,49'), 'Household');
+assert.equal(sec('GARNELEN CHIPS UDANG 809G'), 'Snacks');
+assert.equal(sec('ROESTZWIEBELN'), 'Pantry');
+assert.equal(sec('CHICKEN NUGGETS'), 'Frozen');
 const lots = fridgeRows([
   { id: 'a', name: 'KAROTTE BIO', qty: 1, date: '2026-11-04' },
   { id: 'b', name: 'KAROTTE BIO', qty: 2, date: '2026-10-27' },
