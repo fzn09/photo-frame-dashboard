@@ -460,7 +460,7 @@ weather.
 | `BVG_STOP_ID` | For departures | BVG stop ID |
 | `BVG_STOP_NAME` | No | Stop name shown on screen |
 | `BVG_WALK_MIN` | No | Walk time to the stop; sooner departures are hidden |
-| `TRAVEL_DEFAULT_MIN` | No | Travel assumed for an event with a location, default `20` |
+| `TRAVEL_DEFAULT_MIN` | No | Travel assumed for an event with a location, default `30` |
 | `ARRIVE_EARLY_MIN` | No | Live leave-by: minutes early to arrive, default `5` (needs the `HOME_LAT`/`HOME_LON` secrets) |
 | `VIEWS` | No | Views on the frame ([Step 9](#step-9-choose-which-views-to-show)) |
 | `PHOTO_QUERY` | No | Unsplash search term |

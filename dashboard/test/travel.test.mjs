@@ -1,6 +1,6 @@
 // Run: node test/travel.test.mjs   (from dashboard/). The Worker's default travel time for calendar events.
 import assert from 'node:assert/strict';
-import { travelFor, pickJourney } from '../worker.js';
+import { travelFor, pickJourney, placeMatches } from '../worker.js';
 import { chips } from '../glance.js';
 
 const timed = { start: { dateTime: '2026-11-09T12:00:00+01:00' }, location: 'Bright Smiles Dental' };
@@ -10,6 +10,13 @@ assert.equal(travelFor({ start: { date: '2026-11-09' }, location: 'Montréal' },
 assert.equal(travelFor(timed, ''), null, 'setting empty: off');
 assert.equal(travelFor(timed, '0'), null, 'setting 0: off');
 assert.equal(travelFor({ ...timed, location: 'https://zoom.us/j/123' }, '20'), null, 'online meeting: no travel');
+
+// Geocode guard: a fuzzy near-miss is not the place (real BVG answers)
+assert.equal(placeMatches('Padel Factory', { name: 'Pasta Factory, Kottbusser Damm 6, 10967 Berlin-Kreuzberg' }), false, 'near-miss rejected');
+assert.equal(placeMatches('PadelBros', { name: 'S+U Heidelberger Platz (Berlin)' }), false);
+assert.equal(placeMatches('PadelCity Berlin, Emma-Herwegh-Straße 10, Berlin, Germany', { address: 'Emma-Herwegh-Straße 17, Berlin-Moabit' }), true, 'street part matches');
+assert.equal(placeMatches('Charité Campus Virchow-Klinikum', { name: 'Charité Campus Virchow Klinikum, 13353 Berlin-Wedding' }), true, 'hyphen = space');
+assert.equal(placeMatches('Torstraße 1, 10119 Berlin', { address: 'Torstraße 1, Berlin-Prenzlauer Berg' }), true, 'postcode not required');
 
 // Live route: the latest journey that still arrives by the deadline wins; walking-only gives no via
 const walk = (d, a) => ({ walking: true, departure: d, arrival: a });

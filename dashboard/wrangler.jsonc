@@ -25,7 +25,7 @@
 		// "home" is always on. Unknown names are ignored. Change + redeploy; the frame picks it up within ~5 min.
 		"VIEWS": "home,calendar,tasks,shopping,fridge,meals,kitchen,photos",
 		// Minutes of travel assumed for a timed calendar event that has a location (0 or empty = off): drives "Leave in N min"
-		"TRAVEL_DEFAULT_MIN": "20",
+		"TRAVEL_DEFAULT_MIN": "30",
 		// With the HOME_LAT/HOME_LON secrets set, events in the next 12 h get a live BVG door-to-door time instead,
 		// planned to arrive this many minutes early
 		"ARRIVE_EARLY_MIN": "5",

@@ -230,9 +230,19 @@ async function bvg(path, ttl) {
   return r.json();
 }
 
+// BVG's search is fuzzy: "Padel Factory" returns "Pasta Factory". Accept a place only if every word of some comma part of
+// the location appears in its name or address ("PadelCity Berlin, Emma-Herwegh-Straße 10" matches on the street part).
+const PLACE_STOP = new Set(['berlin', 'germany', 'deutschland']);
+export function placeMatches(loc, place) {
+  const words = s => (s.toLowerCase().match(/\p{L}{3,}/gu) || []).filter(w => !PLACE_STOP.has(w));
+  const t = ((place.name || '') + ' ' + (place.address || '')).toLowerCase();
+  return loc.split(',').map(words).some(ws => ws.length && ws.every(w => t.includes(w)));
+}
+
 export async function routeFor(e, env) {
-  const [to] = await bvg('/locations?' + new URLSearchParams({ query: e.loc, results: '1', addresses: 'true', poi: 'true' }), 30 * 86400);
-  if (!to) return null; // unknown place: keep the default
+  const found = await bvg('/locations?' + new URLSearchParams({ query: e.loc, results: '5', addresses: 'true', poi: 'true' }), 30 * 86400);
+  const to = found.find(p => placeMatches(e.loc, p));
+  if (!to) return null; // unknown place: keep the default rather than route somewhere else
   const p = to.location || to; // stops nest their coordinates
   const deadline = new Date(+new Date(e.start) - (+env.ARRIVE_EARLY_MIN || 0) * 60000).toISOString();
   const q = new URLSearchParams({ 'from.latitude': env.HOME_LAT, 'from.longitude': env.HOME_LON, 'from.address': 'Home',
