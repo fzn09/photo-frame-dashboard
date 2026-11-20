@@ -92,6 +92,12 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     list.innerHTML = V.showUsed ? sections(used) : all.length ? (one ? '<div class="f-cols f-one' + (big ? ' f-big' : '') + '">' + listFor(all) + '</div>' : listFor(all))
       : '<div class="s-empty serif">' + (used.length ? 'All used up.' : 'No receipts yet.') + '<br><i>The next REWE shop lands here.</i></div>';
     list.scrollTop = st;
+    railEnd();
+  }
+  // Hide the rail's "more below" chevron once nothing is left to scroll to
+  function railEnd() {
+    var r = V.el.querySelector('.f-rail');
+    r.classList.toggle('is-end', r.scrollHeight - r.scrollTop - r.clientHeight < 8);
   }
 
   function render() {
@@ -100,6 +106,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     V.el.innerHTML = '<div class="fridge">' +
       '<header class="s-head"><h1 class="serif">Fridge</h1><div class="s-count"></div><div class="f-checked"></div><span class="f-tag f-over" hidden>Overdue</span><button class="f-used" data-used hidden></button></header>' +
       '<nav class="f-rail cats glass" aria-label="Sections"></nav><div class="f-list panel glass glass--dense"></div></div>';
+    V.el.querySelector('.f-rail').addEventListener('scroll', railEnd);
     paint();
   }
 
