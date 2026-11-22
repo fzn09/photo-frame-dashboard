@@ -50,16 +50,17 @@ Kiosk APK: `dashboard/kiosk/build.ps1` (Windows) or `build.sh`. The saved URL is
 - **Stage:** fixed 1280×800 design, scaled with a CSS transform. Left column 96px (floating glass rail), content 1156×772. Cards are glass (`--mod`) on a grainy gradient (`--ground` + `public/bg/grain.png`); see DESIGN.md. Design tokens are in `css/tokens.css`, icons in `js/icons.js` via `App.icon()`.
 - The people are Fauzan (`alex`, `CAL_ALEX`) and Amanda (`jordan`, `CAL_JORDAN`). Location is Berlin (BVG, `Europe/Berlin`).
 
-## Frame constraints (Android 6, WebView 106 target, RK3126, ~1 GB RAM)
+## Frame constraints (M10R7: Firefox 143, RK3126, Mali-400, 1 GB low-RAM)
 
-[docs/building-for-the-frame.md](docs/building-for-the-frame.md) is the source of truth. The `frame-compat-reviewer` agent checks changes against it; run it after dashboard or Worker edits. The rules that bite most:
+The `frame-compat-reviewer` agent ([.claude/agents/frame-compat-reviewer.md](.claude/agents/frame-compat-reviewer.md)) holds the full checklist; run it after dashboard or Worker edits. [docs/building-for-the-frame.md](docs/building-for-the-frame.md) covers upstream's PF1007L (WebView 106); only its network and unattended-survival advice applies here. The rules that bite most:
 
-- Keep `vite.config.js` at `target: 'chrome106'`, `cssTarget: 'chrome61'`. The frame rejects 4- and 8-digit hex colours, so use `rgba()`.
-- Not supported: `oklch`/`color-mix`, native CSS nesting, `:has()`, `dvh`, `toSorted`/`Object.groupBy`/newer JS APIs (the bundler doesn't polyfill them), `alert`/`confirm`/`prompt`, `target="_blank"`.
-- No third-party CDNs from the page: Android 6 lacks the Let's Encrypt root. `*.workers.dev` works. Proxy images and other assets through the Worker. API keys stay in the Worker.
-- No infinite animations (SMIL or CSS loops keep 1–2 cores busy). Cache `Intl.DateTimeFormat`, update the clock once a minute, and avoid `innerHTML` rebuilds on every tick.
-- The page must survive alone: Wi-Fi comes up after the page loads, so retry with backoff and show stale data with its age. Never design a two-finger hold gesture; it opens the kiosk menu.
-- Test on the frame with `adb -d reverse tcp:5173 tcp:5173`, then launch the kiosk with `--ez debug true` and open `chrome://inspect`.
+- **Memory is the limit.** Android's low-RAM mode kills Firefox under pressure (Firefox Home reopens it after ~10 s). Views are never torn down, so keep hidden views light, cap slideshow images at 1280 px and 2–3 alive at once, release object URLs, and don't let arrays or listeners grow per poll.
+- **The GPU is weak.** Animate only `transform`/`opacity`. Avoid `backdrop-filter`, big blurs, animated shadows and filters. No infinite animations.
+- **The CPU is slow.** Cache `Intl.DateTimeFormat`, update the clock once a minute, and repaint only what changed.
+- CSS/JS features are rarely the issue (Firefox 143 is modern, and probably the last version for Android 6). The `chrome106` Vite target is harmless; keep it for upstream frames.
+- API keys stay in the Worker. Proxy photos through it.
+- The page must survive alone: Wi-Fi comes up after the page loads, so retry with backoff, show stale data with its age, and reload once a day.
+- Test on the frame with `adb -d reverse tcp:5173 tcp:5173` and debug with Firefox desktop `about:debugging` over USB. Check memory with `adb shell dumpsys meminfo org.mozilla.firefox`.
 
 ## Contributions
 
