@@ -68,6 +68,22 @@
   function paintHead() {
     var n = open().length, done = sorted().length - n;
     V.el.querySelector('.c-count').innerHTML = '<span class="num' + (n ? ' is-due' : '') + '">' + n + '</span> to do' + (done ? ' · ' + done + ' done' : '');
+    if (App.changed('chores-n', String(n))) App.flash(V.el.querySelector('.c-count .num'), 'm-bump');
+  }
+  // The last chore of the day: eight dots fly out of the counter once and are removed (DOM nodes, no canvas)
+  function burst() {
+    var head = V.el.querySelector('.c-head'), at = V.el.querySelector('.c-count .num');
+    if (!head || !at) return;
+    head.style.position = 'relative';
+    var x = at.offsetLeft + at.offsetWidth / 2, y = at.offsetTop + at.offsetHeight / 2;
+    var people = D.people.map(function (p) { return p.color; });
+    for (var i = 0; i < 8; i++) {
+      var d = document.createElement('i'), a = i * Math.PI / 4;
+      d.className = 'm-dot';
+      d.style.cssText = 'left:' + x + 'px;top:' + y + 'px;--dx:' + Math.round(Math.cos(a) * 70) + 'px;--dy:' + Math.round(Math.sin(a) * 70) + 'px;--c:' + people[i % people.length];
+      head.appendChild(d);
+    }
+    setTimeout(function () { App.$$('.m-dot', head).forEach(function (d) { d.remove(); }); }, 900);
   }
   function render() {
     V.el.innerHTML = '<div class="chores">' +
@@ -98,8 +114,10 @@
       c.done = true;
       c.doneAt = Date.now();
       paintList();
+      App.flash(V.el.querySelector('[data-ch="' + c.id + '"]'), 'm-rise'); // the row settles into its done place
       App.emit('data');
       var last = !open().length;
+      if (last) burst();
       schedule(c, 5000); // after the Undo window, the last chore included (it has Undo now too)
       App.toast(last ? '<b>All chores done.</b> ' + App.esc(c.title) + ' was the last one.' : '<b>' + App.esc(c.title) + '</b> done', {
         icon: last ? 'star' : 'check',

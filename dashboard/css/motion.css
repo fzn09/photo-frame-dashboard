@@ -1,0 +1,99 @@
+/* Motion. Every animation here starts on an event and ends: no infinite loops, transform and opacity only
+   (docs/building-for-the-frame.md, Heavy content). Upstream removed all motion in 83746cc; this brings back only the
+   one-shot kind. html.no-motion (?motion=0) and prefers-reduced-motion turn it all off. Classes are set with
+   App.flash(el, cls) in app.js, which removes them again. */
+
+@keyframes m-fade { from { opacity: 0; } }
+@keyframes m-rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes m-roll { from { opacity: 0; transform: translateY(60%); } }
+@keyframes m-bump { 50% { transform: scale(1.14); } }
+@keyframes m-pulse { 50% { transform: scale(1.06); } }
+@keyframes m-grow { from { opacity: 0; transform: scaleY(.6); } }
+@keyframes m-nudge { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+@keyframes m-from-r { from { opacity: 0; transform: translateX(24px); } }
+@keyframes m-from-l { from { opacity: 0; transform: translateX(-24px); } }
+@keyframes m-shift { from { transform: translateX(14.3%); } } /* one day of a seven-column strip */
+@keyframes m-glow { 40% { opacity: 1; } }
+@keyframes m-burst { to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.4); } }
+
+.m-fade { animation: m-fade .3s var(--ease); }
+.m-rise { animation: m-rise .3s var(--ease) both; }
+.m-roll { display: inline-block; animation: m-roll .25s var(--ease); }
+.m-bump { animation: m-bump .3s var(--spring); }
+span.m-bump, b.m-bump, span.m-tick, b.m-tick { display: inline-block; } /* transform skips inline boxes */
+.m-pulse { animation: m-pulse .4s var(--ease); }
+.m-grow { transform-origin: 50% 0; animation: m-grow .2s var(--ease); }
+.m-nudge { animation: m-nudge .4s linear; }
+.m-from-r { animation: m-from-r .2s var(--ease); }
+.m-from-l { animation: m-from-l .2s var(--ease); }
+.m-shift { animation: m-shift .4s var(--ease); }
+/* staggered entry: style="--i:n" on each row */
+.m-in { animation: m-rise .3s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms); }
+/* a row on its way out (checked off, used up), removed by the view after 200 ms */
+.m-out { opacity: 0; transform: scale(.96); transition: opacity .2s var(--ease), transform .2s var(--ease); }
+
+/* ---- shared chrome: toasts, sheets, the burn-in drift */
+.toast { transition: transform .25s var(--ease); }
+.sheet-scrim { transition: opacity .2s var(--ease); }
+.sheet { transition: transform .25s var(--spring), opacity .2s var(--ease); }
+.amb-info, .nt-inner, .home, #rail { transition: transform 2s var(--ease); } /* the 2-4 px anti-retention shift, glided */
+
+/* gliding selection marker (App.mark): category rails, the Meals week strip */
+.cats, .mc-strip { position: relative; }
+.m-mark { position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; transition: transform .25s var(--ease); }
+.cats .m-mark { border-radius: 14px; background: var(--rail-on); box-shadow: var(--lift); }
+.cats .m-mark.is-alt { background: var(--accent); }
+.cats .cat { position: relative; z-index: 1; }
+.cats .cat.is-on { background: transparent; box-shadow: none; } /* the marker is the fill */
+.mc-strip .m-mark { border-radius: var(--r-s); background: var(--ink); }
+.mc-strip .m-mark.is-alt { background: var(--accent); }
+.mc-strip .mc-day { position: relative; z-index: 1; }
+.mc-strip .mc-day.is-on { background: transparent; }
+
+/* ---- Home */
+/* every 10 min the next event glows once: an opacity-only tint, so nothing is clipped or re-laid out */
+.h-lanes .h-ev { position: relative; }
+.h-sweep::after {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; border-radius: 8px;
+  background: rgb(var(--accent-rgb) / .16); opacity: 0;
+  animation: m-glow .8s var(--ease);
+}
+
+/* ---- Calendar: the now-line moves by transform once a minute, and glides there */
+.now-line { top: 0; transition: transform 1s linear; }
+
+/* ---- Chores: the tick draws itself in */
+.c-box path { stroke-dasharray: 21; stroke-dashoffset: 21; transition: stroke-dashoffset .25s var(--ease) .05s; }
+.c-row.is-checking .c-box path, .c-row.is-done .c-box path { stroke-dashoffset: 0; }
+.m-dot { position: absolute; z-index: 5; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--c, var(--accent)); pointer-events: none; animation: m-burst .8s var(--ease) forwards; }
+
+/* ---- Shopping: the box fills with a little spring */
+.s-box { transition: transform .2s var(--spring); }
+
+/* ---- Fridge: the rail's "more below" chevron fades instead of popping */
+.f-rail::after { transition: opacity .2s var(--ease); }
+.f-rail.is-end::after { display: block; opacity: 0; }
+
+/* ---- Meals */
+.mc-main { transition: opacity .2s var(--ease); }
+.mc-main.is-out { opacity: 0; transition-duration: .15s; }
+.m-img { transition: opacity .4s var(--ease); }
+.m-img.is-loading { opacity: 0; }
+
+/* ---- Kitchen: a bar under the countdown, stepped once a second with the text. Not glided: a 1 s transition renewed
+   every second would keep the compositor busy for the whole timer, which is the endless-animation cost. */
+.k-timer { position: relative; overflow: hidden; }
+.k-t-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: var(--accent); transform-origin: 0 50%; }
+.m-tick { animation: m-roll .15s var(--ease); } /* the last ten seconds */
+
+/* ---- Slides: crossfade; Ambient adds a slow push-in (Ken Burns) that stops after 6 s */
+.slide { transition: opacity .8s var(--ease); }
+.slide.is-pre { opacity: 0; }
+.slide--kb .kb img { transition: transform 6s linear; }
+.slide--kb.is-zoom .kb img { transform: scale(1.05); }
+
+/* ---- off switch */
+.no-motion *, .no-motion *::before, .no-motion *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

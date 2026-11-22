@@ -112,13 +112,14 @@ import { restockRows } from '../../calc.js';
     if (!n) c.parentNode.removeChild(c);
     else c.querySelector('[data-cat-count]').textContent = n;
   }
-  function paintCats() { var c = V.el.querySelector('.s-rail'); if (c) c.innerHTML = catsHTML(); }
+  function paintCats() { var c = V.el.querySelector('.s-rail'); if (c) { c.innerHTML = catsHTML(); App.mark(c); } }
   function insertRow(g) {
     var cat = V.el.querySelector('.s-cat[data-cat="' + g.cat + '"]');
     if (!cat) return paintList();
     var tmp = document.createElement('div');
     tmp.innerHTML = row(g);
-    cat.appendChild(tmp.firstChild);
+    var r = cat.appendChild(tmp.firstChild);
+    App.flash(r, 'm-grow'); // the new row grows in
     catCount(g.cat);
     paintHead();
   }
@@ -144,6 +145,7 @@ import { restockRows } from '../../calc.js';
   function paintHead() {
     var n = open().length;
     V.el.querySelector('.s-count').innerHTML = '<span class="num' + (n ? ' is-due' : '') + '">' + n + '</span> to get';
+    if (App.changed('shop-n', String(n))) App.flash(V.el.querySelector('.s-count .num'), 'm-bump');
     paintCats();
   }
   function render() {
@@ -233,13 +235,19 @@ import { restockRows } from '../../calc.js';
     rowEl.classList.add('is-checking');
     setTimeout(function () {
       if (!V.pending[g.id]) return;
-      delete V.pending[g.id];
-      g.done = true;
-      removeRow(g);
-      refreshSuggestFor(g);
-      sync('done', g);
-      App.emit('data');
-    }, 1200);
+      var r = V.el.querySelector('.s-list [data-id="' + g.id + '"]');
+      if (r) r.classList.add('m-out'); // fade and shrink, then leave the list
+      setTimeout(function () {
+        if (!V.pending[g.id]) { if (r) r.classList.remove('m-out'); return; } // Undo in the last 200 ms
+        delete V.pending[g.id];
+        g.done = true;
+        removeRow(g);
+        refreshSuggestFor(g);
+        sync('done', g);
+        App.emit('data');
+        App.flash(V.el.querySelector('.s-drawer .num'), 'm-bump'); // the cart count takes it
+      }, 200);
+    }, 1000);
     App.toast('<b>' + App.esc(g.name) + '</b> checked off', {
       icon: 'check',
       undo: function () {
@@ -286,7 +294,11 @@ import { restockRows } from '../../calc.js';
   // Fresh list from Bring!: repaint if we're on screen (other views are rebuilt lazily). Not mid check-off animation.
   App.on('shopping', function () {
     if (App.current !== 'shopping' || !V.el || !V.el.firstChild || Object.keys(V.pending).length) return;
+    var had = {};
+    App.$$('.s-list [data-id]', V.el).forEach(function (r) { had[r.dataset.id] = 1; });
     paintList(); paintSuggest();
+    // items added on a phone (Bring! app) fade in, so the change is noticed
+    App.$$('.s-list [data-id]', V.el).forEach(function (r) { if (!had[r.dataset.id]) App.flash(r, 'm-grow'); });
   });
 
   // Fridge changed (used up / put back / new receipts): the restock cards follow. Not while typing.

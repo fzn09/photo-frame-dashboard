@@ -14,7 +14,16 @@
     return hit || { id: id, name: '', min: 0, img: '', photo: '' };
   }
   function mins(m) { return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + m % 60 + ' min' : '') : m + ' min'; }
-  function pic(src) { return src ? '<img src="' + App.esc(src) + '" alt="">' : '<div class="m-noimg">' + App.icon('utensils', 28) + '</div>'; }
+  function pic(src) { return src ? '<img class="m-img" src="' + App.esc(src) + '" alt="">' : '<div class="m-noimg">' + App.icon('utensils', 28) + '</div>'; }
+  // Photos fade in once loaded instead of popping in (a cached one is complete already and shows at once)
+  function fadeImgs(box) {
+    App.$$('img.m-img', box).forEach(function (im) {
+      if (im.complete) return;
+      im.classList.add('is-loading');
+      var done = function () { im.classList.remove('is-loading'); };
+      im.addEventListener('load', done); im.addEventListener('error', done);
+    });
+  }
 
   App.mealsOn = function (day) {
     if (!App.enabled('meals')) return [];
@@ -67,7 +76,7 @@
       onMount: function (s) {
         var box = s.querySelector('.r');
         function fill() {
-          load(m).then(function (r) { box.innerHTML = recipeBody(r); }).catch(function (err) {
+          load(m).then(function (r) { box.innerHTML = recipeBody(r); fadeImgs(box); }).catch(function (err) {
             var hint = err instanceof TypeError ? 'Check the Wi-Fi, then try again.' : 'Cookidoo didn’t answer. Try again in a minute.'; // fetch rejects with TypeError when offline
             box.innerHTML = '<div class="r-wait serif">Couldn’t load this recipe.<br><i>' + hint + '</i><button class="btn" data-retry>Try again</button></div>';
           });
@@ -138,15 +147,24 @@
     main.dataset.n = Math.min(n, 3);
     main.innerHTML = n ? list.map(card).join('') :
       '<div class="m-empty serif"><span>Nothing planned for ' + App.fmt.day(d) + '.<br><i>Plan it in Cookidoo and it shows up here.</i></span></div>';
+    fadeImgs(main);
     list.forEach(function (r) { fillCard(r, n === 1 ? 12 : n === 2 ? 10 : 5); });
   }
+  // Day change from the strip: the cards fade out (150 ms), repaint, and fade back in
+  function swapMain() {
+    var main = V.el.querySelector('.mc-main');
+    main.classList.add('is-out');
+    clearTimeout(V.swap);
+    V.swap = setTimeout(function () { paintMain(); main.classList.remove('is-out'); }, 150);
+  }
+  function paintStrip() { var s = V.el.querySelector('.mc-strip'); s.innerHTML = strip(); App.mark(s, 'is-today'); }
   function paintHead() {
     var h = head();
     if (h !== V.head) V.el.querySelector('.m-head').innerHTML = V.head = h; // the minute tick rarely changes it
   }
   function paint() {
     paintHead();
-    V.el.querySelector('.mc-strip').innerHTML = strip();
+    paintStrip();
     paintMain();
   }
   function today() { V.today = key(App.now()); V.day = V.today; }
@@ -154,7 +172,13 @@
   App.on('meals', function () { if (App.current === 'meals') paint(); });
   App.on('minute', function () {
     if (App.current !== 'meals') return;
-    if (key(App.now()) !== V.today) { today(); paint(); return; } // midnight: move on to the new day
+    if (key(App.now()) !== V.today) { // midnight: move on to the new day; the strip slides one day left
+      today();
+      V.el.querySelector('.mc-strip')._mark = null; // the marker stays on "today", which moved with the strip
+      paint();
+      App.flash(V.el.querySelector('.mc-strip'), 'm-shift');
+      return;
+    }
     paintHead();
   });
 
@@ -168,7 +192,8 @@
           if (t) {
             V.day = t.dataset.day;
             App.$$('.mc-day', el).forEach(function (b) { b.classList.toggle('is-on', b === t); b.setAttribute('aria-pressed', b === t); });
-            return paintMain();
+            App.mark(el.querySelector('.mc-strip'), 'is-today'); // the marker glides to the tapped day
+            return swapMain();
           }
           if ((t = e.target.closest('[data-meal]'))) App.recipeSheet(t.dataset.meal);
         });

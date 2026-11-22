@@ -77,6 +77,49 @@
   };
   App.esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
 
+  // ------------------------------------------------------------ motion (css/motion.css)
+  // Every animation is one-shot: it starts on an event and ends (docs/building-for-the-frame.md, Heavy content).
+  // ?motion=0 turns all of it off on this frame (remembered), ?motion=1 back on; so does prefers-reduced-motion.
+  try {
+    var mq = location.search.match(/[?&]motion=([01])/);
+    if (mq) localStorage.setItem('hq-motion', mq[1]);
+    if (localStorage.getItem('hq-motion') === '0') document.documentElement.classList.add('no-motion');
+  } catch (e) { /* storage off: motion stays on */ }
+  // Run a one-shot animation class again from the start; it removes itself when done (or after 2 s if no event comes).
+  App.flash = function (el, cls) {
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth; // restart: without a reflow, re-adding the same class does nothing
+    el.classList.add(cls);
+    clearTimeout(el['_m' + cls]);
+    el['_m' + cls] = setTimeout(function () { el.classList.remove(cls); }, 2000);
+  };
+  // True when key's text differs from the last call (never on the first one), so a repaint only animates what changed.
+  var seen = {};
+  App.changed = function (key, text) {
+    var was = seen[key];
+    seen[key] = text;
+    return was != null && was !== text;
+  };
+  // A selection marker that glides from the last selected item to the new one, for lists rebuilt with innerHTML
+  // (category rails, the Meals week strip). The marker is a new node each paint; box keeps the last offset.
+  App.mark = function (box, alt) {
+    Array.prototype.slice.call(box.children).forEach(function (c) { if (c.classList.contains('m-mark')) c.remove(); });
+    var on = box.querySelector('.is-on');
+    if (!on) return;
+    var x = on.offsetLeft, y = on.offsetTop, prev = box._mark;
+    var m = document.createElement('i');
+    m.className = 'm-mark' + (alt && on.classList.contains(alt) ? ' is-alt' : '');
+    m.setAttribute('aria-hidden', 'true');
+    m.style.width = on.offsetWidth + 'px';
+    m.style.height = on.offsetHeight + 'px';
+    var at = function (p) { m.style.transform = 'translate(' + p[0] + 'px,' + p[1] + 'px)'; };
+    at(prev || [x, y]);
+    box.insertBefore(m, box.firstChild);
+    box._mark = [x, y];
+    if (prev && (prev[0] !== x || prev[1] !== y)) { void m.offsetWidth; at([x, y]); }
+  };
+
   // ------------------------------------------------------------ icons + people
   App.icon = function (name, size, cls) {
     size = size || 24;
@@ -265,8 +308,13 @@
     t.innerHTML = (opts.icon ? App.icon(opts.icon, 26) : '') + '<span class="toast-msg">' + html + '</span>' +
       (act ? '<button class="toast-undo">' + act.label + '</button>' : '');
     box.appendChild(t);
+    void t.offsetWidth; // let it start below the edge, so it slides up
     t.classList.add('is-in');
-    function kill() { t.remove(); undos = []; }
+    function kill() {
+      undos = [];
+      t.classList.remove('is-in'); // slide out, then go (a newer toast clears the box first anyway)
+      setTimeout(function () { t.remove(); }, 250);
+    }
     toastTimer = setTimeout(kill, ms);
     if (act) t.querySelector('.toast-undo').addEventListener('click', function () { clearTimeout(toastTimer); act.fn(); kill(); });
   };
@@ -277,6 +325,7 @@
     var layer = $('#sheetLayer');
     layer.innerHTML = '<div class="sheet-scrim"></div><div class="sheet ' + (opts.cls || '') + '">' +
       '<button class="sheet-x" data-close aria-label="Close">' + App.icon('x', 28) + '</button>' + html + '</div>';
+    void layer.offsetWidth; // start from the closed state, so the sheet rises in
     layer.classList.add('is-open');
     var box = layer.querySelector('.sheet'), h = box.querySelector('h1, h2');
     box.setAttribute('role', 'dialog');

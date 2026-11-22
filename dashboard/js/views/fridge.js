@@ -88,11 +88,29 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     var groups = SECTIONS.filter(function (sec) { return all.some(function (r) { return r.section === sec; }); }).length;
     var needRail = all.length && (groups > 1 || byState(all, 'soon').length || byState(all, 'past').length);
     rail.innerHTML = V.showUsed || !needRail ? '' : railHTML(all);
+    App.mark(rail, 'cat--soon');
     var one = V.cat === 'soon' || V.cat === 'past', big = one && byState(all, V.cat).length <= 6;
     list.innerHTML = V.showUsed ? sections(used) : all.length ? (one ? '<div class="f-cols f-one' + (big ? ' f-big' : '') + '">' + listFor(all) + '</div>' : listFor(all))
       : '<div class="s-empty serif">' + (used.length ? 'All used up.' : 'No receipts yet.') + '<br><i>The next REWE shop lands here.</i></div>';
     list.scrollTop = st;
     railEnd();
+    motion();
+  }
+
+  // ---- motion (css/motion.css), each once
+  function motion() {
+    var rows = App.$$('.f-row [data-rm]', V.el);
+    // items from a receipt that arrived since the last paint come in one after another
+    if (V.known) rows.filter(function (b) { return b.dataset.rm.split(' ').some(function (id) { return !V.known[id]; }); })
+      .slice(0, 12).forEach(function (b, i) { var r = b.parentNode; r.style.setProperty('--i', i); App.flash(r, 'm-in'); });
+    V.known = {};
+    D.fridge.forEach(function (f) { V.known[f.id] = 1; });
+    // first look of the day: the "use soon" and "past" tags nudge once, then stay still
+    var day = App.now().toDateString();
+    if (!V.showUsed && V.nudged !== day) {
+      V.nudged = day;
+      App.$$('.f-tag:not(.f-tag--none):not(.f-over)', V.el).slice(0, 12).forEach(function (t) { App.flash(t, 'm-nudge'); });
+    }
   }
   // Hide the rail's "more below" chevron once nothing is left to scroll to
   function railEnd() {
@@ -117,13 +135,18 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
     paint();
     App.emit('data');
   }
-  function tap(ids, label) {
-    var used = !V.showUsed;
-    mark(ids, used);
-    App.toast('<b>' + App.esc(label) + '</b> ' + (used ? 'used up' : 'put back'), {
-      icon: 'check', ms: 6000,
-      undo: function () { mark(ids, !used); }
-    });
+  function rowOf(ids) { var b = V.el.querySelector('[data-rm="' + ids.join(' ') + '"]'); return b && b.parentNode; }
+  function tap(ids, label, btn) {
+    var used = !V.showUsed, r = btn.parentNode;
+    if (r.classList.contains('m-out')) return; // already on its way out
+    r.classList.add('m-out'); // shrink and fade, then the list repaints without it
+    setTimeout(function () {
+      mark(ids, used);
+      App.toast('<b>' + App.esc(label) + '</b> ' + (used ? 'used up' : 'put back'), {
+        icon: 'check', ms: 6000,
+        undo: function () { mark(ids, !used); App.flash(rowOf(ids), 'm-grow'); } // and it grows back in
+      });
+    }, 200);
   }
 
   App.on('fridge', function () { if (App.current === 'fridge' && V.el && V.el.firstChild) paint(); });
@@ -134,7 +157,7 @@ import { fridgeRows, SECTIONS } from '../../calc.js';
         V.el = el;
         el.addEventListener('click', function (e) {
           var t = e.target.closest('[data-rm]');
-          if (t) tap(t.dataset.rm.split(' '), t.dataset.label);
+          if (t) tap(t.dataset.rm.split(' '), t.dataset.label, t);
           else if (e.target.closest('[data-used]')) { V.showUsed = !V.showUsed; paint(); }
           else if ((t = e.target.closest('[data-cat]'))) { V.cat = t.dataset.cat; paint(); V.el.querySelector('.f-list').scrollTop = 0; }
         });

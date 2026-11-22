@@ -80,7 +80,8 @@
     var now = App.now(), idx = -1;
     days.forEach(function (d, i) { if (App.sameDay(d, now)) idx = i; });
     if (idx < 0 || now.getHours() < START || now.getHours() >= END) return '';
-    return '<div class="now-line" style="top:' + y(now) + 'px"><span class="num">' + App.fmt.time(now, false) + '</span></div>';
+    // transform, not top: the minute move glides on the compositor (css/motion.css)
+    return '<div class="now-line" style="transform:translateY(' + y(now) + 'px)"><span class="num">' + App.fmt.time(now, false) + '</span></div>';
   }
 
   // ------------------------------------------------------------ Today (lanes per person)
@@ -221,9 +222,11 @@
       '</header>';
   }
 
-  function render() {
+  // enter: 'm-fade' for a new mode, 'm-from-r' / 'm-from-l' for the next / previous day, week or month
+  function render(enter) {
     var body = { day: dayView, '3day': threeDay, week: weekView, month: monthView }[V.mode]();
     V.el.innerHTML = '<div class="cal cal--' + V.mode + '">' + header() + '<div class="cal-body">' + body + '</div></div>';
+    if (enter) V.el.querySelector('.cal-body').classList.add(enter);
     var sc = V.el.querySelector('.grid-scroll');
     if (sc) {
       var now = App.now();
@@ -236,7 +239,7 @@
     if (V.mode === 'month') V.date = new Date(V.date.getFullYear(), V.date.getMonth() + dir, 1);
     else V.date = App.addDays(V.date, dir * ({ day: 1, '3day': 3, week: 7 }[V.mode]));
     V.scroll = null;
-    render();
+    render(dir > 0 ? 'm-from-r' : 'm-from-l');
   }
 
   function onClick(e) {
@@ -255,9 +258,9 @@
       V.mode = t.dataset.mode;
       if (V.mode === 'month') V.date = new Date(V.date.getFullYear(), V.date.getMonth(), 1);
       V.scroll = null;
-      return render();
+      return render('m-rise');
     }
-    if ((t = e.target.closest('[data-day]'))) { V.mode = 'day'; V.date = new Date(+t.dataset.day); V.scroll = null; return render(); }
+    if ((t = e.target.closest('[data-day]'))) { V.mode = 'day'; V.date = new Date(+t.dataset.day); V.scroll = null; return render('m-rise'); }
   }
 
   // Swipe left/right to change day (the only swipe gesture in the app)
@@ -317,7 +320,12 @@
     if (App.current !== 'calendar') return;
     var line = V.el.querySelector('.now-line');
     var now = App.now();
-    if (line) { line.style.top = y(now) + 'px'; line.querySelector('span').textContent = App.fmt.time(now, false); }
+    if (line) { line.style.transform = 'translateY(' + y(now) + 'px)'; line.querySelector('span').textContent = App.fmt.time(now, false); }
+    // An event that starts this minute takes its "now" ring with one brightening flash
+    App.events().forEach(function (e) {
+      if (e.allDay || Math.floor(e.start / 60000) !== Math.floor(now / 60000)) return;
+      App.$$('.ev[data-ev="' + e.id + '"]', V.el).forEach(function (b) { b.classList.add('is-now'); App.flash(b, 'm-pulse'); });
+    });
   });
   App.on('time', function () { V.date = App.dayStart(App.now()); V.scroll = null; });
 })();

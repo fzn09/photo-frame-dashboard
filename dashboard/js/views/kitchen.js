@@ -68,8 +68,11 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
     if (t.done) return '<button class="k-timer is-done" data-tx="' + t.id + '">' + App.icon('bell', 34) + '<b class="k-t-time">Done</b><span class="label">' + label(t) + ' · tap to clear</span></button>';
     return '<div class="k-timer" data-t="' + t.id + '"><b class="k-t-time num">' + mmss(t) + '</b><span class="label">' + label(t) + ' · rings ' + App.fmt.time(new Date(t.end)) + '</span>' +
       '<button class="btn" data-tplus="' + t.id + '">+1 min</button>' +
-      '<button class="k-t-x" data-tx="' + t.id + '" aria-label="Cancel">' + App.icon('x', 26) + '</button></div>';
+      '<button class="k-t-x" data-tx="' + t.id + '" aria-label="Cancel">' + App.icon('x', 26) + '</button>' +
+      '<i class="k-t-bar" style="transform:scaleX(' + left(t) + ')"></i></div>';
   }
+  // Share of the timer still to run, for the bar under the countdown (stepped each second, no transition)
+  function left(t) { return Math.max(0, Math.min(1, (t.end - Date.now()) / (t.mins * 60000))).toFixed(4); }
   function paintRail() {
     var el = document.getElementById('railTimer');
     if (!el) return;
@@ -104,14 +107,25 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
       // Holding off idle meanwhile keeps the Done card on screen.
       if (t.done && now - t.doneAt < 60000) {
         App.resetIdle();
-        if (now >= t.nextBeep) { beep(); t.nextBeep += 5000; }
+        if (now >= t.nextBeep) { beep(); t.nextBeep += 5000; t.pulse = true; }
       }
     });
-    if (changed) return paintTimers();
-    paintRail();
-    if (V.el) App.$$('.k-timer[data-t]', V.el).forEach(function (el) {
+    if (changed) paintTimers(); else paintRail();
+    // A pulse with each beep (12 in the minute, then still): the Done card and the rail timer
+    T.forEach(function (t) {
+      if (!t.pulse) return;
+      t.pulse = false;
+      if (V.el) App.flash(V.el.querySelector('.k-timer.is-done[data-tx="' + t.id + '"]'), 'm-pulse');
+      App.flash(document.getElementById('railTimer'), 'm-pulse');
+    });
+    if (changed || App.current !== 'kitchen') return; // hidden: show() rebuilds the cards anyway
+    App.$$('.k-timer[data-t]', V.el).forEach(function (el) {
       var t = T.filter(function (x) { return x.id === +el.dataset.t; })[0];
-      if (t) el.querySelector('.k-t-time').textContent = mmss(t);
+      if (!t) return;
+      var time = el.querySelector('.k-t-time');
+      time.textContent = mmss(t);
+      el.querySelector('.k-t-bar').style.transform = 'scaleX(' + left(t) + ')';
+      if (t.end - now <= 10000) App.flash(time, 'm-tick'); // the last ten seconds flip in, one by one
     });
   });
 
@@ -139,8 +153,12 @@ import { CALC0, press, fmt, CONV, convert } from '../../calc.js';
   function onClick(e) {
     var t;
     audio();
-    if ((t = e.target.closest('[data-key]'))) { S = press(S, t.dataset.key); V.line = ''; return paintCalc(); }
-    if ((t = e.target.closest('[data-conv]'))) { conv(t.dataset.conv); return paintCalc(); }
+    if ((t = e.target.closest('[data-key]'))) {
+      S = press(S, t.dataset.key); V.line = ''; paintCalc();
+      if (t.dataset.key === '=') App.flash(V.el.querySelector('.k-display'), 'm-rise'); // a result rises in; digits don't
+      return;
+    }
+    if ((t = e.target.closest('[data-conv]'))) { conv(t.dataset.conv); paintCalc(); return App.flash(V.el.querySelector('.k-display'), 'm-rise'); }
     if ((t = e.target.closest('[data-preset]'))) return start(t.dataset.preset === 'screen' ? +S.display : +t.dataset.preset);
     if ((t = e.target.closest('[data-tplus]'))) {
       var p = T.filter(function (x) { return x.id === +t.dataset.tplus; })[0];

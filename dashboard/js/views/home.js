@@ -89,7 +89,7 @@ import { fridgeRows } from '../../calc.js';
     // Calm at rest (person-coloured edge), copper inside 15 minutes, alert red-orange once it is time to go
     var state = e.travel && leave <= 0 ? ' is-now' : ref <= 15 ? ' is-soon' : '';
     var meta = (untilOnly ? 'Until ' + App.fmt.time(e.end) : App.fmt.range(e.start, e.end)) + (e.loc ? ' · ' + App.esc(e.loc) : '');
-    return '<button class="h-hero' + state + '" style="' + App.pstyle(p) + '" data-ev="' + e.id + '">' + ageTag('calendar') +
+    return '<button class="h-hero' + state + '" style="' + App.pstyle(p) + '" data-ev="' + e.id + '" data-left="' + ref + '">' + ageTag('calendar') +
       '<div class="h-hero-main">' +
       '  <div class="label">Next up · ' + App.esc(whoText) + '</div>' +
       '  <div class="h-hero-title serif">' + App.esc(e.title) + '</div>' +
@@ -323,6 +323,27 @@ import { fridgeRows } from '../../calc.js';
     el.querySelector('.h-transit').innerHTML = transit();
     if (App.enabled('fridge')) paintFridge(el.querySelector('.h-fridge'));
     if (App.enabled('tasks')) name(el.querySelector('.h-chores'), chores());
+    motion();
+  }
+
+  // ---- motion: after a repaint, animate only what changed (css/motion.css; each runs once)
+  function moved(sel, cls) {
+    var el = V.el.querySelector(sel);
+    if (el && App.changed('home' + sel, el.textContent)) App.flash(el, cls);
+  }
+  function motion() {
+    moved('.h-wx-temp', 'm-roll');                // temperature: the new figure rolls up
+    moved('.h-shop .h-stat .num', 'm-bump');      // counts: one bump
+    moved('.h-fridge .h-stat .num', 'm-bump');
+    moved('.h-chores .h-stat .num', 'm-bump');
+    moved('.h-hero-title', 'm-fade');             // a new event in Next up
+    quietIn();
+  }
+  // The quiet card's rows come in one after another, once, when the day turns quiet (not on every repaint)
+  function quietIn() {
+    var q = !!V.el.querySelector('.h-quiet');
+    if (q && !V.quietShown) App.$$('.h-quiet-h, .h-quiet .h-meal, .h-quiet .h-ag', V.el).forEach(function (r, i) { r.style.setProperty('--i', i); r.classList.add('m-in'); });
+    V.quietShown = q;
   }
 
   function photoCaption(s) {
@@ -409,10 +430,17 @@ import { fridgeRows } from '../../calc.js';
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
     ages();
     drift();
+    motion();
+    if (App.current !== 'home' || App.mode !== 'day') return;
+    // Time to leave at 10, 5 and 0 minutes: Next up pulses once each time (three in all), never on a loop
+    var h = V.el.querySelector('.h-hero[data-left]');
+    if (h && [10, 5, 0].indexOf(+h.dataset.left) > -1) App.flash(h, 'm-pulse');
+    // Every 10 minutes a light passes once over the next event in the lanes, so the screen reads as live
+    if (n.getMinutes() % 10 === 0) App.flash(V.el.querySelector('.h-lanes .h-ev:not(.is-now)'), 'h-sweep');
   });
   App.on('data', function () { if (App.current === 'home') paint(); });
-  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); paintFridge(V.el.querySelector('.h-fridge')); } });
-  App.on('chores', function () { if (App.current === 'home' && App.enabled('tasks')) name(V.el.querySelector('.h-chores'), chores()); });
+  App.on('fridge', function () { if (App.current === 'home' && App.enabled('fridge')) { lean(); paintFridge(V.el.querySelector('.h-fridge')); motion(); } });
+  App.on('chores', function () { if (App.current === 'home' && App.enabled('tasks')) { name(V.el.querySelector('.h-chores'), chores()); motion(); } });
   App.on('views', function () {
     if (!V.el || !V.el.firstChild) return;
     paint();

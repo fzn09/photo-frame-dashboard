@@ -57,8 +57,16 @@ import { chips, mmss } from '../../glance.js';
   }
 
   function paint() {
-    if (App.mode === 'ambient') $('#ambient .amb-info').innerHTML = ambientInfo();
-    if (App.mode === 'night') $('#night .nt-inner').innerHTML = nightInfo();
+    if (App.mode === 'ambient') {
+      $('#ambient .amb-info').innerHTML = ambientInfo();
+      // the chips' ranking or wording changed (not just the minute): fade the column in
+      var order = App.$$('#ambient .amb-next span').map(function (s) { return s.textContent.replace(/\d/g, ''); }).join('|');
+      if (App.changed('amb-chips', order)) App.flash($('#ambient .amb-right'), 'm-fade');
+    }
+    if (App.mode === 'night') {
+      $('#night .nt-inner').innerHTML = nightInfo();
+      App.flash($('#night .nt-time'), 'm-fade'); // the minute fades in instead of snapping
+    }
   }
 
   // Nudge static content a few px every minute so nothing sits still for hours (image retention)
@@ -70,7 +78,12 @@ import { chips, mmss } from '../../glance.js';
   App.on('ready', function () {
     $('#ambient').innerHTML = '<div class="amb-stage"></div><div class="amb-scrim"></div><div class="amb-info"></div>';
     $('#night').innerHTML = '<div class="nt-inner"></div>';
-    amb.show = new App.Slideshow($('#ambient .amb-stage'), { captions: false, interval: 14000 });
+    // kb: a 6 s push-in per photo, then still. Off by default: Ambient is the always-on screen and the push-in animates
+    // ~43% of it, close to the measured cost of a loop. ?kb=1 turns it on for this frame (remembered), ?kb=0 off;
+    // measure idle CPU (adb shell top) before leaving it on.
+    var kb = false;
+    try { var kq = location.search.match(/[?&]kb=([01])/); if (kq) localStorage.setItem('hq-kb', kq[1]); kb = localStorage.getItem('hq-kb') === '1'; } catch (e) { /* off */ }
+    amb.show = new App.Slideshow($('#ambient .amb-stage'), { captions: false, interval: 14000, kb: kb });
     $('#ambient').addEventListener('click', function (e) {
       var o = e.target.closest('[data-open]'); // the timer chip opens Kitchen, anywhere else opens Home
       App.setMode('day'); App.go(o ? o.dataset.open : 'home');

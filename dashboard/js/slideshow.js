@@ -44,7 +44,7 @@
     var img = p.o === 'p' // a portrait is shown full height, so about 0.42 of the slide's width (800 x 2/3 of 1280)
       ? '<img class="fitimg" src="' + src(p, Math.round(o.w * .42)) + '" alt="">'
       : '<div class="kb"><img src="' + src(p, o.w) + '" alt=""></div>';
-    return '<div class="slide ' + (p.o === 'p' ? 'slide--fit' : 'slide--cover') + '">' + img + (o.captions ? caption(p) : '') + '</div>';
+    return '<div class="slide is-pre ' + (p.o === 'p' ? 'slide--fit' : 'slide--cover' + (o.kb ? ' slide--kb' : '')) + '">' + img + (o.captions ? caption(p) : '') + '</div>';
   }
 
   // Slideshows wait for the first /api/photos attempt (see loadPhotos) so none of them fills its queue
@@ -84,8 +84,7 @@
     this.current = slide;
     var wrap = document.createElement('div');
     wrap.innerHTML = slideHTML(slide.photos[0], this.o);
-    var node = wrap.firstChild;
-    node.style.opacity = '0';
+    var node = wrap.firstChild; // starts transparent (.is-pre) and fades in over the old slide
     // Fallback look if images can't load (offline)
     Array.prototype.forEach.call(node.querySelectorAll('img'), function (im) {
       im.addEventListener('error', function () { im.classList.add('is-broken'); });
@@ -96,9 +95,11 @@
     var shown = false;
     function show() {
       if (shown) return; shown = true;
-      node.classList.add('is-in');
-      node.style.opacity = '';
-      old.forEach(function (o) { o.remove(); });
+      void node.offsetWidth;
+      node.classList.add('is-in', 'is-zoom');
+      node.classList.remove('is-pre');
+      // Crossfade, then drop the old slide so only one decoded photo stays in memory (two for 0.8 s)
+      setTimeout(function () { old.forEach(function (o) { o.remove(); }); }, 850);
     }
     if (first && !first.complete) { first.addEventListener('load', show); first.addEventListener('error', show); setTimeout(show, 2500); }
     else show();
