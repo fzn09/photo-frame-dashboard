@@ -132,9 +132,29 @@
 .h-hero--next { justify-content: space-between; }
 .h-hero--next .label::before { box-shadow: none; }
 .h-hero--next .h-hero-count { color: var(--ink); font-size: var(--fs-xl); } /* tomorrow: smaller than a live countdown, the clock stays the anchor */
-.h-free--all { grid-column: 1 / -1; font-size: var(--fs-l); padding-top: 10px; }
-.h-tomorrow { grid-column: 1 / -1; margin-top: 12px; }
-.h-tomorrow .label { margin-bottom: 4px; }
+/* ---- quiet day: nobody has anything left today, so Next up drops out and the people card takes all of row 2.
+   Left: the free statement (and today's cooking). Right, behind a hairline: what's coming, as an agenda. */
+.home[data-quiet] {
+  grid-template-areas:
+    "clock clock clock clock clock clock clock weather weather weather weather weather weather weather weather weather weather weather transit transit transit transit transit transit"
+    "lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes lanes"
+    "row row row row row row row row row row row row row row row row row row row row row row row row";
+}
+.home[data-quiet] > .h-hero-slot { display: none; }
+.h-quiet { grid-column: 1 / -1; display: grid; grid-template-columns: 5fr 7fr; gap: 28px; height: 218px; }
+.h-quiet-l { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; padding: 4px 0 0 4px; }
+.h-quiet-l.is-solo { justify-content: center; }
+.h-quiet-h { font-size: var(--fs-l); line-height: 1.05; color: var(--ink); }
+.h-quiet-l.is-solo .h-quiet-h { font-size: var(--fs-xl); line-height: 1; }
+.h-quiet.is-clear { grid-template-columns: 1fr; }
+.h-quiet.is-clear .h-free { font-size: var(--fs-l); }
+.h-quiet-meals { display: flex; flex-direction: column; min-width: 0; }
+.h-quiet-meals .label { margin-bottom: 2px; }
+.h-quiet-r { min-width: 0; padding-left: 28px; box-shadow: inset 1px 0 0 var(--line); display: flex; flex-direction: column; }
+.h-quiet-rh { display: flex; align-items: center; height: 26px; } /* fixed: .h-more's 48 px tap area overhangs, it doesn't push the rows */
+/* agenda row: day (only on a day's first row), time, title, whose */
+.h-ag-d { flex: none; width: 132px; font-family: var(--serif); font-style: italic; font-size: var(--fs-m); line-height: 1; color: var(--ink); white-space: nowrap; }
+.h-ag .h-ev-t { min-width: 72px; }
 .h-hero--empty .label::before { background: var(--mute); }
 .h-hero--empty .h-hero-title { font-size: var(--fs-l); line-height: 1.05; -webkit-line-clamp: 3; }
 .h-hero--empty .h-hero-meta { font-family: var(--sans); }

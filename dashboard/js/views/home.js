@@ -119,14 +119,12 @@ import { fridgeRows } from '../../calc.js';
       return i < together.length - 1 || !famMore ? row(e, true)
         : '<div class="h-tg-last">' + row(e, true) + '<button class="h-more" data-go="calendar">+' + famMore + ' more</button></div>';
     }).join('');
+    if (quiet()) return ageTag('calendar') + quietDay(now, meals);
     return ageTag('calendar') +
       (band ? '<div class="h-mband"><span class="label h-mband-l">Cooking</span>' + meals.slice(0, 3).map(function (r) {
         return '<button class="h-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<b>' + App.esc(r.name) + '</b></button>';
       }).join('') + '</div>' : '') +
       (together.length ? '<div class="h-together">' + shared + '</div>' : '') +
-      // Nobody has anything left: one line across both columns, not "Free" twice beside an empty Next up
-      (!together.length && !hero && D.people.every(function (p) { return !live(p.id).length; })
-        ? '<div class="h-free h-free--all serif"><i>Everyone</i> is free for the rest of the day</div>' + laterTomorrow(now) :
       D.people.map(function (p) {
         var list = live(p.id).filter(function (e) { return !App.isFamily(e); });
         var shown = list.slice(0, cap), more = list.length - shown.length;
@@ -139,17 +137,53 @@ import { fridgeRows } from '../../calc.js';
           (shown.length ? shown.map(function (e) { return row(e); }).join('') :
             '<div class="h-free serif">' + (busy ? '<i>Nothing</i> else' : '<i>Free</i> the rest of the day') + '</div>') +
           '</div>';
-      }).join(''));
+      }).join('');
   }
 
-  // The evening people card looks ahead: tomorrow after its first event (that one is in the Next up card)
-  function laterTomorrow(now) {
-    var tm = App.timedOn(App.addDays(now, 1)).slice(1, 4);
-    return tm.length ? '<div class="h-tomorrow"><div class="label">Later tomorrow</div>' + tm.map(function (e) {
-      return '<button class="h-ev" data-ev="' + e.id + '"><span class="h-ev-t">' + App.fmt.time(e.start, false) + '</span>' +
-        '<span class="h-ev-n">' + App.esc(e.title) + '</span>' + App.dots(e.people, 12) + '</button>';
-    }).join('') + '</div>' : '';
+  // Nobody has anything left today: no Next up and no event still running. Row 2 then folds into one wide card
+  // (.home[data-quiet]) instead of a near-empty Next up beside a people card that says "free" once.
+  function quiet() {
+    var now = App.now();
+    return !App.nextEvent() && !App.timedOn(now).some(function (e) { return e.end > now; });
   }
+
+  // The quiet card: the free statement and today's cooking on the left, what's coming on the right.
+  // "Coming up" is today's all-day items, then the next 7 days (an all-day item only on the day it starts).
+  var QUIET_ROWS = 4;
+  function quietDay(now, meals) {
+    var rows = App.allDayOn(now).map(function (e) { return { d: 0, e: e }; });
+    for (var i = 1; i <= 7; i++) {
+      var day = App.addDays(now, i);
+      App.allDayOn(day).forEach(function (e) { if (App.sameDay(e.start, day)) rows.push({ d: i, e: e }); });
+      App.timedOn(day).forEach(function (e) { rows.push({ d: i, e: e }); });
+    }
+    var shown = rows.slice(0, QUIET_ROWS), more = rows.length - shown.length;
+    var agenda = shown.map(function (r, k) {
+      var e = r.e, first = !k || shown[k - 1].d !== r.d;
+      var dayName = r.d === 0 ? 'Today' : r.d === 1 ? 'Tomorrow' : App.fmt.day(App.addDays(now, r.d));
+      return '<button class="h-ev h-ag" data-ev="' + e.id + '">' +
+        '<span class="h-ag-d">' + (first ? dayName : '') + '</span>' +
+        '<span class="h-ev-t">' + (e.allDay ? 'All day' : App.fmt.time(e.start)) + '</span>' +
+        '<span class="h-ev-n">' + App.esc(e.title) + '</span>' + App.dots(e.people, 12) + '</button>';
+    }).join('');
+    // A clear week too: one statement across the card, not a heading over an empty right half
+    if (!agenda && !meals.length) {
+      return '<div class="h-quiet is-clear"><div class="h-quiet-l is-solo">' +
+        '<div class="h-quiet-h serif"><i>Everyone</i> is free for the rest of the day</div>' +
+        '<div class="h-free serif">Nothing in the calendar this week either.</div></div></div>';
+    }
+    return '<div class="h-quiet">' +
+      '<div class="h-quiet-l' + (meals.length ? '' : ' is-solo') + '">' +
+      '<div class="h-quiet-h serif"><i>Everyone</i> is free<br>for the rest of the day</div>' +
+      (meals.length ? '<div class="h-quiet-meals"><div class="label">Cooking</div>' + meals.slice(0, 2).map(function (r) {
+        return '<button class="h-meal" data-meal="' + App.esc(r.id) + '">' + App.mealThumb(r) + '<b>' + App.esc(r.name) + '</b></button>';
+      }).join('') + '</div>' : '') +
+      '</div><div class="h-quiet-r"><div class="h-quiet-rh"><span class="label">Coming up</span>' +
+      (more > 0 ? '<button class="h-more" data-go="calendar">+' + more + ' more this week</button>' : '') + '</div>' +
+      (agenda || '<div class="h-free serif"><i>Nothing</i> in the calendar this week</div>') +
+      '</div></div>';
+  }
+  function quietFlag() { V.el.firstChild.toggleAttribute('data-quiet', quiet()); }
 
   function ring(done, total, size) {
     var r = size / 2 - 5, c = 2 * Math.PI * r, f = total ? done / total : 0;
@@ -280,6 +314,7 @@ import { fridgeRows } from '../../calc.js';
   function paint() {
     var el = V.el;
     lean();
+    quietFlag();
     el.querySelector('.h-clock').innerHTML = clock();
     el.querySelector('.h-weather').innerHTML = weather();
     el.querySelector('.h-hero-slot').innerHTML = hero();
@@ -365,6 +400,10 @@ import { fridgeRows } from '../../calc.js';
     if (!V.el || !V.el.firstChild) return;
     V.el.querySelector('.h-clock').innerHTML = clock();
     V.el.querySelector('.h-hero-slot').innerHTML = hero();
+    // the last event of the day just ended (or one started): fold or unfold row 2 now, not on the hour
+    var wasQuiet = V.el.firstChild.hasAttribute('data-quiet');
+    quietFlag();
+    if (wasQuiet !== V.el.firstChild.hasAttribute('data-quiet')) V.el.querySelector('.h-lanes').innerHTML = lanes();
     V.el.querySelector('.h-transit').innerHTML = transit();
     if (App.enabled('tasks')) name(V.el.querySelector('.h-chores'), chores()); // "18:00" becomes "Late · 18:00" on time
     if (n.getMinutes() === 0) { V.el.querySelector('.h-weather').innerHTML = weather(); V.el.querySelector('.h-lanes').innerHTML = lanes(); }
